@@ -11,6 +11,7 @@
 #include "EventFilter/Utilities/interface/DAQSourceModelsFRD.h"
 #include "EventFilter/Utilities/interface/DAQSourceModelsScoutingRun3.h"
 #include "EventFilter/Utilities/interface/DAQSourceModelsDTH.h"
+#include "EventFilter/Utilities/interface/DAQSourceModelsScoutingPhase2.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/InputSourceDescription.h"
@@ -90,6 +91,8 @@ DAQSource::DAQSource(edm::ParameterSet const& pset, edm::InputSourceDescription 
     dataMode_ = std::make_shared<DataModeFRDStriped>(this);
   } else if (dataModeConfig_ == "ScoutingRun3") {
     dataMode_ = std::make_shared<DataModeScoutingRun3>(this);
+  } else if (dataModeConfig_ == "ScoutingPhase2") {
+    dataMode_.reset(new DataModeScoutingPhase2(this));
   } else if (dataModeConfig_ == "DTH") {
     dataMode_ = std::make_shared<DataModeDTH>(this, verifyChecksum_);
   } else
