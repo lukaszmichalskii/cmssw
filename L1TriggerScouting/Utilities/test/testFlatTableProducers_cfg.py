@@ -28,6 +28,12 @@ options.register ('selBx',
                   VarParsing.VarParsing.varType.string,
                  "BX Selection to use")
 
+options.register ('saveStubs',
+                  True,
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.bool,
+                 "BX Selection to use")
+
 options.parseArguments()
 
 process = cms.Process( "DUMP" )
@@ -67,6 +73,11 @@ process.scTauTable = cms.EDProducer("ConvertScoutingTausToOrbitFlatTable",
   name = cms.string("L1Tau"),
   doc = cms.string("Taus from Calo Demux"),
 )
+process.scStubsTable = cms.EDProducer("ConvertScoutingStubsToOrbitFlatTable",
+  src = cms.InputTag("FinalBxSelectorBMTFStub" if selbx else "l1ScBMTFUnpacker", "BMTFStub"),
+  name = cms.string("L1BMTFStub"),
+  doc = cms.string("Stubs from BMTF"),
+)
 process.scSumTable = cms.EDProducer("ConvertScoutingSumsToOrbitFlatTable",
   src = cms.InputTag("FinalBxSelectorBxSums" if selbx else "l1ScCaloUnpacker", "EtSum"),
   name = cms.string("L1EtSum"),
@@ -82,6 +93,7 @@ process.p = cms.Path(
   process.scJetTable +
   process.scEgammaTable +
   process.scTauTable +
+  process.scStubsTable +
   process.scSumTable
 )
 
@@ -94,6 +106,8 @@ process.out = cms.OutputModule("OrbitNanoAODOutputModule",
     compressionAlgorithm = cms.untracked.string("ZSTD"),
 )
 
+if not options.saveStubs:
+  process.p.remove(process.scStubsTable)
 if selbx:
   process.p.remove(process.scTauTable)
   process.out.outputCommands += [ "keep uints_*_SelBx_*" ]
