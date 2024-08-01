@@ -151,6 +151,11 @@ process.scPhase2PuppiRawToDigiSOA = scPhase2PuppiRawToDigi.clone(
     runCandidateUnpacker = False,
     runSOAUnpacker = True
 )
+scPhase2TkEmRawToDigi = cms.EDProducer('ScPhase2TkEmRawToDigi',
+  src = cms.InputTag('rawDataCollector'),
+  fedIDs = cms.vuint32(0),
+  runStructUnpacker = cms.bool(True),
+)
 process.w3piCandidate = cms.EDProducer("ScPhase2PuppiW3PiDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiCandidate"),
     runCandidate = cms.bool(True),
@@ -165,7 +170,8 @@ process.w3piStruct = cms.EDProducer("ScPhase2PuppiW3PiDemo",
 )
 
 process.wdsgStruct = cms.EDProducer("ScPhase2PuppiWDsGammaDemo",
-    src = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
+    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
     runStruct = cms.bool(True)
 )
 
@@ -193,6 +199,7 @@ process.p_simple = cms.Path(
 )
 process.p_struct = cms.Path(
   process.scPhase2PuppiRawToDigiStruct
+  + process.scPhase2TkEmRawToDigiStruct
   +process.w3piStruct
   +process.wdsgStruct
   +process.scPhase2PuppiStructToTable
@@ -206,6 +213,7 @@ process.p_all = cms.Path(
   process.scPhase2PuppiRawToDigiCandidate+
   process.scPhase2PuppiRawToDigiStruct+
   process.scPhase2PuppiRawToDigiSOA+
+  process.scPhase2TkEmRawToDigiStruct+
   process.scPhase2PuppiStructToTable+
   process.scPhase2TkEmStructToTable+
   process.w3piCandidate+
@@ -216,6 +224,7 @@ process.p_all = cms.Path(
 process.p_fast = cms.Path(
   process.scPhase2PuppiRawToDigiStruct+
   process.scPhase2PuppiRawToDigiSOA+
+  process.scPhase2TkEmRawToDigiStruct+
   process.scPhase2PuppiStructToTable+
   process.scPhase2TkEmStructToTable+
   process.w3piStruct+
