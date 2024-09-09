@@ -64,7 +64,7 @@ bool FinalBxSelector::filter(edm::Event& iEvent, const edm::EventSetup&) {
 
 void FinalBxSelector::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
-  desc.setUnknown();
+  desc.add<std::vector<edm::InputTag>>("analysisLabels");
   descriptions.addDefault(desc);
 }
 

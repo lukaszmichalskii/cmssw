@@ -35,10 +35,22 @@ options.register ('buBaseDir',
                   "BU base directory")
 
 options.register ('buNumStreams',
-                  [1], # default value
+                  [], # default value
                   VarParsing.VarParsing.multiplicity.list,
                   VarParsing.VarParsing.varType.int,          # string, int, or float
                   "Number of input streams (i.e. files) used simultaneously for each BU directory")
+
+options.register ('timeslices',
+                  1,
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.int,          # string, int, or float
+                  "Number of timeslices")
+
+options.register ('tmuxPeriod',
+                  1,
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.int,          # string, int, or float
+                  "Time multiplex period")
 
 options.register ('puppiStreamIDs',
                   [], # default value
@@ -70,17 +82,23 @@ options.register ('numFwkStreams',
                   VarParsing.VarParsing.varType.int,          # string, int, or float
                   "Number of CMSSW streams")
 
+options.register ('analyses',
+                  [], # default value
+                  VarParsing.VarParsing.multiplicity.list,
+                  VarParsing.VarParsing.varType.string,          # string, int, or float
+                  "analyses: any list of 'w3pi'.")
+
 options.register ('puppiMode',
                   'struct', # default value
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "puppi mode to run (simple, struct, soa)")
+                  "puppi mode to run: struct is the default, and the only one for which everything is implemented; others are candidate, soa, all, fast")
                  
 options.register ('outMode',
                   'none', # default value
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "puppi mode to run (none, struct, soa)")
+                  "output (none, nanoSelected, nanoInclusive, nanoBoth)")
                    
 options.register ('outFile',
                   "NanoOutput.root",
@@ -90,13 +108,18 @@ options.register ('outFile',
 
 
 options.parseArguments()
-if options.puppiMode not in ("simple", "sparse", "struct", "sparseStruct", "soa", "all", "fast"):
+if options.buNumStreams == []:
+    options.buNumStreams.append(1)
+analyses = options.analyses if options.analyses else ["w3pi"]
+if options.puppiMode not in ("struct","candidate", "soa", "all", "fast"):
     raise RuntimeError("Unsupported puppiMode %r" %options.puppiMode)
 
 process = cms.Process("SCPU")
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(options.maxEvents)
 )
+
+print()
 
 process.options = cms.untracked.PSet(
     numberOfThreads = cms.untracked.uint32(options.numThreads),
@@ -171,77 +194,133 @@ process.scPhase2PuppiRawToDigiSOA = scPhase2PuppiRawToDigi.clone(
     runCandidateUnpacker = False,
     runSOAUnpacker = True
 )
+
+process.goodOrbitsByNBX = cms.EDFilter("GoodOrbitNBxSelector",
+    unpackers = cms.VInputTag(cms.InputTag("scPhase2PuppiRawToDigiStruct")),
+    nbxMin = cms.uint32(3564 * options.timeslices // options.tmuxPeriod)
+)
+
 process.w3piCandidate = cms.EDProducer("ScPhase2PuppiW3PiDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiCandidate"),
     runCandidate = cms.bool(True),
     runStruct = cms.bool(False),
     runSOA = cms.bool(False)
 )
+
 process.w3piStruct = cms.EDProducer("ScPhase2PuppiW3PiDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
     runCandidate = cms.bool(False),
     runStruct = cms.bool(True),
     runSOA = cms.bool(False)
 )
+
 process.w3piSOA = cms.EDProducer("ScPhase2PuppiW3PiDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiSOA"),
     runCandidate = cms.bool(False),
     runStruct = cms.bool(False),
     runSOA = cms.bool(True)
 )
+
+process.scPhase2SelectedBXs =  cms.EDFilter("FinalBxSelector",
+    analysisLabels = cms.VInputTag([cms.InputTag(f"{a}Struct", "selectedBx") for a in analyses]),
+)
+
+process.scPhase2PuppiMasked = cms.EDProducer("MaskOrbitBxScoutingPuppi",
+    dataTag = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    selectBxs = cms.InputTag("scPhase2SelectedBXs","SelBx"),
+)
+
+
 process.scPhase2PuppiStructToTable = cms.EDProducer("ScPuppiToOrbitFlatTable",
     src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
     name = cms.string("L1Puppi"),
     doc = cms.string("L1Puppi candidates from Correlator Layer 2"),
 )
-process.p_simple = cms.Path(
-  process.scPhase2PuppiRawToDigiCandidate
-  +process.w3piCandidate
+
+process.scPhase2PuppiMaskedStructToTable = process.scPhase2PuppiStructToTable.clone(
+    src = "scPhase2PuppiMasked"
 )
-process.p_struct = cms.Path(
-  process.scPhase2PuppiRawToDigiStruct
-  +process.w3piStruct
-  +process.scPhase2PuppiStructToTable
+
+
+process.p_inclusive = cms.Path(
+  process.scPhase2PuppiRawToDigiStruct +
+  process.goodOrbitsByNBX +
+  process.scPhase2PuppiStructToTable
 )
+
+analysisModules = [getattr(process,f"{a}Struct") for a in analyses]
+process.s_analyses = cms.Sequence(sum(analysisModules[1:], analysisModules[0]))
+
+process.p_selected = cms.Path(
+  process.scPhase2PuppiRawToDigiStruct +
+  process.goodOrbitsByNBX +
+  process.s_analyses +
+  process.scPhase2SelectedBXs +
+  process.scPhase2PuppiMasked + 
+  process.scPhase2PuppiMaskedStructToTable
+)
+
+# Additional paths for benchmarking different data structures
+
+process.p_candidate = cms.Path(
+  process.scPhase2PuppiRawToDigiCandidate +
+  process.w3piCandidate
+)
+
 process.p_soa = cms.Path(
-  process.scPhase2PuppiRawToDigiSOA
-  +process.w3piSOA
+  process.scPhase2PuppiRawToDigiSOA +
+  process.w3piSOA
 )
+
 process.p_all = cms.Path(
-  process.scPhase2PuppiRawToDigiCandidate+
-  process.scPhase2PuppiRawToDigiStruct+
-  process.scPhase2PuppiRawToDigiSOA+
-  process.scPhase2PuppiStructToTable+
-  process.w3piCandidate+
-  process.w3piStruct+
+  process.scPhase2PuppiRawToDigiCandidate +
+  process.scPhase2PuppiRawToDigiStruct +
+  process.scPhase2PuppiRawToDigiSOA +
+  process.scPhase2PuppiStructToTable +
+  process.w3piCandidate +
+  process.w3piStruct +
   process.w3piSOA
 )
+
 process.p_fast = cms.Path(
-  process.scPhase2PuppiRawToDigiStruct+
-  process.scPhase2PuppiRawToDigiSOA+
-  process.scPhase2PuppiStructToTable+
-  process.w3piStruct+
+  process.scPhase2PuppiRawToDigiStruct +
+  process.scPhase2PuppiRawToDigiSOA +
+  process.scPhase2PuppiStructToTable +
+  process.w3piStruct +
   process.w3piSOA
 )
-process.scPhase2PuppiStructNanoAll = cms.OutputModule("OrbitNanoAODOutputModule",
-    fileName = cms.untracked.string(options.outFile),
-    outputCommands = cms.untracked.vstring("drop *", "keep l1ScoutingRun3OrbitFlatTable_scPhase2PuppiStructToTable_*_*"),
+
+
+process.scPhase2NanoAll = cms.OutputModule("OrbitNanoAODOutputModule",
+    fileName = cms.untracked.string(options.outFile.replace(".root","")+".inclusive.root"),
+    SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring('p_inclusive')),
+    outputCommands = cms.untracked.vstring("drop *", 
+        "keep l1ScoutingRun3OrbitFlatTable_scPhase2PuppiStructToTable_*_*"),
     compressionLevel = cms.untracked.int32(4),
     compressionAlgorithm = cms.untracked.string("LZ4"),
 )
-process.scPhase2PuppiStructNanoW3pi = cms.OutputModule("OrbitNanoAODOutputModule",
-    fileName = cms.untracked.string(options.outFile.replace(".root","")+".w3pi.root"),
-    selectedBx = cms.InputTag("w3piStruct","selectedBx"),
-    outputCommands = cms.untracked.vstring("drop *", 
-        "keep l1ScoutingRun3OrbitFlatTable_scPhase2PuppiStructToTable_*_*",
-        "keep l1ScoutingRun3OrbitFlatTable_w3piStruct_*_*"
+
+process.scPhase2PuppiNanoSelected = cms.OutputModule("OrbitNanoAODOutputModule",
+    fileName = cms.untracked.string(options.outFile.replace(".root","")+".selected.root"),
+    SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring('p_selected')),
+    selectedBx = cms.InputTag("scPhase2SelectedBXs","SelBx"),
+    outputCommands = cms.untracked.vstring("drop *",
+        "keep l1ScoutingRun3OrbitFlatTable_scPhase2PuppiMaskedStructToTable_*_*",
+        "keep *_w3piStruct_*_*",
+        "keep *_scPhase2SelectedBXs_*_*"
         ),
     compressionLevel = cms.untracked.int32(4),
     compressionAlgorithm = cms.untracked.string("LZ4"),
 )
-process.o_structAll = cms.EndPath( process.scPhase2PuppiStructNanoAll )
-process.o_structW3pi = cms.EndPath( process.scPhase2PuppiStructNanoW3pi )
-sched = [ getattr(process, "p_"+options.puppiMode) ]
+
+sched = [ process.p_inclusive, process.p_selected ]
+if options.puppiMode != "struct":
+    options.sched = [ getattr(process, "p_" + options.puppiMode)]
+
+process.o_nanoInclusive = cms.EndPath(process.scPhase2NanoAll)
+process.o_nanoSelected = cms.EndPath(process.scPhase2PuppiNanoSelected)
+process.o_nanoBoth = cms.EndPath(process.scPhase2NanoAll + process.scPhase2PuppiNanoSelected)
+
 if options.outMode != "none":
   sched.append(getattr(process, "o_"+options.outMode))
 process.schedule = cms.Schedule(*sched)
