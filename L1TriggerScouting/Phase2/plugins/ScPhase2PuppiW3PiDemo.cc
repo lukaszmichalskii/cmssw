@@ -134,11 +134,11 @@ void ScPhase2PuppiW3PiDemo::produce(edm::Event &iEvent, const edm::EventSetup &i
 
 void ScPhase2PuppiW3PiDemo::endStream() {
   if (doCandidate_)
-    std::cout << "Candidate analysis: " << countCandidate_ << " -> " << passCandidate_ << std::endl;
+    std::cout << "W3Pi Candidate analysis: " << countCandidate_ << " -> " << passCandidate_ << std::endl;
   if (doStruct_)
-    std::cout << "Struct analysis: " << countStruct_ << " -> " << passStruct_ << std::endl;
+    std::cout << "W3Pi Struct analysis: " << countStruct_ << " -> " << passStruct_ << std::endl;
   if (doSOA_)
-    std::cout << "SOA analysis: " << countSOA_ << " -> " << passSOA_ << std::endl;
+    std::cout << "W3Pi SOA analysis: " << countSOA_ << " -> " << passSOA_ << std::endl;
 }
 
 template <typename T>
