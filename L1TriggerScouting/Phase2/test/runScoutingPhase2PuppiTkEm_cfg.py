@@ -100,6 +100,12 @@ options.register ('analyses',
                   VarParsing.VarParsing.varType.string,          # string, int, or float
                   "analyses: any list of 'w3pi', 'wdsg'.")
 
+options.register ('prescaleInclusive',
+                  100, # default value
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.int,          # string, int, or float
+                  "Prescale factor for the inclusive stream.")
+
 options.register ('outMode',
                   'none', # default value
                   VarParsing.VarParsing.multiplicity.singleton,
@@ -156,6 +162,11 @@ process.EvFDaqDirector = cms.Service("EvFDaqDirector",
 )
 process.FastMonitoringService = cms.Service("FastMonitoringService")
 
+process.load( "HLTrigger.Timer.FastTimerService_cfi" )
+process.FastTimerService.writeJSONSummary = cms.untracked.bool(True)
+process.FastTimerService.jsonFileName = cms.untracked.string(f'resources.{os.uname()[1]}.json')
+process.MessageLogger.cerr.FastReport = cms.untracked.PSet( limit = cms.untracked.int32( 10000000 ) )
+
 fuDir = options.fuBaseDir+("/run%06d" % options.runNumber)
 buDirs = [b+("/run%06d" % options.runNumber) for b in options.buBaseDir]
 for d in [fuDir, options.fuBaseDir] + buDirs + options.buBaseDir:
@@ -200,21 +211,16 @@ process.goodOrbitsByNBX = cms.EDFilter("GoodOrbitNBxSelector",
 
 process.w3piStruct = cms.EDProducer("ScPhase2PuppiW3PiDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    runCandidate = cms.bool(False),
-    runStruct = cms.bool(True),
-    runSOA = cms.bool(False)
 )
 
 process.wdsgStruct = cms.EDProducer("ScPhase2PuppiWDsGammaDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
-    runStruct = cms.bool(True)
+    srcPuppi = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    srcTkEm = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
 )
 
 process.wpigStruct = cms.EDProducer("ScPhase2PuppiWPiGammaDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
-    runStruct = cms.bool(True)
+    srcPuppi = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    srcTkEm = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
 )
 
 process.scPhase2SelectedBXs =  cms.EDFilter("FinalBxSelector",
@@ -272,8 +278,12 @@ process.s_unpackers = cms.Sequence(
   process.goodOrbitsByNBX
 )
 
+from FWCore.Modules.preScaler_cfi import preScaler
+process.prescaleInclusive = preScaler.clone(prescaleFactor = options.prescaleInclusive)
+
 process.p_inclusive = cms.Path(
   process.s_unpackers +
+  process.prescaleInclusive +
   process.scPhase2PuppiStructToTable +
   process.scPhase2TkEmStructToTable +
   process.scPhase2TkEleStructToTable
