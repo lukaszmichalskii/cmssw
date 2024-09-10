@@ -416,7 +416,10 @@ float ScPhase2PuppiW3PiDemo::tripletmass(const std::array<unsigned int, 3> &t,
 
 void ScPhase2PuppiW3PiDemo::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
   edm::ParameterSetDescription desc;
-  desc.setUnknown();
+  desc.add<edm::InputTag>("src");
+  desc.add<bool>("runStruct", true);
+  desc.add<bool>("runCandidate", false);
+  desc.add<bool>("runSOA", false);
   descriptions.addDefault(desc);
 }
 

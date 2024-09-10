@@ -31,16 +31,16 @@ private:
   void produce(edm::Event &, const edm::EventSetup &) override;
   void endStream() override;
   template <typename T, typename U>
-  void runObj(const OrbitCollection<T> &src,
-              const OrbitCollection<U> &src2,
+  void runObj(const OrbitCollection<T> &srcPuppi,
+              const OrbitCollection<U> &srcTkEm,
               edm::Event &out,
               unsigned long &nTry,
               unsigned long &nPass,
               const std::string &bxLabel);
 
   bool doStruct_;
-  edm::EDGetTokenT<OrbitCollection<l1Scouting::Puppi>> structToken_;
-  edm::EDGetTokenT<OrbitCollection<l1Scouting::TkEm>> struct2Token_;
+  edm::EDGetTokenT<OrbitCollection<l1Scouting::Puppi>> structPuppiToken_;
+  edm::EDGetTokenT<OrbitCollection<l1Scouting::TkEm>> structTkEmToken_;
 
   struct Cuts {
     float minpt1 = 3;
@@ -104,8 +104,8 @@ private:
 ScPhase2PuppiWDsGammaDemo::ScPhase2PuppiWDsGammaDemo(const edm::ParameterSet &iConfig)
     : doStruct_(iConfig.getParameter<bool>("runStruct")) {
   if (doStruct_) {
-    structToken_ = consumes<OrbitCollection<l1Scouting::Puppi>>(iConfig.getParameter<edm::InputTag>("src"));
-    struct2Token_ = consumes<OrbitCollection<l1Scouting::TkEm>>(iConfig.getParameter<edm::InputTag>("src2"));
+    structPuppiToken_ = consumes<OrbitCollection<l1Scouting::Puppi>>(iConfig.getParameter<edm::InputTag>("srcPuppi"));
+    structTkEmToken_ = consumes<OrbitCollection<l1Scouting::TkEm>>(iConfig.getParameter<edm::InputTag>("srcTkEm"));
     produces<std::vector<unsigned>>("selectedBx");
     produces<l1ScoutingRun3::OrbitFlatTable>("wdsgamma");
   }
@@ -120,13 +120,13 @@ void ScPhase2PuppiWDsGammaDemo::beginStream(edm::StreamID) {
 
 void ScPhase2PuppiWDsGammaDemo::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   if (doStruct_) {
-    edm::Handle<OrbitCollection<l1Scouting::Puppi>> src;
-    iEvent.getByToken(structToken_, src);
+    edm::Handle<OrbitCollection<l1Scouting::Puppi>> srcPuppi;
+    iEvent.getByToken(structPuppiToken_, srcPuppi);
 
-    edm::Handle<OrbitCollection<l1Scouting::TkEm>> src2;
-    iEvent.getByToken(struct2Token_, src2);
+    edm::Handle<OrbitCollection<l1Scouting::TkEm>> srcTkEm;
+    iEvent.getByToken(structTkEmToken_, srcTkEm);
 
-    runObj(*src, *src2, iEvent, countStruct_, passStruct_, "");
+    runObj(*srcPuppi, *srcTkEm, iEvent, countStruct_, passStruct_, "");
   }
 }
 
@@ -136,8 +136,8 @@ void ScPhase2PuppiWDsGammaDemo::endStream() {
 }
 
 template <typename T, typename U>
-void ScPhase2PuppiWDsGammaDemo::runObj(const OrbitCollection<T> &src,
-                                       const OrbitCollection<U> &src2,
+void ScPhase2PuppiWDsGammaDemo::runObj(const OrbitCollection<T> &srcPuppi,
+                                       const OrbitCollection<U> &srcTkEm,
                                        edm::Event &iEvent,
                                        unsigned long &nTry,
                                        unsigned long &nPass,
@@ -155,11 +155,11 @@ void ScPhase2PuppiWDsGammaDemo::runObj(const OrbitCollection<T> &src,
   float bestQuadrupletScore, bestQuadrupletMass;
   for (unsigned int bx = 1; bx <= OrbitCollection<T>::NBX; ++bx) {
     nTry++;
-    auto range = src.bxIterator(bx);
+    auto range = srcPuppi.bxIterator(bx);
     const T *cands = &range.front();
     auto size = range.size();
 
-    auto range2 = src2.bxIterator(bx);
+    auto range2 = srcTkEm.bxIterator(bx);
     const U *cands2 = &range2.front();
     auto size2 = range2.size();
 
@@ -378,7 +378,9 @@ float ScPhase2PuppiWDsGammaDemo::quadrupletmass(const std::array<unsigned int, 4
 
 void ScPhase2PuppiWDsGammaDemo::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
   edm::ParameterSetDescription desc;
-  desc.setUnknown();
+  desc.add<edm::InputTag>("srcPuppi");
+  desc.add<edm::InputTag>("srcTkEm");
+  desc.add<bool>("runStruct", true);
   descriptions.addDefault(desc);
 }
 
