@@ -114,7 +114,7 @@ options.register ('outFile',
 
 
 options.parseArguments()
-analyses = options.analyses if options.analyses else ["w3pi", "wdsg"]
+analyses = options.analyses if options.analyses else ["w3pi", "wdsg", "wpig"]
 print(f"Analyses set to {analyses}")
 
 process = cms.Process("SCPU")
@@ -206,6 +206,12 @@ process.w3piStruct = cms.EDProducer("ScPhase2PuppiW3PiDemo",
 )
 
 process.wdsgStruct = cms.EDProducer("ScPhase2PuppiWDsGammaDemo",
+    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
+    runStruct = cms.bool(True)
+)
+
+process.wpigStruct = cms.EDProducer("ScPhase2PuppiWPiGammaDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
     src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
     runStruct = cms.bool(True)
@@ -309,6 +315,7 @@ process.scPhase2PuppiNanoSelected = cms.OutputModule("OrbitNanoAODOutputModule",
         "keep l1ScoutingRun3OrbitFlatTable_scPhase2TkEleMaskedStructToTable_*_*",
         "keep *_w3piStruct_*_*",
         "keep *_wdsgStruct_*_*",
+        "keep *_wpigStruct_*_*",
         "keep *_scPhase2SelectedBXs_*_*"
         ),
     compressionLevel = cms.untracked.int32(4),
