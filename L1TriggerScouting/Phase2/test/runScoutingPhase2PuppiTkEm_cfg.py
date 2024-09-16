@@ -118,6 +118,12 @@ options.register ('outFile',
                   VarParsing.VarParsing.varType.string,
                   "Sub lumisection number to process")
 
+options.register ('task',
+                  0,
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.int,          # string, int, or float
+                  "Task index (used for json outputs)")
+
 
 options.parseArguments()
 analyses = options.analyses if options.analyses else ["w3pi", "wdsg", "wpig"]
@@ -164,8 +170,8 @@ process.FastMonitoringService = cms.Service("FastMonitoringService")
 
 process.load( "HLTrigger.Timer.FastTimerService_cfi" )
 process.FastTimerService.writeJSONSummary = cms.untracked.bool(True)
-process.FastTimerService.jsonFileName = cms.untracked.string(f'resources.{os.uname()[1]}.json')
-process.MessageLogger.cerr.FastReport = cms.untracked.PSet( limit = cms.untracked.int32( 10000000 ) )
+process.FastTimerService.jsonFileName = cms.untracked.string(f'resources.{os.uname()[1]}.{options.task}.json')
+#process.MessageLogger.cerr.FastReport = cms.untracked.PSet( limit = cms.untracked.int32( 10000000 ) )
 
 fuDir = options.fuBaseDir+("/run%06d" % options.runNumber)
 buDirs = [b+("/run%06d" % options.runNumber) for b in options.buBaseDir]

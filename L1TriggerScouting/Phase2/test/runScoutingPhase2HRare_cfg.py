@@ -112,6 +112,12 @@ options.register ('outFile',
                   VarParsing.VarParsing.varType.string,
                   "Sub lumisection number to process")
 
+options.register ('task',
+                  0,
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.int,          # string, int, or float
+                  "Task index (used for json outputs)")
+
 
 options.parseArguments()
 analyses = options.analyses if options.analyses else ["hrhog", "hphig", "hjpsig", "h2rho", "h2phi"]
@@ -158,8 +164,8 @@ process.FastMonitoringService = cms.Service("FastMonitoringService")
 
 process.load( "HLTrigger.Timer.FastTimerService_cfi" )
 process.FastTimerService.writeJSONSummary = cms.untracked.bool(True)
-process.FastTimerService.jsonFileName = cms.untracked.string(f'resources.{os.uname()[1]}.json')
-process.MessageLogger.cerr.FastReport = cms.untracked.PSet( limit = cms.untracked.int32( 10000000 ) )
+process.FastTimerService.jsonFileName = cms.untracked.string(f'resources.{os.uname()[1]}.{options.task}.json')
+#process.MessageLogger.cerr.FastReport = cms.untracked.PSet( limit = cms.untracked.int32( 10000000 ) )
 
 fuDir = options.fuBaseDir+("/run%06d" % options.runNumber)
 buDirs = [b+("/run%06d" % options.runNumber) for b in options.buBaseDir]
@@ -204,36 +210,30 @@ process.goodOrbitsByNBX = cms.EDFilter("GoodOrbitNBxSelector",
 )
 
 process.hrhogStruct = cms.EDProducer("ScPhase2PuppiHRhoGammaDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
-    runStruct = cms.bool(True)
+    srcPuppi = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    srcTkEm = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
 )
 
 process.hphigStruct = cms.EDProducer("ScPhase2PuppiHPhiGammaDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
-    runStruct = cms.bool(True)
+    srcPuppi = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    srcTkEm = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
 )
 
 process.hjpsigStruct = cms.EDProducer("ScPhase2PuppiHJPsiGammaDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    src2 = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
-    runStruct = cms.bool(True)
+    srcPuppi = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
+    srcTkEm = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
 )
 
 process.h2rhoStruct = cms.EDProducer("ScPhase2PuppiH2RhoDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    runStruct = cms.bool(True)
 )
 
 process.h2phiStruct = cms.EDProducer("ScPhase2PuppiH2PhiDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    runStruct = cms.bool(True)
 )
 
 process.hphijpsiStruct = cms.EDProducer("ScPhase2PuppiHPhiJPsiDemo",
     src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    runStruct = cms.bool(True)
 )
 
 process.scPhase2SelectedBXs =  cms.EDFilter("FinalBxSelector",

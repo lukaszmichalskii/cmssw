@@ -116,7 +116,8 @@ void ScPhase2PuppiWPiGammaDemo::produce(edm::Event &iEvent, const edm::EventSetu
 
 void ScPhase2PuppiWPiGammaDemo::endStream() {
   if (doStruct_)
-    std::cout << "WPiGamma Struct analysis: " << countStruct_ << " -> " << passStruct_ << std::endl;
+    edm::LogImportant("ScPhase2AnalysisSummary")
+        << "WPiGamma Struct analysis: " << countStruct_ << " -> " << passStruct_;
 }
 
 template <typename T, typename U>
