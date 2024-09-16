@@ -132,7 +132,8 @@ void ScPhase2PuppiWDsGammaDemo::produce(edm::Event &iEvent, const edm::EventSetu
 
 void ScPhase2PuppiWDsGammaDemo::endStream() {
   if (doStruct_)
-    std::cout << "WDsGammma Struct analysis: " << countStruct_ << " -> " << passStruct_ << std::endl;
+    edm::LogImportant("ScPhase2AnalysisSummary")
+        << "WDsGammma Struct analysis: " << countStruct_ << " -> " << passStruct_;
 }
 
 template <typename T, typename U>

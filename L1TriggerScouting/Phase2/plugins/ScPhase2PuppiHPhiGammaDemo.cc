@@ -39,8 +39,8 @@ private:
               const std::string &bxLabel);
 
   bool doStruct_;
-  edm::EDGetTokenT<OrbitCollection<l1Scouting::Puppi>> structToken_;
-  edm::EDGetTokenT<OrbitCollection<l1Scouting::TkEm>> struct2Token_;
+  edm::EDGetTokenT<OrbitCollection<l1Scouting::Puppi>> structPuppiToken_;
+  edm::EDGetTokenT<OrbitCollection<l1Scouting::TkEm>> structTkEmToken_;
 
   struct Cuts {
     float minpt1 = 10;
@@ -61,8 +61,7 @@ private:
   } cuts;
 
   template <typename T>
-  bool isolationQ(
-      unsigned int pidex1, unsigned int pidex2, const T *cands, unsigned int size) const;
+  bool isolationQ(unsigned int pidex1, unsigned int pidex2, const T *cands, unsigned int size) const;
 
   template <typename T>
   bool isolationTkEm(float pt, float eta, float phi, const T *cands, unsigned int size) const;
@@ -73,7 +72,10 @@ private:
   static float pairmass(const std::array<unsigned int, 2> &t, const T *cands, const std::array<float, 2> &massD);
 
   template <typename T, typename U>
-  float tripletmass(const std::array<unsigned int, 3> &t, const T *cands, const U *cands2, const std::array<float, 3> &masses);
+  float tripletmass(const std::array<unsigned int, 3> &t,
+                    const T *cands,
+                    const U *cands2,
+                    const std::array<float, 3> &masses);
 
   unsigned long countStruct_;
   unsigned long passStruct_;
@@ -82,8 +84,8 @@ private:
 ScPhase2PuppiHPhiGammaDemo::ScPhase2PuppiHPhiGammaDemo(const edm::ParameterSet &iConfig)
     : doStruct_(iConfig.getParameter<bool>("runStruct")) {
   if (doStruct_) {
-    structToken_ = consumes<OrbitCollection<l1Scouting::Puppi>>(iConfig.getParameter<edm::InputTag>("src"));
-    struct2Token_ = consumes<OrbitCollection<l1Scouting::TkEm>>(iConfig.getParameter<edm::InputTag>("src2"));
+    structPuppiToken_ = consumes<OrbitCollection<l1Scouting::Puppi>>(iConfig.getParameter<edm::InputTag>("srcPuppi"));
+    structTkEmToken_ = consumes<OrbitCollection<l1Scouting::TkEm>>(iConfig.getParameter<edm::InputTag>("srcTkEm"));
     produces<std::vector<unsigned>>("selectedBx");
     produces<l1ScoutingRun3::OrbitFlatTable>("hphigamma");
   }
@@ -98,35 +100,36 @@ void ScPhase2PuppiHPhiGammaDemo::beginStream(edm::StreamID) {
 
 void ScPhase2PuppiHPhiGammaDemo::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   if (doStruct_) {
-    edm::Handle<OrbitCollection<l1Scouting::Puppi>> src;
-    iEvent.getByToken(structToken_, src);
+    edm::Handle<OrbitCollection<l1Scouting::Puppi>> srcPuppi;
+    iEvent.getByToken(structPuppiToken_, srcPuppi);
 
-    edm::Handle<OrbitCollection<l1Scouting::TkEm>> src2;
-    iEvent.getByToken(struct2Token_, src2);
+    edm::Handle<OrbitCollection<l1Scouting::TkEm>> srcTkEm;
+    iEvent.getByToken(structTkEmToken_, srcTkEm);
 
-    runObj(*src, *src2, iEvent, countStruct_, passStruct_, "");
+    runObj(*srcPuppi, *srcTkEm, iEvent, countStruct_, passStruct_, "");
   }
 }
 
 void ScPhase2PuppiHPhiGammaDemo::endStream() {
   if (doStruct_)
-    std::cout << "HPhiGamma Struct analysis: " << countStruct_ << " -> " << passStruct_ << std::endl;
+    edm::LogImportant("ScPhase2AnalysisSummary")
+        << "HPhiGamma Struct analysis: " << countStruct_ << " -> " << passStruct_;
 }
 
 template <typename T, typename U>
-void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &src,
-                                       const OrbitCollection<U> &src2,
-                                       edm::Event &iEvent,
-                                       unsigned long &nTry,
-                                       unsigned long &nPass,
-                                       const std::string &label) {
+void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &srcPuppi,
+                                        const OrbitCollection<U> &srcTkEm,
+                                        edm::Event &iEvent,
+                                        unsigned long &nTry,
+                                        unsigned long &nPass,
+                                        const std::string &label) {
   l1ScoutingRun3::BxOffsetsFillter bxOffsetsFiller;
   bxOffsetsFiller.start();
   auto ret = std::make_unique<std::vector<unsigned>>();
   std::vector<float> masses;
-  std::vector<uint8_t> i0s, i1s, i2s;   // i2s is the photon
-  ROOT::RVec<unsigned int> ix;          //
-  ROOT::RVec<unsigned int> ig;          // photons
+  std::vector<uint8_t> i0s, i1s, i2s;  // i2s is the photon
+  ROOT::RVec<unsigned int> ix;         //
+  ROOT::RVec<unsigned int> ig;         // photons
   std::array<unsigned int, 2> bestPair;
   std::array<unsigned int, 3> bestTriplet;
   bool bestPairFound;
@@ -134,11 +137,11 @@ void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &src,
   float bestPhoScore;
   for (unsigned int bx = 1; bx <= OrbitCollection<T>::NBX; ++bx) {
     nTry++;
-    auto range = src.bxIterator(bx);
+    auto range = srcPuppi.bxIterator(bx);
     const T *cands = &range.front();
     auto size = range.size();
 
-    auto range2 = src2.bxIterator(bx);
+    auto range2 = srcTkEm.bxIterator(bx);
     const U *cands2 = &range2.front();
     auto size2 = range2.size();
 
@@ -177,7 +180,7 @@ void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &src,
         if (i2 == i1 || cands[ix[i2]].pt() < cuts.minpt1)
           continue;
 
-        if (!(cands[ix[i1]].charge()*cands[ix[i2]].charge() < 0))
+        if (!(cands[ix[i1]].charge() * cands[ix[i2]].charge() < 0))
           continue;
 
         auto mass2 = pairmass({{ix[i1], ix[i2]}}, cands, {{0.4937, 0.4937}});
@@ -188,11 +191,11 @@ void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &src,
         if (!drcond)
           continue;  //angular sep of top 2 tracks
 
-        std::array<unsigned int, 2> pair{{ix[i1], ix[i2]}};   // pair of indices
+        std::array<unsigned int, 2> pair{{ix[i1], ix[i2]}};  // pair of indices
         if (drQ < bestPairScore) {
           std::copy_n(pair.begin(), 2, bestPair.begin());
           bestPairScore = drQ;
-          if (bestPairScore*bestPairScore < cuts.maxdeltar2)
+          if (bestPairScore * bestPairScore < cuts.maxdeltar2)
             bestPairFound = true;
         }
       }
@@ -213,9 +216,9 @@ void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &src,
     bestPhoScore = 0;
     for (unsigned int i3 = 0; i3 < ngammas; ++i3) {
       if (cands2[ig[i3]].pt() < cuts.minpt3)
-        continue; // photon pt cut
+        continue;  // photon pt cut
 
-      std::array<unsigned int, 3> tr{{bestPair[0], bestPair[1], ig[i3]}};   // triplet of indices
+      std::array<unsigned int, 3> tr{{bestPair[0], bestPair[1], ig[i3]}};  // triplet of indices
 
       if (cands2[ig[i3]].pt() > bestPhoScore) {
         std::copy_n(tr.begin(), 3, bestTriplet.begin());
@@ -227,7 +230,7 @@ void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &src,
 
     // photon isolation
     bool isop = isolationTkEm(
-      cands2[bestTriplet[2]].pt(), cands2[bestTriplet[2]].eta(), cands2[bestTriplet[2]].phi(), cands, size);
+        cands2[bestTriplet[2]].pt(), cands2[bestTriplet[2]].eta(), cands2[bestTriplet[2]].phi(), cands, size);
     if (!isop)
       continue;
 
@@ -258,8 +261,10 @@ void ScPhase2PuppiHPhiGammaDemo::runObj(const OrbitCollection<T> &src,
 
 //TEST functions
 template <typename T>
-bool ScPhase2PuppiHPhiGammaDemo::isolationQ(
-    unsigned int pidex1, unsigned int pidex2, const T *cands, unsigned int size) const {
+bool ScPhase2PuppiHPhiGammaDemo::isolationQ(unsigned int pidex1,
+                                            unsigned int pidex2,
+                                            const T *cands,
+                                            unsigned int size) const {
   bool passed = false;
   float psum = 0;
   float eta = cands[pidex1].eta();  //center cone around leading track
@@ -319,8 +324,8 @@ float ScPhase2PuppiHPhiGammaDemo::tripletmass(const std::array<unsigned int, 3> 
                                               const T *cands,
                                               const U *cands2,
                                               const std::array<float, 3> &masses) {
-  ROOT::Math::PtEtaPhiMVector p1(cands[t[0]].pt(),  cands[t[0]].eta(),  cands[t[0]].phi(),  masses[0]);
-  ROOT::Math::PtEtaPhiMVector p2(cands[t[1]].pt(),  cands[t[1]].eta(),  cands[t[1]].phi(),  masses[1]);
+  ROOT::Math::PtEtaPhiMVector p1(cands[t[0]].pt(), cands[t[0]].eta(), cands[t[0]].phi(), masses[0]);
+  ROOT::Math::PtEtaPhiMVector p2(cands[t[1]].pt(), cands[t[1]].eta(), cands[t[1]].phi(), masses[1]);
   ROOT::Math::PtEtaPhiMVector p3(cands2[t[2]].pt(), cands2[t[2]].eta(), cands2[t[2]].phi(), masses[2]);
   float mass = (p1 + p2 + p3).M();
   return mass;
@@ -328,7 +333,9 @@ float ScPhase2PuppiHPhiGammaDemo::tripletmass(const std::array<unsigned int, 3> 
 
 void ScPhase2PuppiHPhiGammaDemo::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
   edm::ParameterSetDescription desc;
-  desc.setUnknown();
+  desc.add<edm::InputTag>("srcPuppi");
+  desc.add<edm::InputTag>("srcTkEm");
+  desc.add<bool>("runStruct", true);
   descriptions.addDefault(desc);
 }
 
