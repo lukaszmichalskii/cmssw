@@ -1,143 +1,21 @@
 from __future__ import print_function
 import FWCore.ParameterSet.Config as cms
-import FWCore.ParameterSet.VarParsing as VarParsing
 import os
 
-options = VarParsing.VarParsing ('analysis')
-options.register ('runNumber',
-                  37,
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Run Number")
-
-options.register ('lumiNumber',
-                  1,
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Run Number")
-
-options.register ('daqSourceMode',
-                  'ScoutingPhase2', # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "DAQ source data mode")
-
-options.register ('broker',
-                  'none', # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "Broker: 'none' or 'hostname:port'")
-
-options.register ('buBaseDir',
-                  '/dev/shm/ramdisk', # default value
-                  VarParsing.VarParsing.multiplicity.list,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "BU base directory")
-
-options.register ('buNumStreams',
-                  [], # default value
-                  VarParsing.VarParsing.multiplicity.list,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Number of input streams (i.e. files) used simultaneously for each BU directory")
-
-options.register ('timeslices',
-                  1,
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Number of timeslices")
-
-options.register ('tmuxPeriod',
-                  1,
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Time multiplex period")
-
-options.register ('puppiStreamIDs',
-                  [], # default value
-                  VarParsing.VarParsing.multiplicity.list,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Stream IDs for the Puppi inputs")
-
-options.register ('fuBaseDir',
-                  '/dev/shm/data', # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "BU base directory")
-
-options.register ('fffBaseDir',
-                  '/dev/shm', # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "FFF base directory")
-
-options.register ('numThreads',
-                  1, # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Number of CMSSW threads")
-
-options.register ('numFwkStreams',
-                  1, # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Number of CMSSW streams")
-
-options.register ('run',
-                  'both', # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "'inclusive', 'selected', 'both' (default).")
-
-options.register ('analyses',
-                  [], # default value
-                  VarParsing.VarParsing.multiplicity.list,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "analyses: any list of 'w3pi'.")
-
-options.register ('prescaleInclusive',
-                  100, # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Prescale factor for the inclusive stream.")
-
-options.register ('puppiMode',
-                  'struct', # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "puppi mode to run: struct is the default, and the only one for which everything is implemented; others are candidate, soa, all, fast")
-                 
-options.register ('outMode',
-                  'none', # default value
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,          # string, int, or float
-                  "output (none, nanoSelected, nanoInclusive, nanoBoth)")
-                   
-options.register ('outFile',
-                  "NanoOutput.root",
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.string,
-                  "Sub lumisection number to process")
-
-options.register ('task',
-                  0,
-                  VarParsing.VarParsing.multiplicity.singleton,
-                  VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Task index (used for json outputs)")
-
-
+from L1TriggerScouting.Phase2.options_cff import options
 options.parseArguments()
 if options.buNumStreams == []:
     options.buNumStreams.append(1)
-analyses = options.analyses if options.analyses else ["w3pi"]
-if options.puppiMode not in ("struct","candidate", "soa", "all", "fast"):
-    raise RuntimeError("Unsupported puppiMode %r" %options.puppiMode)
+analyses = options.analyses if options.analyses else ["w3pi", "hphijpsi", "h2rho", "h2phi"]
+print(f"Analyses set to {analyses}")
+
+if options.run not in ("both", "inclusive", "selected", "candidate", "soa", "all", "fast"):
+    raise RuntimeError("Unsupported run mode %r" % options.run)
 
 process = cms.Process("SCPU")
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(options.maxEvents)
 )
-
-print()
 
 process.options = cms.untracked.PSet(
     numberOfThreads = cms.untracked.uint32(options.numThreads),
@@ -146,7 +24,7 @@ process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True)
 )
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 if len(options.buNumStreams) != len(options.buBaseDir):
     raise RuntimeError("Mismatch between buNumStreams (%d) and buBaseDirs (%d)" % (len(options.buNumStreams), len(options.buBaseDir)))
@@ -198,76 +76,28 @@ process.source = cms.Source("DAQSource",
 )
 os.system("touch " + buDirs[0] + "/" + "fu.lock")
 
-## test pluging
-scPhase2PuppiRawToDigi = cms.EDProducer('ScPhase2PuppiRawToDigi',
-  src = cms.InputTag('rawDataCollector'),
-  fedIDs = cms.vuint32(*puppiStreamIDs),
-  runCandidateUnpacker = cms.bool(False),
-  runStructUnpacker = cms.bool(False),
-  runSOAUnpacker = cms.bool(False),
-)
-process.scPhase2PuppiRawToDigiCandidate = scPhase2PuppiRawToDigi.clone(
-    runCandidateUnpacker = True
-)
-process.scPhase2PuppiRawToDigiStruct = scPhase2PuppiRawToDigi.clone(
-    runCandidateUnpacker = False,
-    runStructUnpacker = True
-)
-process.scPhase2PuppiRawToDigiSOA = scPhase2PuppiRawToDigi.clone(
-    runCandidateUnpacker = False,
-    runSOAUnpacker = True
-)
+process.load("L1TriggerScouting.Phase2.unpackers_cff")
+process.load("L1TriggerScouting.Phase2.rareDecayAnalyses_cff")
+process.load("L1TriggerScouting.Phase2.maskedCollections_cff")
+process.load("L1TriggerScouting.Phase2.nanoAODOutputs_cff")
 
-process.goodOrbitsByNBX = cms.EDFilter("GoodOrbitNBxSelector",
-    unpackers = cms.VInputTag(cms.InputTag("scPhase2PuppiRawToDigiStruct")),
-    nbxMin = cms.uint32(3564 * options.timeslices // options.tmuxPeriod)
-)
-
-process.w3piCandidate = cms.EDProducer("ScPhase2PuppiW3PiDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiCandidate"),
-    runCandidate = cms.bool(True),
-    runStruct = cms.bool(False),
-    runSOA = cms.bool(False)
-)
-
-process.w3piStruct = cms.EDProducer("ScPhase2PuppiW3PiDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    runCandidate = cms.bool(False),
-    runStruct = cms.bool(True),
-    runSOA = cms.bool(False)
-)
-
-process.w3piSOA = cms.EDProducer("ScPhase2PuppiW3PiDemo",
-    src = cms.InputTag("scPhase2PuppiRawToDigiSOA"),
-    runCandidate = cms.bool(False),
-    runStruct = cms.bool(False),
-    runSOA = cms.bool(True)
-)
-
-process.scPhase2SelectedBXs =  cms.EDFilter("FinalBxSelector",
-    analysisLabels = cms.VInputTag([cms.InputTag(f"{a}Struct", "selectedBx") for a in analyses]),
-)
-
-process.scPhase2PuppiMasked = cms.EDProducer("MaskOrbitBxScoutingPuppi",
-    dataTag = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    selectBxs = cms.InputTag("scPhase2SelectedBXs","SelBx"),
-)
+## Configure unpackers
+process.scPhase2PuppiRawToDigiStruct.fedIDs = [*puppiStreamIDs]
+process.goodOrbitsByNBX.nbxMin = 3564 * options.timeslices // options.tmuxPeriod
+process.goodOrbitsByNBX.unpackers = [ "scPhase2PuppiRawToDigiStruct" ]
 
 
-process.scPhase2PuppiStructToTable = cms.EDProducer("ScPuppiToOrbitFlatTable",
-    src = cms.InputTag("scPhase2PuppiRawToDigiStruct"),
-    name = cms.string("L1Puppi"),
-    doc = cms.string("L1Puppi candidates from Correlator Layer 2"),
-)
-
-process.scPhase2PuppiMaskedStructToTable = process.scPhase2PuppiStructToTable.clone(
-    src = "scPhase2PuppiMasked"
-)
+## Configure analyses
+analysisModules = [getattr(process,f"{a}Struct") for a in analyses]
+process.s_analyses = cms.Sequence(sum(analysisModules[1:], analysisModules[0]))
 
 
+## Configure selected outputs
+process.scPhase2SelectedBXs.analysisLabels = [cms.InputTag(f"{a}Struct", "selectedBx") for a in analyses]
+
+## Define inclusive processing (ZeroBias)
 from FWCore.Modules.preScaler_cfi import preScaler
 process.prescaleInclusive = preScaler.clone(prescaleFactor = options.prescaleInclusive)
-
 process.p_inclusive = cms.Path(
   process.scPhase2PuppiRawToDigiStruct +
   process.goodOrbitsByNBX +
@@ -275,9 +105,7 @@ process.p_inclusive = cms.Path(
   process.scPhase2PuppiStructToTable
 )
 
-analysisModules = [getattr(process,f"{a}Struct") for a in analyses]
-process.s_analyses = cms.Sequence(sum(analysisModules[1:], analysisModules[0]))
-
+## Define selected processing (Physics streams)
 process.p_selected = cms.Path(
   process.scPhase2PuppiRawToDigiStruct +
   process.goodOrbitsByNBX +
@@ -287,7 +115,25 @@ process.p_selected = cms.Path(
   process.scPhase2PuppiMaskedStructToTable
 )
 
-# Additional paths for benchmarking different data structures
+# Additional modules and paths for benchmarking different data structures
+process.scPhase2PuppiRawToDigiCandidate = process.scPhase2PuppiRawToDigiStruct.clone(
+    runStructUnpacker = cms.bool(False),
+    runCandidateUnpacker = cms.bool(True),
+)
+process.scPhase2PuppiRawToDigiSOA = process.scPhase2PuppiRawToDigiStruct.clone(
+    runStructUnpacker = cms.bool(False),
+    runSOAUnpacker = cms.bool(True),
+)
+
+process.w3piCandidate = process.w3piStruct.clone(
+    runStruct = cms.bool(False),
+    runCandidate = cms.bool(True),
+)
+
+process.w3piSOA = process.w3piStruct.clone(
+    runStruct = cms.bool(False),
+    runSOA = cms.bool(True),
+)
 
 process.p_candidate = cms.Path(
   process.scPhase2PuppiRawToDigiCandidate +
@@ -318,39 +164,19 @@ process.p_fast = cms.Path(
 )
 
 
-process.scPhase2NanoAll = cms.OutputModule("OrbitNanoAODOutputModule",
-    fileName = cms.untracked.string(options.outFile.replace(".root","")+".inclusive.root"),
-    SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring('p_inclusive')),
-    outputCommands = cms.untracked.vstring("drop *", 
-        "keep l1ScoutingRun3OrbitFlatTable_scPhase2PuppiStructToTable_*_*"),
-    compressionLevel = cms.untracked.int32(4),
-    compressionAlgorithm = cms.untracked.string("LZ4"),
-)
-
-process.scPhase2PuppiNanoSelected = cms.OutputModule("OrbitNanoAODOutputModule",
-    fileName = cms.untracked.string(options.outFile.replace(".root","")+".selected.root"),
-    SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring('p_selected')),
-    selectedBx = cms.InputTag("scPhase2SelectedBXs","SelBx"),
-    outputCommands = cms.untracked.vstring("drop *",
-        "keep l1ScoutingRun3OrbitFlatTable_scPhase2PuppiMaskedStructToTable_*_*",
-        "keep *_w3piStruct_*_*",
-        "keep *_scPhase2SelectedBXs_*_*"
-        ),
-    compressionLevel = cms.untracked.int32(4),
-    compressionAlgorithm = cms.untracked.string("LZ4"),
-)
-
-sched = [ process.p_inclusive, process.p_selected ]
-if options.puppiMode != "struct":
-    options.sched = [ getattr(process, "p_" + options.puppiMode)]
+process.scPhase2NanoAll.fileName = options.outFile.replace(".root","")+".inclusive.root"
+process.scPhase2NanoAll.SelectEvents.SelectEvents = ['p_inclusive']
+ 
+process.scPhase2PuppiNanoSelected.fileName = options.outFile.replace(".root","")+".selected.root"
+process.scPhase2PuppiNanoSelected.SelectEvents.SelectEvents = ['p_selected']
+process.scPhase2PuppiNanoSelected.outputCommands += [ f"keep *_{a}Struct_*_*" for a in analyses ]
 
 process.o_nanoInclusive = cms.EndPath(process.scPhase2NanoAll)
 process.o_nanoSelected = cms.EndPath(process.scPhase2PuppiNanoSelected)
 process.o_nanoBoth = cms.EndPath(process.scPhase2NanoAll + process.scPhase2PuppiNanoSelected)
 
 sched = [ process.p_inclusive, process.p_selected ]
-if options.run == "inclusive": sched = [ process.p_inclusive ]
-if options.run == "selected": sched = [ process.p_selected ]
+if options.run != "both":  [ getattr(process, "p_" + options.run)]
 
 if options.outMode != "none":
   sched.append(getattr(process, "o_"+options.outMode))
