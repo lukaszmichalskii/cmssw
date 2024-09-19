@@ -41,8 +41,8 @@ private:
   edm::EDGetTokenT<OrbitCollection<l1Scouting::Puppi>> structToken_;
 
   struct Cuts {
-    float minptD = 5;
-    float minptQ = 10;
+    float minptD = 10;
+    float minptQ = 30;
     float maxdeltarD2 = 0.40 * 0.40;
     float minmassH = 100;
     float maxmassH = 150;

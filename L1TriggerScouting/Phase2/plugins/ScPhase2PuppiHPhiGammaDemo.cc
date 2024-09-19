@@ -43,10 +43,10 @@ private:
   edm::EDGetTokenT<OrbitCollection<l1Scouting::TkEm>> structTkEmToken_;
 
   struct Cuts {
-    float minpt1 = 5;
-    float minpt2 = 5;
-    float minpt3 = 10;
-    float minptQ = 10;
+    float minpt1 = 10;
+    float minpt2 = 10;
+    float minpt3 = 30;
+    float minptQ = 30;
     float maxdeltar2 = 0.40 * 0.40;
     float minmass = 100;
     float maxmass = 150;
