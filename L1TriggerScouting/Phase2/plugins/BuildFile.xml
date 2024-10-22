@@ -7,3 +7,4 @@
 <use name="L1TriggerScouting/Utilities"/>
 <use name="L1TriggerScouting/Phase2"/>
 <flags EDM_PLUGIN="1"/>
+<flags CXXFLAGS="-march=native -mavx2 -fopenmp"/>
