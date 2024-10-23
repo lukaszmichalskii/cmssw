@@ -12,7 +12,7 @@
 #include "DataFormats/L1Scouting/interface/OrbitCollection.h"
 #include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
 #include "DataFormats/L1TParticleFlow/interface/L1ScoutingPuppi.h"
-#include "L1TriggerScouting/Phase2/interface/l1puppiUnpack.h"
+#include "L1TriggerScouting/Phase2/interface/puppi_unpack.h"
 
 class ScPhase2PuppiRawToDigi : public edm::stream::EDProducer<> {
 public:
@@ -38,9 +38,12 @@ private:
   std::vector<std::vector<l1t::PFCandidate>> candBuffer_;
   std::vector<std::vector<l1Scouting::Puppi>> structBuffer_;
   unsigned int nbx_;
+  bool useGPU_;
 
   void unpackFromRaw(uint64_t data, std::vector<l1t::PFCandidate> &outBuffer);
   void unpackFromRaw(uint64_t data, std::vector<l1Scouting::Puppi> &outBuffer);
+  void unpackFromRawGPU(const uint64_t *data, const size_t size, std::vector<l1t::PFCandidate> &outBuffer);
+  void unpackFromRawGPU(const uint64_t *data, const size_t size, std::vector<l1Scouting::Puppi> &outBuffer);
 };
 
 ScPhase2PuppiRawToDigi::ScPhase2PuppiRawToDigi(const edm::ParameterSet &iConfig)
@@ -48,7 +51,8 @@ ScPhase2PuppiRawToDigi::ScPhase2PuppiRawToDigi(const edm::ParameterSet &iConfig)
       fedIDs_(iConfig.getParameter<std::vector<unsigned int>>("fedIDs")),
       doCandidate_(iConfig.getParameter<bool>("runCandidateUnpacker")),
       doStruct_(iConfig.getParameter<bool>("runStructUnpacker")),
-      doSOA_(iConfig.getParameter<bool>("runSOAUnpacker")) {
+      doSOA_(iConfig.getParameter<bool>("runSOAUnpacker")),
+      useGPU_(iConfig.getParameter<bool>("runGPU")) {
   if (doCandidate_) {
     candBuffer_.resize(OrbitCollection<l1t::PFCandidate>::NBX + 1);
     produces<OrbitCollection<l1t::PFCandidate>>();
@@ -111,6 +115,13 @@ std::unique_ptr<OrbitCollection<T>> ScPhase2PuppiRawToDigi::unpackObj(unsigned i
       assert(bx < OrbitCollection<T>::NBX);
       std::vector<T> &outputBuffer = buffer[bx + 1];
       outputBuffer.reserve(nwords);
+
+      if (useGPU_) {
+        unpackFromRawGPU(p, nwords, outputBuffer);
+        ntot += nwords;
+        p += nwords;
+        continue;
+      }
       for (unsigned int i = 0; i < nwords; ++i, ++p) {
         uint64_t data = *p;
         unpackFromRaw(data, outputBuffer);
@@ -121,6 +132,13 @@ std::unique_ptr<OrbitCollection<T>> ScPhase2PuppiRawToDigi::unpackObj(unsigned i
   return std::make_unique<OrbitCollection<T>>(buffer, ntot);
 }
 
+void ScPhase2PuppiRawToDigi::unpackFromRawGPU(const uint64_t *data, const size_t size, std::vector<l1t::PFCandidate> &outBuffer) {
+
+}
+
+void ScPhase2PuppiRawToDigi::unpackFromRawGPU(const uint64_t *data, const size_t size, std::vector<l1Scouting::Puppi> &outBuffer) {
+}
+
 void ScPhase2PuppiRawToDigi::unpackFromRaw(uint64_t data, std::vector<l1t::PFCandidate> &outBuffer) {
   float pt, eta, phi, mass, z0 = 0, dxy = 0, puppiw = 1;
   uint16_t hwPt, hwPuppiW = 1 << 8;
@@ -129,20 +147,20 @@ void ScPhase2PuppiRawToDigi::unpackFromRaw(uint64_t data, std::vector<l1t::PFCan
   uint8_t pid, hwQuality;
   l1t::PFCandidate::ParticleType type;
   int charge;
-  l1puppiUnpack::readshared(data, pt, eta, phi);
-  l1puppiUnpack::readshared(data, hwPt, hwEta, hwPhi);
-  pid = (data >> 37) & 0x7;
-  l1puppiUnpack::assignpdgid(pid, pdgId);
-  l1puppiUnpack::assignCMSSWPFCandidateId(pid, type);
-  l1puppiUnpack::assignmass(pid, mass);
-  l1puppiUnpack::assigncharge(pid, charge);
+  puppi_unpack::cpu::ReadShared(data, pt, eta, phi);
+  puppi_unpack::cpu::ReadShared(data, hwPt, hwEta, hwPhi);
+  puppi_unpack::cpu::DecodePID(data, pid);
+  puppi_unpack::cpu::MapParticle(pid, pdgId);
+  puppi_unpack::cpu::MapType(pid, type);
+  puppi_unpack::cpu::MapMass(pid, mass);
+  puppi_unpack::cpu::MapCharge(pid, charge);
   reco::Particle::PolarLorentzVector p4(pt, eta, phi, mass);
   if (pid > 1) {
-    l1puppiUnpack::readcharged(data, z0, dxy, hwQuality);
-    l1puppiUnpack::readcharged(data, hwZ0, hwDxy, hwQuality);
+    puppi_unpack::cpu::ReadCharge(data, z0, dxy, hwQuality);
+    puppi_unpack::cpu::ReadCharge(data, hwZ0, hwDxy, hwQuality);
   } else {
-    l1puppiUnpack::readneutral(data, puppiw, hwQuality);
-    l1puppiUnpack::readneutral(data, hwPuppiW, hwQuality);
+    puppi_unpack::cpu::ReadNeutral(data, puppiw, hwQuality);
+    puppi_unpack::cpu::ReadNeutral(data, hwPuppiW, hwQuality);
   }
   outBuffer.emplace_back(type, charge, p4, puppiw, hwPt, hwEta, hwPhi);
   if (pid > 1) {
@@ -161,12 +179,12 @@ void ScPhase2PuppiRawToDigi::unpackFromRaw(uint64_t data, std::vector<l1t::PFCan
 void ScPhase2PuppiRawToDigi::unpackFromRaw(uint64_t data, std::vector<l1Scouting::Puppi> &outBuffer) {
   float pt, eta, phi, z0 = 0, dxy = 0, puppiw = 1;
   uint8_t quality;
-  l1puppiUnpack::readshared(data, pt, eta, phi);
+  puppi_unpack::cpu::ReadShared(data, pt, eta, phi);
   uint8_t pid = (data >> 37) & 0x7;
   if (pid > 1) {
-    l1puppiUnpack::readcharged(data, z0, dxy, quality);
+    puppi_unpack::cpu::ReadCharge(data, z0, dxy, quality);
   } else {
-    l1puppiUnpack::readneutral(data, puppiw, quality);
+    puppi_unpack::cpu::ReadNeutral(data, puppiw, quality);
   }
   outBuffer.emplace_back(pt, eta, phi, pid, z0, dxy, puppiw, quality);
 }
@@ -206,14 +224,14 @@ std::unique_ptr<l1Scouting::PuppiSOA> ScPhase2PuppiRawToDigi::unpackSOA(const SD
     ret.offsets.push_back(i0);
     for (unsigned int i = 0; i < nwords; ++i, ++pa.first, ++i0) {
       uint64_t data = *pa.first;
-      l1puppiUnpack::readshared(data, ret.pt[i0], ret.eta[i0], ret.phi[i0]);
+      puppi_unpack::cpu::ReadShared(data, ret.pt[i0], ret.eta[i0], ret.phi[i0]);
       uint8_t pid = (data >> 37) & 0x7;
-      l1puppiUnpack::assignpdgid(pid, ret.pdgId[i0]);
+      puppi_unpack::cpu::MapParticle(pid, ret.pdgId[i0]);
       if (pid > 1) {
-        l1puppiUnpack::readcharged(data, ret.z0[i0], ret.dxy[i0], ret.quality[i0]);
+        puppi_unpack::cpu::ReadCharge(data, ret.z0[i0], ret.dxy[i0], ret.quality[i0]);
         ret.puppiw[i0] = 1.0f;
       } else {
-        l1puppiUnpack::readneutral(data, ret.puppiw[i0], ret.quality[i0]);
+        puppi_unpack::cpu::ReadNeutral(data, ret.puppiw[i0], ret.quality[i0]);
         ret.dxy[i0] = 0.0f;
         ret.z0[i0] = 0.0f;
       }
@@ -236,6 +254,7 @@ void ScPhase2PuppiRawToDigi::fillDescriptions(edm::ConfigurationDescriptions &de
   desc.add<bool>("runCandidateUnpacker", false);
   desc.add<bool>("runStructUnpacker", true);
   desc.add<bool>("runSOAUnpacker", false);
+  desc.add<bool>("runGPU", false);
   descriptions.addDefault(desc);
 }
 
