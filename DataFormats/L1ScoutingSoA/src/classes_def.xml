@@ -1,0 +1,7 @@
+<lcgdict>
+  <class name="PuppiSoA"/>
+  <class name="PuppiSoA::View"/>
+  <class name="PortableHostCollection<PuppiSoA>"/>
+  <class name="PuppiHostCollection"/>
+  <class name="edm::Wrapper<PuppiHostCollection>" splitLevel="0"/>
+</lcgdict>
