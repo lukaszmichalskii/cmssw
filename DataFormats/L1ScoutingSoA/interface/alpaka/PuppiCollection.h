@@ -17,17 +17,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-// namespace cms::alpakatools {
-//   template <typename TDevice>
-//   struct CopyToHost<PuppiDeviceCollection<TDevice>> {
-//     template <typename TQueue>
-//     static auto copyAsync(TQueue &queue, PuppiDeviceCollection<TDevice> const &srcData) {
-//       PuppiHostCollection dstData(srcData->metadata().size(), queue);
-//       alpaka::memcpy(queue, dstData.buffer(), srcData.buffer());
-//       return dstData;
-//     }
-//   };
-// }  // namespace cms::alpakatools
+namespace cms::alpakatools {
+  template <typename TDevice>
+  struct CopyToHost<PuppiDeviceCollection<TDevice>> {
+    template <typename TQueue>
+    static auto copyAsync(TQueue &queue, PuppiDeviceCollection<TDevice> const &srcData) {
+      PuppiHostCollection dstData(srcData->metadata().size(), queue);
+      alpaka::memcpy(queue, dstData.buffer(), srcData.buffer());
+      return dstData;
+    }
+  };
+}  // namespace cms::alpakatools
 
 ASSERT_DEVICE_MATCHES_HOST_COLLECTION(PuppiCollection, PuppiHostCollection);
 

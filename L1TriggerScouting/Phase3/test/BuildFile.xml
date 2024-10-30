@@ -1,0 +1,7 @@
+<test name="PuppiRawToDigiCPU" command="testPuppiRawToDigi.sh cpu"/>
+<test name="PuppiRawToDigiCUDA" command="testPuppiRawToDigi.sh cuda">
+  <use name="cuda"/>
+</test>
+<test name="PuppiRawToDigiROCm" command="testPuppiRawToDigi.sh rocm">
+  <use name="rocm"/>
+</test>
