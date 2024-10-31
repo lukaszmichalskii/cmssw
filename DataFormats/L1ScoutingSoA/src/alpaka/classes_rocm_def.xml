@@ -3,4 +3,9 @@
   <class name="alpaka_rocm_async::PuppiCollection" persistent="false"/>
   <class name="edm::DeviceProduct<alpaka_rocm_async::PuppiCollection>" persistent="false"/>
   <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::PuppiCollection>>" persistent="false"/>
+
+  <class name="alpaka_rocm_async::PortableObject<PuppiStruct>" persistent="false"/>
+  <class name="alpaka_rocm_async::Puppi" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::Puppi>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::Puppi>>" persistent="false"/>
 </lcgdict>

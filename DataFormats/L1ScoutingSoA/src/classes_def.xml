@@ -4,4 +4,9 @@
   <class name="PortableHostCollection<PuppiSoA>"/>
   <class name="PuppiHostCollection"/>
   <class name="edm::Wrapper<PuppiHostCollection>" splitLevel="0"/>
+
+  <class name="PuppiStruct"/>
+  <class name="PortableHostObject<PuppiStruct>"/>
+  <class name="PuppiHost"/>
+  <class name="edm::Wrapper<PuppiHost>"/>
 </lcgdict>

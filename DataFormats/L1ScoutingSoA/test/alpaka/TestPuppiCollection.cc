@@ -5,6 +5,7 @@
 
 #include "DataFormats/L1ScoutingSoA/interface/PuppiSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/Puppi.h"
 #include "FWCore/Utilities/interface/stringize.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/devices.h"
@@ -31,6 +32,25 @@ int main() {
 
     // Inner scope to deallocate memory before destroying the stream
     {
+      Puppi d_puppi{queue};
+      auto data = d_puppi.data();
+      data->bx = 0;
+      data->offsets = 0;
+      data->pt = 0;
+      data->eta = 0;
+      data->phi = 0;
+      data->z0 = 0;
+      data->dxy = 0;
+      data->puppiw = 0;
+      data->pdgId = 0;
+      data->quality = 0;
+
+      std::cout << "\tPuppi structure on device:\n\t";
+      std::cout << data->bx << "; " << data->offsets << "; " << data->pt << "; ";
+      std::cout << data->eta << "; " << data->phi << "; " << data->z0 << "; ";
+      std::cout << data->dxy << "; " << data->puppiw << "; " << data->pdgId << "; ";
+      std::cout << data->quality << std::endl << std::endl;
+
       // Instantiate tracks on device. PortableDeviceCollection allocates
       // SoA on device automatically.
       PuppiCollection collection(SIZE, queue);
