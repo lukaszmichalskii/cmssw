@@ -1,4 +1,4 @@
-<bin file="alpaka/*.cc" name="TestPuppiCollection">
+<bin file="alpaka/*.cc" name="TestL1ScoutingSoA">
   <use name="alpaka"/>
   <use name="HeterogeneousCore/AlpakaInterface"/>
   <use name="DataFormats/L1ScoutingSoA" source_only="1"/>

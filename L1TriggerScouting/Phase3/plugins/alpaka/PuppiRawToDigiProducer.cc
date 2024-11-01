@@ -7,12 +7,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 PuppiRawToDigiProducer::PuppiRawToDigiProducer(edm::ParameterSet const& config)
   : raw_token_{consumes<SDSRawDataCollection>(config.getParameter<edm::InputTag>("src"))},
     fed_ids_(config.getParameter<std::vector<unsigned int>>("fed_ids")),
-    token_{produces()}, 
-    size_{config.getParameter<int32_t>("size")} {}
+    token_{produces()} {}
 
 void PuppiRawToDigiProducer::Summary(const long &duration) {
   std::cout << "Parameters: " << std::endl;
-  std::cout << "--size = " << size_ << std::endl;
   std::cout << "--fed_ids = (" << fed_ids_.size() << ") ";
   if (!fed_ids_.empty()) {
     for (const auto& fed_id : fed_ids_)
@@ -43,11 +41,9 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
   //////////////////////////////////////////////////////////////////////////////////////
 
   auto raw_data_collection = event.getHandle(raw_token_);
-  auto d_collection = std::make_unique<PuppiCollection>(size_, event.queue());
-  // run the algorithm, potentially asynchronously
-  unpacker_.Fill(event.queue(), *d_collection, 1);
-  unpacker_.Assert(event.queue(), *d_collection, 1);
-  event.put(token_, std::move(d_collection));
+  PuppiCollection collection(100, event.queue());
+  auto collection_ptr = std::make_unique<PuppiCollection>(std::move(collection));
+  event.put(token_, std::move(collection));
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// END CODE BLOCK /////////////////////////////////
@@ -62,7 +58,6 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
 
 void PuppiRawToDigiProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
-  desc.add<int32_t>("size", 1);
   desc.add<edm::InputTag>("src", edm::InputTag("rawDataCollector"));
   desc.add<std::vector<unsigned int>>("fed_ids");
   descriptions.addWithDefaultLabel(desc);

@@ -11,7 +11,7 @@ public:
   template <typename TQueue>
   explicit PuppiHost(TQueue queue)
     : PortableHostObject<PuppiStruct>(queue) {}
-
+    
 };
 
 #endif  // DataFormats_L1ScoutingSoA_interface_PuppiHost_h

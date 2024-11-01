@@ -82,7 +82,6 @@ os.system("touch " + buDirs[0] + "/" + "fu.lock")
 process.PuppiRawToDigiStruct = cms.EDProducer('PuppiRawToDigiProducer@alpaka',
     src = cms.InputTag('rawDataCollector'),
     fed_ids = cms.vuint32(),
-    size = cms.int32(1),
     # alpaka.backend can be set to a specific backend to force using it, or be omitted or left empty to use the defult backend;
     # depending on the architecture and available hardware, the supported backends are "serial_sync", "cuda_async", "rocm_async"
     alpaka = cms.untracked.PSet(
@@ -94,9 +93,7 @@ process.PuppiRawToDigiStruct = cms.EDProducer('PuppiRawToDigiProducer@alpaka',
 process.PuppiRawToDigiStruct.fed_ids = [*puppiStreamIDs]
 # process.goodOrbitsByNBX.nbxMin = 3564 * options.timeslices // options.tmuxPeriod
 
-process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone(
-   size = cms.int32(3564),
-)
+process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone()
 
 process.unpacker_puppi = cms.Path(
    process.PuppiRawToDigi

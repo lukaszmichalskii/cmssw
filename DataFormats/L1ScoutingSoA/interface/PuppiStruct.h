@@ -4,8 +4,6 @@
 #include <cstdint>
 
 struct PuppiStruct {
-  uint16_t bx;
-  uint32_t offsets;
   float pt;
   float eta;
   float phi;

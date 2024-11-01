@@ -16,7 +16,7 @@ public:
   template <typename TQueue>
   explicit PuppiDevice(TQueue queue)
     : PortableDeviceObject<PuppiStruct, TDev>(queue) {}
-    
+
 };
 
 #endif  // DataFormats_L1ScoutingSoA_interface_PuppiDevice_h

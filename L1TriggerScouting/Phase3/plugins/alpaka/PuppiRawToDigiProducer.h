@@ -1,6 +1,3 @@
-#include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
-#include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
-
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
@@ -10,7 +7,15 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 
+#include "DataFormats/FEDRawData/interface/FEDRawData.h"
+#include "DataFormats/L1ScoutingRawData/interface/SDSNumbering.h"
+#include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
+#include "DataFormats/L1Scouting/interface/OrbitCollection.h"
+#include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
+#include "DataFormats/L1TParticleFlow/interface/L1ScoutingPuppi.h"
+
 #include "PuppiUnpack.h"
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -31,7 +36,7 @@ private:
   edm::EDGetTokenT<SDSRawDataCollection> raw_token_;
   std::vector<unsigned int> fed_ids_;
   device::EDPutToken<PuppiCollection> token_;
-  const int32_t size_;
+  int bunch_crossing_ = 0;
 
   // implementation of the algorithm
   PuppiUnpack unpacker_;
