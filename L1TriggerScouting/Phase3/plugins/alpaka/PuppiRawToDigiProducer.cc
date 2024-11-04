@@ -41,9 +41,7 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
   //////////////////////////////////////////////////////////////////////////////////////
 
   auto raw_data_collection = event.getHandle(raw_token_);
-  PuppiCollection collection(100, event.queue());
-  auto collection_ptr = std::make_unique<PuppiCollection>(std::move(collection));
-  event.put(token_, std::move(collection));
+  event.put(token_, std::make_unique<PuppiCollection>(100, event.queue()));
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// END CODE BLOCK /////////////////////////////////

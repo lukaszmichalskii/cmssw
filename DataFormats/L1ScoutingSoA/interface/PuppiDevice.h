@@ -5,18 +5,6 @@
 #include "DataFormats/L1ScoutingSoA/interface/PuppiStruct.h"
 
 template <typename TDev>
-class PuppiDevice : public PortableDeviceObject<PuppiStruct, TDev> {
-
-public:
-  PuppiDevice() = default;
-
-  explicit PuppiDevice(TDev const &device)
-    : PortableDeviceObject<PuppiStruct, TDev>(device) {}
-
-  template <typename TQueue>
-  explicit PuppiDevice(TQueue queue)
-    : PortableDeviceObject<PuppiStruct, TDev>(queue) {}
-
-};
+using PuppiDevice = PortableDeviceObject<PuppiStruct, TDev>;
 
 #endif  // DataFormats_L1ScoutingSoA_interface_PuppiDevice_h

@@ -2,4 +2,4 @@
 
 TEST_DIR=DataFormats/L1ScoutingSoA/test
 
-cd ${TEST_DIR} && scram b unittests && cd ../../..
+cd ${TEST_DIR} && scram b unittests -v && cd ../../..

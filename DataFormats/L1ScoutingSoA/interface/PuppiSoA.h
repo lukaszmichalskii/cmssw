@@ -1,11 +1,21 @@
 #ifndef DataFormats_L1ScoutingSoA_interface_PuppiSoA_h
 #define DataFormats_L1ScoutingSoA_interface_PuppiSoA_h
 
+#include <array>
+
+#include "DataFormats/Common/interface/StdArray.h"
+#include "DataFormats/SoATemplate/interface/SoACommon.h"
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
+#include "DataFormats/SoATemplate/interface/SoAView.h"
+#include "DataFormats/L1ScoutingSoA/interface/PuppiConstants.h"
+
+/**< Bunch crossings and offsets has fixed size. */
+using BxArray = edm::StdArray<uint16_t, constants::BX_ARRAY_SIZE>;
+using OffsetsArray = edm::StdArray<uint32_t, constants::OFFSETS_ARRAY_SIZE>;
 
 GENERATE_SOA_LAYOUT(PuppiSoALayout,
-  SOA_COLUMN(uint16_t, bx),
-  SOA_COLUMN(uint32_t, offsets),
+  SOA_COLUMN(BxArray, bx),
+  SOA_COLUMN(OffsetsArray, offsets),
   SOA_COLUMN(float, pt), 
   SOA_COLUMN(float, eta),
   SOA_COLUMN(float, phi),

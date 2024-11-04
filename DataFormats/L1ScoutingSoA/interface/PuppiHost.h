@@ -4,14 +4,6 @@
 #include "DataFormats/Portable/interface/PortableHostObject.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiStruct.h"
 
-class PuppiHost : public PortableHostObject<PuppiStruct> {
-public:
-  PuppiHost() = default;
-
-  template <typename TQueue>
-  explicit PuppiHost(TQueue queue)
-    : PortableHostObject<PuppiStruct>(queue) {}
-    
-};
+using PuppiHost = PortableHostObject<PuppiStruct>;
 
 #endif  // DataFormats_L1ScoutingSoA_interface_PuppiHost_h

@@ -20,18 +20,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::View view, int value) const {
       for (int32_t idx : uniform_elements(acc, view.metadata().size())) {
-        view[idx] = {
-          static_cast<uint16_t>(value), 
-          static_cast<uint32_t>(value), 
-          static_cast<float>(value), 
-          static_cast<float>(value), 
-          static_cast<float>(value), 
-          static_cast<float>(value), 
-          static_cast<float>(value), 
-          static_cast<float>(value), 
-          static_cast<int16_t>(value), 
-          static_cast<uint8_t>(value)
-        };
+        view[idx].pt() = static_cast<float>(value);
+        view[idx].eta() = static_cast<float>(value);
+        view[idx].phi() = static_cast<float>(value);
+        view[idx].z0() = static_cast<float>(value);
+        view[idx].dxy() = static_cast<float>(value);
+        view[idx].puppiw() = static_cast<float>(value);
+        view[idx].pdgId() = static_cast<int16_t>(value);
+        view[idx].quality() = static_cast<uint8_t>(value);
       }
     }
   };
@@ -48,8 +44,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView view, int value) const {
       for (int32_t idx : uniform_elements(acc, view.metadata().size())) {
-        ALPAKA_ASSERT_ACC(view[idx].bx() == static_cast<uint16_t>(value));
-        ALPAKA_ASSERT_ACC(view[idx].offsets() == static_cast<uint32_t>(value));
+        ALPAKA_ASSERT_ACC(view.bx()->size() == 3564);
+        ALPAKA_ASSERT_ACC(view.offsets()->size() == 3564+1);
         ALPAKA_ASSERT_ACC(view[idx].pt() == static_cast<float>(value));
         ALPAKA_ASSERT_ACC(view[idx].eta() == static_cast<float>(value));
         ALPAKA_ASSERT_ACC(view[idx].phi() == static_cast<float>(value));
