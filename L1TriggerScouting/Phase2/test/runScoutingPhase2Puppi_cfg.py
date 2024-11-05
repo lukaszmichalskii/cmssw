@@ -178,6 +178,17 @@ process.o_nanoBoth = cms.EndPath(process.scPhase2NanoAll + process.scPhase2Puppi
 sched = [ process.p_inclusive, process.p_selected ]
 if options.run != "both":  [ getattr(process, "p_" + options.run)]
 
+
+process.Test = process.scPhase2PuppiRawToDigiStruct.clone(
+    runCandidateUnpacker = cms.bool(False),
+    runStructUnpacker = cms.bool(False),
+    runSOAUnpacker = cms.bool(True),
+)
+
+process.test = cms.Path(
+  process.Test
+)
+
 if options.outMode != "none":
   sched.append(getattr(process, "o_"+options.outMode))
-process.schedule = cms.Schedule(*sched)
+process.schedule = cms.Schedule(process.test)

@@ -68,8 +68,8 @@ int main() {
       // Puppi collection on device
       for (int i = 0; i < h_collection.view().metadata().size(); ++i) {
         std::cout << "\tPuppi collection on device:\n\t";
-        std::cout << h_collection.view().bx()->size() << "; ";
-        std::cout << h_collection.view().offsets()->size() << "; ";
+        std::cout << h_collection.view().bx().size() << "; ";
+        std::cout << h_collection.view().offsets().size() << "; ";
         std::cout << h_collection.view()[i].pt() << "; ";
         std::cout << h_collection.view()[i].eta() << "; ";
         std::cout << h_collection.view()[i].phi() << "; ";

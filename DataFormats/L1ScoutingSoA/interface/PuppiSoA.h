@@ -8,14 +8,15 @@
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 #include "DataFormats/SoATemplate/interface/SoAView.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiConstants.h"
+#include "DataFormats/L1ScoutingSoA/interface/PuppiStruct.h"
 
 /**< Bunch crossings and offsets has fixed size. */
 using BxArray = edm::StdArray<uint16_t, constants::BX_ARRAY_SIZE>;
 using OffsetsArray = edm::StdArray<uint32_t, constants::OFFSETS_ARRAY_SIZE>;
 
 GENERATE_SOA_LAYOUT(PuppiSoALayout,
-  SOA_COLUMN(BxArray, bx),
-  SOA_COLUMN(OffsetsArray, offsets),
+  SOA_SCALAR(BxArray, bx),
+  SOA_SCALAR(OffsetsArray, offsets),
   SOA_COLUMN(float, pt), 
   SOA_COLUMN(float, eta),
   SOA_COLUMN(float, phi),

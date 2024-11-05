@@ -78,25 +78,34 @@ process.source = cms.Source("DAQSource",
 )
 os.system("touch " + buDirs[0] + "/" + "fu.lock")
 
-# process.load("L1TriggerScouting.Phase2.unpackers_cff")
 process.PuppiRawToDigiStruct = cms.EDProducer('PuppiRawToDigiProducer@alpaka',
     src = cms.InputTag('rawDataCollector'),
     fed_ids = cms.vuint32(),
-    # alpaka.backend can be set to a specific backend to force using it, or be omitted or left empty to use the defult backend;
-    # depending on the architecture and available hardware, the supported backends are "serial_sync", "cuda_async", "rocm_async"
     alpaka = cms.untracked.PSet(
        backend = cms.untracked.string(options.backend)
     ),
 )
 
+# process.TkEmRawToDigiStruct = cms.EDProducer('TkEmRawToDigiProducer@alpaka',
+#     src = cms.InputTag('rawDataCollector'),
+#     fed_ids = cms.vuint32(),
+#     alpaka = cms.untracked.PSet(
+#        backend = cms.untracked.string(options.backend)
+#     ),
+# )
+
 ## Configure unpackers
 process.PuppiRawToDigiStruct.fed_ids = [*puppiStreamIDs]
+# process.TkEmRawToDigiStruct.fed_ids = [*tkEmStreamIDs]
 # process.goodOrbitsByNBX.nbxMin = 3564 * options.timeslices // options.tmuxPeriod
 
 process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone()
+# process.TkEmRawToDigi = process.PuppiRawToDigiStruct.clone()
 
-process.unpacker_puppi = cms.Path(
+
+process.unpacking = cms.Path(
    process.PuppiRawToDigi
+#    process.TkEmRawToDigi
 )
 
-process.schedule = cms.Schedule(process.unpacker_puppi)
+process.schedule = cms.Schedule(process.unpacking)

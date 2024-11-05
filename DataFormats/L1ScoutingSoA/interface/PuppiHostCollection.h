@@ -3,6 +3,7 @@
 
 #include "DataFormats/Portable/interface/PortableHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiSoA.h"
+#include "DataFormats/L1ScoutingSoA/interface/PuppiHost.h"
 
 using PuppiHostCollection = PortableHostCollection<PuppiSoA>;
 

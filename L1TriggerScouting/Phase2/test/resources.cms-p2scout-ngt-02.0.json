@@ -1,0 +1,90 @@
+{
+  "modules": [
+    {
+      "events": 1,
+      "label": "source",
+      "mem_alloc": 1666,
+      "mem_free": 1,
+      "time_real": 0.336578,
+      "time_thread": 0.32397,
+      "type": "DAQSource"
+    },
+    {
+      "events": 1,
+      "label": "TriggerResults",
+      "mem_alloc": 0,
+      "mem_free": 0,
+      "time_real": 0.002,
+      "time_thread": 0.00217,
+      "type": "TriggerResultInserter"
+    },
+    {
+      "events": 1,
+      "label": "test",
+      "mem_alloc": 0,
+      "mem_free": 0,
+      "time_real": 0.00312,
+      "time_thread": 0.00314,
+      "type": "PathStatusInserter"
+    },
+    {
+      "events": 1,
+      "label": "Test",
+      "mem_alloc": 41535,
+      "mem_free": 21,
+      "time_real": 4.584424,
+      "time_thread": 4.56811,
+      "type": "ScPhase2PuppiRawToDigi"
+    },
+    {
+      "events": 1,
+      "label": "other",
+      "mem_alloc": 8426826,
+      "mem_free": 65455,
+      "time_real": 1480.162789,
+      "time_thread": 119.64113,
+      "type": "other"
+    },
+    {
+      "events": 1,
+      "label": "eventsetup",
+      "mem_alloc": 0,
+      "mem_free": 0,
+      "time_real": 0.0,
+      "time_thread": 0.0,
+      "type": "eventsetup"
+    },
+    {
+      "events": 1,
+      "label": "idle",
+      "mem_alloc": 66,
+      "mem_free": 67,
+      "time_real": 0.807636,
+      "time_thread": 0.80479,
+      "type": "idle"
+    }
+  ],
+  "resources": [
+    {
+      "time_real": "real time"
+    },
+    {
+      "time_thread": "cpu time"
+    },
+    {
+      "mem_alloc": "allocated memory"
+    },
+    {
+      "mem_free": "deallocated memory"
+    }
+  ],
+  "total": {
+    "events": 1,
+    "label": "SCPU",
+    "mem_alloc": 8470095,
+    "mem_free": 65545,
+    "time_real": 1485.896547,
+    "time_thread": 125.34331,
+    "type": "Job"
+  }
+}
