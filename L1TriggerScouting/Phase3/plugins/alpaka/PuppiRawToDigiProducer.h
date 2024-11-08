@@ -10,44 +10,53 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 
 #include "DataFormats/FEDRawData/interface/FEDRawData.h"
-#include "DataFormats/L1ScoutingRawData/interface/SDSNumbering.h"
 #include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
-#include "DataFormats/L1Scouting/interface/OrbitCollection.h"
-#include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
-#include "DataFormats/L1TParticleFlow/interface/L1ScoutingPuppi.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
 
 #include "PuppiUnpack.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
+/**
+ * @class PuppiRawToDigiProducer
+ * @brief Producer of Puppi struct-of-array for CPU, CUDA, ROCm architectures
+ * 
+ * Takes as input raw data collection.
+ * Compose device memory layout for Puppi collection.
+ * Transfer data from host to device and launch decoding pipeline kernels.
+ * The product stays on device memory and can be automatically transferred to host if needed.
+ */
 class PuppiRawToDigiProducer : public stream::EDProducer<> {
 
 public:
-  PuppiRawToDigiProducer(edm::ParameterSet const& config);
+  // Constructor & destructor
+  PuppiRawToDigiProducer(const edm::ParameterSet& params);
   ~PuppiRawToDigiProducer() override = default;
 
-  void produce(device::Event& event, device::EventSetup const& event_setup) override;
+  // Virtual methods
+  void produce(device::Event& event, const device::EventSetup& event_setup) override;
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
-  // main pipeline methods
+  // Tokens to read/write
+  edm::EDGetTokenT<SDSRawDataCollection> raw_token_;  /**< host product */
+  device::EDPutToken<PuppiCollection> token_;  /**< device product */
+
+  int bunch_crossing_ = 0;  /**< bunch crossing counter */
+  std::vector<unsigned int> fed_ids_;  /**< fed identifiers */
+
+  // Pipeline kernels
+  PuppiUnpack unpacker_;  /**< automatically resolve target device to schedule */
+
+  // Pipeline methods
   template<typename T> 
   std::tuple<std::vector<T>, std::vector<T>> MemoryScan(const SDSRawDataCollection &raw_data);
-  std::unique_ptr<PuppiCollection> UnpackCollection(Queue &queue, const SDSRawDataCollection &raw_data);
+  PuppiCollection UnpackCollection(Queue &queue, const SDSRawDataCollection &raw_data);
 
-  // debugging helpers
+  // Debugging helpers
   std::chrono::high_resolution_clock::time_point Tick();
   void Summary(const long &duration);
   void LogSeparator();
-
-  edm::EDGetTokenT<SDSRawDataCollection> raw_token_;
-  device::EDPutToken<PuppiCollection> token_;
-
-  int bunch_crossing_ = 0;
-  std::vector<unsigned int> fed_ids_;
-
-  // implementation of the algorithm
-  PuppiUnpack unpacker_;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

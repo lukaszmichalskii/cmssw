@@ -8,7 +8,6 @@
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 #include "DataFormats/SoATemplate/interface/SoAView.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiConstants.h"
-#include "DataFormats/L1ScoutingSoA/interface/PuppiStruct.h"
 
 /**< Bunch crossings and offsets has fixed size. */
 using BxArray = edm::StdArray<uint16_t, constants::BX_ARRAY_SIZE>;

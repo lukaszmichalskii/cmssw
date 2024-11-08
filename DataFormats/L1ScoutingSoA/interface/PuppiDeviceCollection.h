@@ -3,7 +3,6 @@
 
 #include "DataFormats/Portable/interface/PortableDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiSoA.h"
-#include "DataFormats/L1ScoutingSoA/interface/PuppiDevice.h"
 
 template <typename TDev>
 using PuppiDeviceCollection = PortableDeviceCollection<PuppiSoA, TDev>;

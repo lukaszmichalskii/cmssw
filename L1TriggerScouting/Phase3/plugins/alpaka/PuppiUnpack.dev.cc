@@ -3,8 +3,6 @@
 #error ALPAKA_HOST_ONLY defined in device compilation
 #endif
 
-#include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
-#include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 
 #include "PuppiUnpack.h"

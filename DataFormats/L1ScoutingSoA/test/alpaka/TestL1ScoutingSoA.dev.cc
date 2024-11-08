@@ -12,30 +12,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::test_l1_scouting_soa {
 
   using namespace cms::alpakatools;
 
-  class TestInitKernel {
-  public:
-    template <typename TAcc, typename = std::enable_if_t<isAccelerator<TAcc>>>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, Puppi::Product *data, int value) const {
-      if (once_per_grid(acc)) {
-        data->pt = static_cast<float>(value);
-        data->eta = static_cast<float>(value);
-        data->phi = static_cast<float>(value);
-        data->z0 = static_cast<float>(value);
-        data->dxy = static_cast<float>(value);
-        data->puppiw = static_cast<float>(value);
-        data->pdgId = static_cast<int16_t>(value);
-        data->quality = static_cast<uint8_t>(value);
-      }
-    }
-  };
-
-  void LaunchKernel(Puppi::Product *data, Queue& queue, size_t threads_ct) {
-    uint32_t threads_per_block = static_cast<uint32_t>(threads_ct);;
-    uint32_t blocks_per_grid = cms::alpakatools::divide_up_by(1, threads_per_block);
-    auto workDiv = cms::alpakatools::make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-    alpaka::exec<Acc1D>(queue, workDiv, TestInitKernel{}, data, VALUE);
-  }
-
   class TestFillKernel {
   public:
     template <typename TAcc, typename = std::enable_if_t<isAccelerator<TAcc>>>

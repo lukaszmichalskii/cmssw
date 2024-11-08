@@ -5,7 +5,5 @@
 #include "DataFormats/Common/interface/DeviceProduct.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
-#include "DataFormats/L1ScoutingSoA/interface/PuppiStruct.h"
-#include "DataFormats/L1ScoutingSoA/interface/alpaka/Puppi.h"
 
 #endif  // DataFormats_L1ScoutingSoA_src_alpaka_classes_cuda_h

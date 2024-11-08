@@ -1,4 +1,4 @@
-<library file="alpaka/*.cc" name="PuppiRawToDigiProducer">
+<library file="alpaka/*.cc" name="L1ScoutingPhase3">
   <use name="alpaka"/>
   <use name="DataFormats/L1Trigger"/>
   <use name="DataFormats/L1Scouting"/>

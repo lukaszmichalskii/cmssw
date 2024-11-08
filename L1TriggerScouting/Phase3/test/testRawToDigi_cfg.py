@@ -86,26 +86,24 @@ process.PuppiRawToDigiStruct = cms.EDProducer('PuppiRawToDigiProducer@alpaka',
     ),
 )
 
-# process.TkEmRawToDigiStruct = cms.EDProducer('TkEmRawToDigiProducer@alpaka',
-#     src = cms.InputTag('rawDataCollector'),
-#     fed_ids = cms.vuint32(),
-#     alpaka = cms.untracked.PSet(
-#        backend = cms.untracked.string(options.backend)
-#     ),
-# )
+process.IsolationStruct = cms.EDProducer("IsolationModule@alpaka",
+    src = cms.InputTag("PuppiRawToDigiStruct"),
+    alpaka = cms.untracked.PSet(
+       backend = cms.untracked.string(options.backend)
+    ),
+)
 
-## Configure unpackers
 process.PuppiRawToDigiStruct.fed_ids = [*puppiStreamIDs]
-# process.TkEmRawToDigiStruct.fed_ids = [*tkEmStreamIDs]
-# process.goodOrbitsByNBX.nbxMin = 3564 * options.timeslices // options.tmuxPeriod
 
+# for params testing
 process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone()
-# process.TkEmRawToDigi = process.PuppiRawToDigiStruct.clone()
-
+process.Isolation = process.IsolationStruct.clone(
+   src = cms.InputTag("PuppiRawToDigi"),
+)
 
 process.unpacking = cms.Path(
-   process.PuppiRawToDigi
-#    process.TkEmRawToDigi
+   process.PuppiRawToDigi +
+   process.Isolation
 )
 
 process.schedule = cms.Schedule(process.unpacking)

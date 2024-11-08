@@ -10,16 +10,7 @@ PuppiRawToDigiProducer::PuppiRawToDigiProducer(edm::ParameterSet const& config)
     fed_ids_(config.getParameter<std::vector<unsigned int>>("fed_ids")) {}
 
 void PuppiRawToDigiProducer::Summary(const long &duration) {
-  std::cout << "Parameters: " << std::endl;
-  std::cout << "--fed_ids = (" << fed_ids_.size() << ") ";
-  if (!fed_ids_.empty()) {
-    for (const auto& fed_id : fed_ids_)
-      std::cout << fed_id << "; ";
-    std::cout << std::endl;
-  }
-  std::cout << std::endl;
-
-  std::cout << "Processing took: " << duration << " ns" << std::endl;
+  std::cout << "Decoding raw to digi took: " << duration << " ms"  << std::endl;
 }
 
 std::chrono::high_resolution_clock::time_point PuppiRawToDigiProducer::Tick() {
@@ -57,55 +48,19 @@ std::tuple<std::vector<T>, std::vector<T>> PuppiRawToDigiProducer::MemoryScan(co
   return std::make_tuple(std::move(buffer), std::move(headers_buffer));
 }
 
-std::unique_ptr<PuppiCollection> PuppiRawToDigiProducer::UnpackCollection(Queue &queue, const SDSRawDataCollection &raw_data) {  
+PuppiCollection PuppiRawToDigiProducer::UnpackCollection(Queue &queue, const SDSRawDataCollection &raw_data) {  
   // Scan raw memory and extract mem blocks
   auto [buffer, headers] = MemoryScan<uint64_t>(raw_data);
 
-  std::cout << "\tHeaders: " << headers.size() << std::endl;
-  for (size_t idx = 0; idx < headers.size(); idx++) {
-    std::bitset<64> bit64h(headers[idx]);
-    std::cout << "\t" << bit64h << std::endl;
-    if (idx == 5)
-      break;
-  }
-  std::cout << std::endl;
-
-  std::cout << "\tParticles: " << buffer.size() << std::endl;
-  for (size_t idx = 0; idx < buffer.size(); idx++) {
-    std::bitset<64> bit64p(buffer[idx]);
-    std::cout << "\t" << bit64p << std::endl;
-    if (idx == 5)
-      break;
-  }
-  std::cout << std::endl;
-
   // Instantiate on device
   PuppiCollection collection(buffer.size(), queue);
+  
+  // Launch kernels wrapper
   unpacker_.ProcessHeaders(queue, headers, collection);
   unpacker_.ProcessData(queue, buffer, collection);
 
-  PuppiHostCollection host_collection(collection.view().metadata().size(), queue);
-  alpaka::memcpy(queue, host_collection.buffer(), collection.const_buffer());
-  alpaka::wait(queue);
-
-  for (int32_t idx = 0; idx < host_collection.view().metadata().size(); idx++) {
-    std::cout << "\t" << host_collection.view().bx()[idx] << "; ";
-    std::cout << host_collection.view().offsets()[idx] << "; ";
-    std::cout << host_collection.view()[idx].pt() << "; ";
-    std::cout << host_collection.view()[idx].eta() << "; ";
-    std::cout << host_collection.view()[idx].phi() << "; ";
-    std::cout << host_collection.view()[idx].z0() << "; ";
-    std::cout << host_collection.view()[idx].dxy() << "; ";
-    std::cout << host_collection.view()[idx].puppiw() << "; ";
-    std::cout << host_collection.view()[idx].pdgId() << "; ";
-    std::cout << static_cast<int>(host_collection.view()[idx].quality()) << "; ";
-    std::cout << std::endl;
-
-    if (idx == 3570)
-      break;
-  }
-
-  return std::make_unique<PuppiCollection>(std::move(collection));
+  // Collection stays on device afterwards
+  return collection;
 }
 
 void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup const& event_setup) {
@@ -116,15 +71,22 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
   ///////////////////////////////////// CODE BLOCK /////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
+  // Get data from Event
   auto raw_data_collection = event.getHandle(raw_token_);
-  event.put(token_, UnpackCollection(event.queue(), *raw_data_collection));
+
+  // Unpack collection on device
+  auto product = UnpackCollection(event.queue(), *raw_data_collection);
+  std::cout << "Size of PuppiCollection after decoding: " << product.view().metadata().size() << std::endl;
+
+  // Put device product into event (transferred to host automatically if needed)
+  event.emplace(token_, std::move(product));
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// END CODE BLOCK /////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
   auto end = Tick();
-  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   
   Summary(duration.count());
   LogSeparator();

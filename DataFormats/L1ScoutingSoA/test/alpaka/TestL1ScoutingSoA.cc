@@ -30,14 +30,6 @@ int main() {
 
     // Inner scope to deallocate memory before destroying the stream
     {
-      // Instantiate struct on device (CPU or GPU).
-      Puppi d_puppi{queue}; 
-      test_l1_scouting_soa::LaunchKernel(d_puppi.data(), queue, THREADS_PER_BLOCK);
-
-      // Instantiate on host. Destination memory for data to be copied.
-      PuppiHost h_puppi{queue};
-      alpaka::memcpy(queue, h_puppi.buffer(), d_puppi.const_buffer());
-
       // Instantiate on device. Allocation on device is done automatically
       PuppiCollection collection(SIZE, queue);
 
@@ -51,19 +43,6 @@ int main() {
       PuppiHostCollection h_collection(collection.view().metadata().size(), queue);
       alpaka::memcpy(queue, h_collection.buffer(), collection.const_buffer());
       alpaka::wait(queue);
-
-      // Debug prints. Puppi struct on device
-      auto data = h_puppi.data();
-      std::cout << "\n\tPuppi structure on device:\n\t";
-      std::cout << data->pt << "; ";
-      std::cout << data->eta << "; ";
-      std::cout << data->phi << "; ";
-      std::cout << data->z0 << "; ";
-      std::cout << data->dxy << "; ";
-      std::cout << data->puppiw << "; ";
-      std::cout << data->pdgId << "; ";
-      std::cout << data->quality;
-      std::cout << std::endl << std::endl;
 
       // Puppi collection on device
       for (int i = 0; i < h_collection.view().metadata().size(); ++i) {
