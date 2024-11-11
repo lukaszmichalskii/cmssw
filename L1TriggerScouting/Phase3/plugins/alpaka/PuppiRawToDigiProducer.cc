@@ -59,6 +59,7 @@ PuppiCollection PuppiRawToDigiProducer::UnpackCollection(Queue &queue, const SDS
   unpacker_.ProcessHeaders(queue, headers, collection);
   unpacker_.ProcessData(queue, buffer, collection);
 
+
   // Collection stays on device afterwards
   return collection;
 }

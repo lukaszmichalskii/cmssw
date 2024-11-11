@@ -13,10 +13,10 @@ public:
   PuppiCollection Isolate(Queue& queue, PuppiCollection const& data) const;
 
 private:
-  template<typename T>
-  void Filter(Queue& queue, PuppiCollection::ConstView const_view, T* __restrict__ mask) const;
-  template<typename T>
-  void EstimateSize(Queue &queue, T* __restrict__ mask, uint32_t const size) const;
+  template<typename T, typename U, typename Tc>
+  void Filter(Queue& queue, PuppiCollection::ConstView const_view, T* mask, U* charge, Tc* int_cut_ct, Tc* high_cut_ct) const;
+  template<typename T, typename Tc>
+  void EstimateSize(Queue &queue, T* mask, uint32_t const size, Tc* accumulator) const;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
