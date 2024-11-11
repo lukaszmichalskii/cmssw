@@ -29,13 +29,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   public:
     template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, uint16_t* bx, uint32_t* offsets, size_t size) const {
-      if (once_per_block(acc)) {
-        offsets[3564] = 3564;
-      }
-      
       for (int32_t idx : uniform_elements(acc, size)) {
         bx[idx] = static_cast<uint16_t>((data[idx] >> 12) & 0xFFF);
-        offsets[idx] = static_cast<uint32_t>(idx);    
+        offsets[idx] = static_cast<uint16_t>(data[idx] & 0xFFF);
       }
     }
   };

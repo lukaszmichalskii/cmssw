@@ -19,23 +19,22 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   auto device_mask = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, extent);
   alpaka::memset(queue, device_mask, static_cast<uint32_t>(0));
 
-  // Destination memory for data to be copied to debug and size estimation
-  PlatformHost platform;
-  DevHost host = alpaka::getDevByIdx(platform, 0);
-  Vec<alpaka::DimInt<1>> mask_extent(size);
-  std::vector<uint32_t> host_mask(size, 0);
-
   // Filter particles by types / cuts and applying cone isolation
   Filter(queue, raw_data.const_view(), device_mask.data());
 
   // Get number of particles that pass criteria
   EstimateSize(queue, device_mask.data(), size);
 
+  // Destination memory for data to be copied to debug and size estimation
+  PlatformHost platform;
+  DevHost host = alpaka::getDevByIdx(platform, 0);
+  Vec<alpaka::DimInt<1>> mask_extent(size);
+  std::vector<uint32_t> host_mask(size, 0);
   alpaka::memcpy(queue, createView(host, host_mask, mask_extent), device_mask);
   auto post_size = host_mask[0];
+
   // Return reduced particles set for further analysis
   PuppiCollection collection(post_size, queue);
-
   return collection;
 }
 
