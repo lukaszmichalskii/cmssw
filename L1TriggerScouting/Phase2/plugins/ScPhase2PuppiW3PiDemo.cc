@@ -284,6 +284,10 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         }
       }
     }
+
+    std::cout << "intermediatecut: " << intermediatecut << " highcut: " << highcut << std::endl;
+    std::cout << "npions: " << ix.size() << std::endl;
+    break;
     unsigned int npions = ix.size();
     if (highcut < 1 || intermediatecut < 2 || npions < 3)
       continue;

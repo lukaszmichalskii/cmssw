@@ -14,7 +14,7 @@ public:
 
 private:
   template<typename T, typename U, typename Tc>
-  void Filter(Queue& queue, PuppiCollection::ConstView const_view, T* mask, U* charge, Tc* int_cut_ct, Tc* high_cut_ct) const;
+  void Filter(Queue& queue, PuppiCollection::ConstView const_view, uint32_t begin, uint32_t end, T* __restrict__ mask, U* __restrict__ charge, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct) const;
   template<typename T, typename Tc>
   void EstimateSize(Queue &queue, T* mask, uint32_t const size, Tc* accumulator) const;
 };

@@ -22,7 +22,7 @@ void IsolationModule::LogSeparator() {
   std::cout << std::endl;
 }
 
-PuppiCollection IsolationModule::Isolate(Queue &queue, const PuppiCollection &raw_collection) {  
+PuppiCollection IsolationModule::Isolate(Queue &queue, PuppiCollection const& raw_collection) {  
   return isolation_.Isolate(queue, raw_collection);
 }
 
@@ -34,10 +34,10 @@ void IsolationModule::produce(device::Event& event, device::EventSetup const& ev
   ///////////////////////////////////// CODE BLOCK /////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
-  auto const& raw_data_collection = event.get(raw_token_);
-  // auto product = Isolate(event.queue(), raw_data_collection);
-  // std::cout << "Size of PuppiCollection after isolation: " << product.view().metadata().size() << std::endl;
-  // event.emplace(token_, std::move(product));
+  auto& raw_data_collection = event.get(raw_token_);
+  auto product = Isolate(event.queue(), raw_data_collection);
+  std::cout << "Size of PuppiCollection after isolation: " << product.view().metadata().size() << std::endl;
+  event.emplace(token_, std::move(product));
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// END CODE BLOCK /////////////////////////////////

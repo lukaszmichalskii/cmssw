@@ -28,8 +28,8 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   auto device_estimated_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto device_int_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto device_high_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
-  auto begin = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
-  auto end = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
+  auto& device_offsets = raw_data.view().offsets();
+  auto& device_bx = raw_data.view().bx();
 
   // Initialize device memory
   alpaka::memset(queue, device_mask, 0);
@@ -45,6 +45,20 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   std::vector<int8_t> host_charge(size);
   std::vector<uint8_t> host_mask(size);
 
+  std::vector<uint16_t> host_bx(device_bx.size());
+  std::vector<uint32_t> host_offsets(device_offsets.size());
+  alpaka::memcpy(queue, createView(host, host_bx, Vec<alpaka::DimInt<1>>(device_bx.size())), createView(alpaka::getDev(queue), device_bx, Vec<alpaka::DimInt<1>>(device_bx.size())));
+  alpaka::memcpy(queue, createView(host, host_offsets, Vec<alpaka::DimInt<1>>(device_offsets.size())), createView(alpaka::getDev(queue), device_offsets, Vec<alpaka::DimInt<1>>(device_offsets.size())));
+
+  // Combinatorics
+  for (auto bx : host_bx) {
+    auto begin = host_offsets[bx];
+    auto end = host_offsets[bx+1];
+    Filter(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_int_cut_ct.data(), device_high_cut_ct.data());
+    break;
+  }
+  alpaka::wait(queue);
+
   // Get number of particles that pass criteria
   EstimateSize(queue, device_mask.data(), size, device_estimated_size.data());
 
@@ -56,27 +70,9 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   alpaka::wait(queue);
 
   // Debug
-  std::cout << "First level filter pass: " << host_estimated_size[0] << std::endl;
-  std::cout << "Intermediate size: " << host_int_cut_ct[0] << std::endl;
-  std::cout << "High size: "  << host_high_cut_ct[0] << std::endl;
-
-  int ct = 0;
-  std::cout << "C: ";
-  for (size_t i = 0; i < host_charge.size(); i++) {
-    if (host_charge[i] == 0 || ct >= 50) continue;
-    ct++;
-    std::cout << static_cast<short>(host_charge[i]) << "; ";
-  }
-  std::cout << std::endl;
-
-  ct = 0;
-  std::cout << "M: ";
-  for (size_t i = 0; i < host_mask.size(); i++) {
-    if (host_mask[i] == 0 || ct >= 50) continue;
-    ct++;
-    std::cout << static_cast<unsigned short>(host_mask[i]) << "; ";
-  }
-  std::cout << std::endl;
+  // std::cout << "First level filter pass: " << host_estimated_size[0] << std::endl;
+  // std::cout << "Intermediate size: " << host_int_cut_ct[0] << std::endl;
+  // std::cout << "High size: "  << host_high_cut_ct[0] << std::endl;
 
   // Return reduced particles set for further analysis
   PuppiCollection collection(host_estimated_size[0], queue);
@@ -84,7 +80,7 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
 }
 
 template<typename TAcc>
-ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, int64_t thread_idx, PuppiCollection::ConstView data) {
+ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, int64_t thread_idx, PuppiCollection::View data) {
   // Cut thresholds
   const float min_threshold = 0.01; // mindr2
   const float max_threshold = 0.25; // maxdr2
@@ -110,32 +106,35 @@ ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, int64_t thread_idx, PuppiColle
 class FilterKernel {
 public:
   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename U, typename Tc>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, T* mask, U* charge, Tc* int_cut_ct, Tc* high_cut_ct) const {
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, uint32_t begin, uint32_t end, T* __restrict__ mask, U* __restrict__ charge, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct) const {
     const uint8_t min_threshold = 7;  // minpt1
     const uint8_t int_threshold = 12;  // minpt2
     const uint8_t high_threshold = 15;  // minpt3
-    for (int64_t idx : uniform_elements(acc, data.metadata().size())) {
-      auto pdgid_abs = abs(data[idx].pdgId()); 
-      bool filter_pass = (data[idx].pt() >= min_threshold) && (pdgid_abs == 211 || pdgid_abs == 11);
-      if (filter_pass) {
-        mask[idx] = 1;
-        charge[idx] = (pdgid_abs == 11) ? (pdgid_abs > 0 ? -1 : +1) : (pdgid_abs > 0 ? +1 : -1);
-        if (data[idx].pt() >= int_threshold)
-          alpaka::atomicAdd(acc, &int_cut_ct[0], static_cast<uint32_t>(1));
-        if (data[idx].pt() >= high_threshold)
-          alpaka::atomicAdd(acc, &high_cut_ct[0], static_cast<uint32_t>(1));
+
+    for (uint32_t thread_idx : uniform_elements(acc, begin, end)) {
+      printf("%u;%u;%u", begin, end, thread_idx);
+      if (abs(data.pdgId()[thread_idx]) == 211 || abs(data.pdgId()[thread_idx]) == 11) {
+        if (data.pt()[thread_idx] >= min_threshold) {
+          mask[thread_idx] = static_cast<uint8_t>(1);
+          charge[thread_idx] = static_cast<int8_t>(abs(data.pdgId()[thread_idx]) == 11 ? (data.pdgId()[thread_idx] > 0 ? -1 : +1) : (data.pdgId()[thread_idx] > 0 ? +1 : -1));
+          if (data.pt()[thread_idx] >= int_threshold)
+            alpaka::atomicAdd(acc, &int_cut_ct[0], static_cast<uint32_t>(1));
+          if (data.pt()[thread_idx] >= high_threshold)
+            alpaka::atomicAdd(acc, &high_cut_ct[0], static_cast<uint32_t>(1));
+        }
       }
     }
   }
 };
 
 template<typename T, typename U, typename Tc>
-void Isolation::Filter(Queue& queue, PuppiCollection::ConstView const_view, T* mask, U* charge, Tc* int_cut_ct, Tc* high_cut_ct) const {
-  auto size = const_view.metadata().size();
+void Isolation::Filter(Queue& queue, PuppiCollection::ConstView const_view, uint32_t begin, uint32_t end, T* __restrict__ mask, U* __restrict__ charge, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct) const {
+  auto size = end - begin;
   uint32_t threads_per_block = 64;
-  uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
+  uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);
+  std::cout << "B: " << blocks_per_grid << "; Beg: " << begin << "; End: " << end << "; Size: " << size << std::endl;
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, const_view, mask, charge, int_cut_ct, high_cut_ct);
+  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, const_view, begin, end, mask, charge, int_cut_ct, high_cut_ct);
 }
 
 class EstimateSizeKernel {

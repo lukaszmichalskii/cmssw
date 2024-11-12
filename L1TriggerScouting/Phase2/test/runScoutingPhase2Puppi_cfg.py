@@ -21,7 +21,7 @@ process.options = cms.untracked.PSet(
     numberOfThreads = cms.untracked.uint32(options.numThreads),
     numberOfStreams = cms.untracked.uint32(options.numFwkStreams),
     numberOfConcurrentLuminosityBlocks = cms.untracked.uint32(1),
-    wantSummary = cms.untracked.bool(True)
+    wantSummary = cms.untracked.bool(False)
 )
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
@@ -133,6 +133,7 @@ process.w3piCandidate = process.w3piStruct.clone(
 process.w3piSOA = process.w3piStruct.clone(
     runStruct = cms.bool(False),
     runSOA = cms.bool(True),
+    src = cms.InputTag("scPhase2PuppiRawToDigiSOA"),
 )
 
 process.p_candidate = cms.Path(
@@ -179,16 +180,6 @@ sched = [ process.p_inclusive, process.p_selected ]
 if options.run != "both":  [ getattr(process, "p_" + options.run)]
 
 
-process.Test = process.scPhase2PuppiRawToDigiStruct.clone(
-    runCandidateUnpacker = cms.bool(False),
-    runStructUnpacker = cms.bool(False),
-    runSOAUnpacker = cms.bool(True),
-)
-
-process.test = cms.Path(
-  process.Test
-)
-
 if options.outMode != "none":
   sched.append(getattr(process, "o_"+options.outMode))
-process.schedule = cms.Schedule(process.test)
+process.schedule = cms.Schedule(process.p_soa)

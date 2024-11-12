@@ -28,13 +28,10 @@ if len(options.buNumStreams) != len(options.buBaseDir):
     raise RuntimeError("Mismatch between buNumStreams (%d) and buBaseDirs (%d)" % (len(options.buNumStreams), len(options.buBaseDir)))
 
 
-if options.puppiStreamIDs == [] and options.tkEmStreamIDs ==  []:
-    nStreamsTot = sum(options.buNumStreams)
-    puppiStreamIDs = list(range(nStreamsTot//2)) # take first half 
-    tkEmStreamIDs = list(range(nStreamsTot//2, nStreamsTot)) # take second half 
+if options.puppiStreamIDs == []:
+    puppiStreamIDs = list(range(sum(options.buNumStreams))) # take all 
 else:
     puppiStreamIDs = options.puppiStreamIDs
-    tkEmStreamIDs = options.tkEmStreamIDs
 
 process.EvFDaqDirector = cms.Service("EvFDaqDirector",
     useFileBroker = cms.untracked.bool(options.broker != "none"),
@@ -80,7 +77,7 @@ os.system("touch " + buDirs[0] + "/" + "fu.lock")
 
 process.PuppiRawToDigiStruct = cms.EDProducer('PuppiRawToDigiProducer@alpaka',
     src = cms.InputTag('rawDataCollector'),
-    fed_ids = cms.vuint32(),
+    fedIDs = cms.vuint32(),
     alpaka = cms.untracked.PSet(
        backend = cms.untracked.string(options.backend)
     ),
@@ -93,12 +90,21 @@ process.IsolationStruct = cms.EDProducer("IsolationModule@alpaka",
     ),
 )
 
-process.PuppiRawToDigiStruct.fed_ids = [*puppiStreamIDs]
+process.PuppiRawToDigiStruct.fedIDs = [*puppiStreamIDs]
 
 # for params testing
-process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone()
+process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone(
+    src = cms.InputTag('rawDataCollector'),
+    fedIDs = [*puppiStreamIDs],
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(options.backend)
+    ),
+)
 process.Isolation = process.IsolationStruct.clone(
-   src = cms.InputTag("PuppiRawToDigi"),
+    src = cms.InputTag("PuppiRawToDigi"),
+    alpaka = cms.untracked.PSet(
+       backend = cms.untracked.string(options.backend)
+    ),
 )
 
 process.unpacking = cms.Path(
