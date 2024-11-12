@@ -82,19 +82,6 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
   alpaka::memcpy(event.queue(), h_collection.buffer(), product.const_buffer());
   alpaka::wait(event.queue());
 
-  // Puppi collection on device
-  std::cout << "\tPuppi collection on device:\n\t";
-  for (uint32_t i = 5; i < h_collection.view().bx().size(); ++i) {
-    std::cout << h_collection.view().bx()[i] << "; ";
-    std::cout << h_collection.view().offsets()[h_collection.view().bx()[i]] << "; ";
-    std::cout << h_collection.view().offsets()[h_collection.view().bx()[i+1]] << "; ";
-    std::cout << h_collection.view().offsets()[h_collection.view().bx()[i+1]] - h_collection.view().offsets()[h_collection.view().bx()[i]] << "; ";
-    std::cout << h_collection.view().metadata().size() << std::endl;
-    break; // one line only for debugging
-  }
-
-  std::cout << std::endl;
-
   // Put device product into event (transferred to host automatically if needed)
   event.emplace(token_, std::move(product));
 

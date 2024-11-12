@@ -107,6 +107,10 @@ process.Isolation = process.IsolationStruct.clone(
     ),
 )
 
+# process.unpacking = cms.Path(
+#    process.PuppiRawToDigi
+# )
+
 process.unpacking = cms.Path(
    process.PuppiRawToDigi +
    process.Isolation

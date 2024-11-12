@@ -9,7 +9,7 @@ IsolationModule::IsolationModule(edm::ParameterSet const& params)
     token_{produces()} {}
 
 void IsolationModule::Summary(const long &duration) {
-  std::cout << "Isolation module took: " << duration << " ms"  << std::endl;
+  std::cout << "W3Pi Analysis took: " << duration << " ms"  << std::endl;
 }
 
 std::chrono::high_resolution_clock::time_point IsolationModule::Tick() {
@@ -36,7 +36,7 @@ void IsolationModule::produce(device::Event& event, device::EventSetup const& ev
 
   auto& raw_data_collection = event.get(raw_token_);
   auto product = Isolate(event.queue(), raw_data_collection);
-  std::cout << "Size of PuppiCollection after isolation: " << product.view().metadata().size() << std::endl;
+  std::cout << "W3Pi Analysis: " << raw_data_collection.view().metadata().size() << " -> " << product.view().metadata().size() << std::endl;
   event.emplace(token_, std::move(product));
 
   //////////////////////////////////////////////////////////////////////////////////////

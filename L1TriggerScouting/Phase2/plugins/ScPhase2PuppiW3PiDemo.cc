@@ -260,6 +260,10 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
   ROOT::RVec<int> charge;        //stores whether a particle passes isolation test so we don't calculate reliso twice
   std::array<unsigned int, 3> bestTriplet;  // best triplet
   float bestTripletScore;
+  int global_int_cut = 0;
+  int global_high_cut = 0;
+  int global_l1_pass = 0;
+
   for (unsigned int ibx = 0, nbx = src.bx.size(); ibx < nbx; ++ibx) {
     countSOA_++;
     unsigned int offs = src.offsets[ibx];
@@ -285,9 +289,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       }
     }
 
-    std::cout << "intermediatecut: " << intermediatecut << " highcut: " << highcut << std::endl;
-    std::cout << "npions: " << ix.size() << std::endl;
-    break;
+    global_int_cut += intermediatecut;
+    global_high_cut += highcut;
+    global_l1_pass += ix.size();
     unsigned int npions = ix.size();
     if (highcut < 1 || intermediatecut < 2 || npions < 3)
       continue;
@@ -355,6 +359,12 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       passSOA_++;
     }
   }  // loop on BXs
+
+  std::cout << "Particles Num L1 Filter: " << global_l1_pass << std::endl;
+  std::cout << "Paritcles Num L1 IntCut: " << global_int_cut << std::endl;
+  std::cout << "Paritcles Num L1  HiCut: "  << global_high_cut << std::endl;
+  std::cout << std::endl;
+
 
   iEvent.put(std::move(ret));
 }

@@ -77,7 +77,6 @@ void ScPhase2PuppiRawToDigi::produce(edm::Event &iEvent, const edm::EventSetup &
     iEvent.put(unpackObj(iEvent.id().event(), *scoutingRawDataCollection, structBuffer_));
   }
   if (doSOA_) {
-    std::cout << "SoA: " << std::endl;
     iEvent.put(unpackSOA(*scoutingRawDataCollection));
   }
   if (doCandidate_ || doStruct_ || doSOA_) {
@@ -177,18 +176,12 @@ std::unique_ptr<l1Scouting::PuppiSOA> ScPhase2PuppiRawToDigi::unpackSOA(const SD
   std::vector<std::pair<const uint64_t *, const uint64_t *>> buffers;
   unsigned int sizeguess = 0;
   nbx_ = 0;
-  std::cout << "FEDs: ";
-  for (auto &fedId : fedIDs_) {
-    std::cout << fedId << "; ";
-  }
-  std::cout << std::endl;
   for (auto &fedId : fedIDs_) {
     const FEDRawData &src = feds.FEDData(fedId);
     buffers.emplace_back(reinterpret_cast<const uint64_t *>(src.data()),
                          reinterpret_cast<const uint64_t *>(src.data() + src.size()));
     sizeguess += src.size();
   }
-  std::cout << "SIZEGUESS: " << sizeguess << std::endl;
   l1Scouting::PuppiSOA ret;
   ret.bx.reserve(3564);
   ret.offsets.reserve(3564 + 1);
@@ -198,7 +191,6 @@ std::unique_ptr<l1Scouting::PuppiSOA> ScPhase2PuppiRawToDigi::unpackSOA(const SD
   ret.pdgId.resize(sizeguess);
   ret.quality.resize(sizeguess);
   unsigned int i0 = 0;
-  std::cout << "Buffers: " << buffers.size() << std::endl;
   for (int ibuff = 0, nbuffs = buffers.size(), lbuff = nbuffs - 1; buffers[ibuff].first != buffers[ibuff].second;
        ibuff = (ibuff == lbuff ? 0 : ibuff + 1)) {
     auto &pa = buffers[ibuff];
@@ -234,8 +226,7 @@ std::unique_ptr<l1Scouting::PuppiSOA> ScPhase2PuppiRawToDigi::unpackSOA(const SD
   }
   ret.pdgId.resize(i0);
   ret.quality.resize(i0);
-  std::cout << "Ret bx size: " << ret.bx.size() << std::endl;
-  std::cout << "Ret pt size: " << ret.pt.size() << std::endl;
+  std::cout << "Size of PuppiCollection after decoding: " << ret.pt.size() << std::endl;
   auto retptr = std::make_unique<l1Scouting::PuppiSOA>(std::move(ret));
   return retptr;
 }

@@ -28,15 +28,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   class ProcessHeadersKernel {
   public:
     template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, uint16_t* bx, uint32_t* offsets, size_t size) const {
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, PuppiCollection::View out, size_t size) const {
       if (once_per_grid(acc)) { // prefix sum sequential workaround
         for (uint32_t idx = 1; idx <= size; idx++) {
-          offsets[idx] = offsets[idx-1] + static_cast<uint32_t>(data[idx-1] & 0xFFF);    
+          out.offsets()[idx] = out.offsets()[idx-1] + static_cast<uint32_t>(data[idx-1] & 0xFFF);    
         }
       }
       
       for (int32_t idx : uniform_elements(acc, size)) {
-        bx[idx] = static_cast<uint16_t>((data[idx] >> 12) & 0xFFF);
+        out.bx()[idx] = static_cast<uint16_t>((data[idx] >> 12) & 0xFFF);
       }
     }
   };
@@ -47,12 +47,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto device_buffer = CopyToDevice<uint64_t>(queue, data);
     std::vector<uint64_t>().swap(data);
 
-    auto& bx = collection.view().bx();
-    auto& offsets = collection.view().offsets();
     uint32_t threads_per_block = 64;
     uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-    alpaka::exec<Acc1D>(queue, grid, ProcessHeadersKernel{}, device_buffer.data(), bx.data(), offsets.data(), size);
+    alpaka::exec<Acc1D>(queue, grid, ProcessHeadersKernel{}, device_buffer.data(), collection.view(), size);
   }
 
   class ProcessDataKernel {
