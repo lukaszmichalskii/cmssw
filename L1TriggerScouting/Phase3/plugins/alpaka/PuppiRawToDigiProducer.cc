@@ -7,7 +7,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 PuppiRawToDigiProducer::PuppiRawToDigiProducer(edm::ParameterSet const& config)
   : raw_token_{consumes<SDSRawDataCollection>(config.getParameter<edm::InputTag>("src"))},
     token_{produces()},
-    fed_ids_(config.getParameter<std::vector<unsigned int>>("fed_ids")) {}
+    fed_ids_(config.getParameter<std::vector<unsigned int>>("fedIDs")) {}
 
 void PuppiRawToDigiProducer::Summary(const long &duration) {
   std::cout << "Decoding raw to digi took: " << duration << " ms"  << std::endl;
@@ -78,6 +78,22 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
   // Unpack collection on device
   auto product = UnpackCollection(event.queue(), *raw_data_collection);
   std::cout << "Size of PuppiCollection after decoding: " << product.view().metadata().size() << std::endl;
+  PuppiHostCollection h_collection(product.view().metadata().size(), event.queue());
+  alpaka::memcpy(event.queue(), h_collection.buffer(), product.const_buffer());
+  alpaka::wait(event.queue());
+
+  // Puppi collection on device
+  std::cout << "\tPuppi collection on device:\n\t";
+  for (uint32_t i = 5; i < h_collection.view().bx().size(); ++i) {
+    std::cout << h_collection.view().bx()[i] << "; ";
+    std::cout << h_collection.view().offsets()[h_collection.view().bx()[i]] << "; ";
+    std::cout << h_collection.view().offsets()[h_collection.view().bx()[i+1]] << "; ";
+    std::cout << h_collection.view().offsets()[h_collection.view().bx()[i+1]] - h_collection.view().offsets()[h_collection.view().bx()[i]] << "; ";
+    std::cout << h_collection.view().metadata().size() << std::endl;
+    break; // one line only for debugging
+  }
+
+  std::cout << std::endl;
 
   // Put device product into event (transferred to host automatically if needed)
   event.emplace(token_, std::move(product));
@@ -96,7 +112,7 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
 void PuppiRawToDigiProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("src", edm::InputTag("rawDataCollector"));
-  desc.add<std::vector<unsigned int>>("fed_ids");
+  desc.add<std::vector<unsigned int>>("fedIDs");
   descriptions.addWithDefaultLabel(desc);
 }
 

@@ -29,7 +29,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   public:
     template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, uint16_t* bx, uint32_t* offsets, size_t size) const {
-      if (once_per_block(acc)) { // prefix sum sequential workaround
+      if (once_per_grid(acc)) { // prefix sum sequential workaround
         for (uint32_t idx = 1; idx <= size; idx++) {
           offsets[idx] = offsets[idx-1] + static_cast<uint32_t>(data[idx-1] & 0xFFF);    
         }
