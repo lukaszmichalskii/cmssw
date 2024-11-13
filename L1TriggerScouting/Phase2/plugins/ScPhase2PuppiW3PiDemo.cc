@@ -304,7 +304,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         continue;  //high pt cut
       if (isolation(ix[i1], size, etas, phis, pts, iso[i1]) == 0)
         continue;  //check iso of high pt pion
+      printf("0");
       for (unsigned int i2 = 0; i2 < npions; ++i2) {
+        printf("1");
         if (i2 == i1 || pts[ix[i2]] < cuts.minpt2)
           continue;
         if (pts[ix[i2]] > pts[ix[i1]] || (pts[ix[i2]] == pts[ix[i1]] and i2 < i1))
@@ -312,6 +314,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         if (!deltar(etas[ix[i1]], etas[ix[i2]], phis[ix[i1]], phis[ix[i2]]))
           continue;  //angular sep of top 2 pions
         for (unsigned int i3 = 0; i3 < npions; ++i3) {
+          printf("2");
           if (i3 == i1 or i3 == i2)
             continue;
           if (pts[ix[i2]] < cuts.minpt1)
@@ -323,17 +326,22 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
           std::array<unsigned int, 3> tr{{ix[i1], ix[i2], ix[i3]}};  //triplet of indeces
 
           if (std::abs(charge[i1] + charge[i2] + charge[i3]) == 1) {
+            printf("3");
             //make Lorentz vectors for each triplet
             auto mass = tripletmass(tr, pts, etas, phis);
             if (mass >= cuts.minmass and mass <= cuts.maxmass) {  //MASS test
+              printf("4");
               if (deltar(etas[ix[i1]], etas[ix[i3]], phis[ix[i1]], phis[ix[i3]]) and
                   deltar(etas[ix[i2]], etas[ix[i3]], phis[ix[i2]], phis[ix[i3]])) {
+                printf("5");
                 //ISOLATION test for lower 4 pions
                 bool isop = isolation(ix[i2], size, etas, phis, pts, iso[i2]) &&
                             isolation(ix[i3], size, etas, phis, pts, iso[i3]);
                 if (isop == true) {
+                  printf("6");
                   float ptsum = pts[ix[i1]] + pts[ix[i2]] + pts[ix[i3]];
                   if (ptsum > bestTripletScore) {
+                    printf("7");
                     std::copy_n(tr.begin(), 3, bestTriplet.begin());
                     bestTripletScore = ptsum;
                   }
@@ -357,7 +365,10 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       ret->puppiw.insert(ret->puppiw.end(), &src.puppiw[offs], &src.puppiw[offs + size]);
       ret->quality.insert(ret->quality.end(), &src.quality[offs], &src.quality[offs + size]);
       passSOA_++;
+      printf("Increment");
     }
+
+    std::cout << "Idx: " << ibx << "; [" << src.offsets[ibx] << ", " << src.offsets[ibx+1] << "]; "<< "; Best Score: " << bestTripletScore << std::endl;
   }  // loop on BXs
 
   std::cout << "Particles Num L1 Filter: " << global_l1_pass << std::endl;

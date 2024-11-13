@@ -44,7 +44,7 @@ private:
   Isolation isolation_;
 
   // Pipeline methods
-  PuppiCollection Isolate(Queue &queue, PuppiCollection const& raw_collection);
+  size_t Isolate(Queue &queue, PuppiCollection const& raw_collection);
 
   // Debugging helpers
   std::chrono::high_resolution_clock::time_point Tick();
