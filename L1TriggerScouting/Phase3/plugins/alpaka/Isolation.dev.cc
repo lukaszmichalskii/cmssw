@@ -30,6 +30,10 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   auto device_high_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto& device_offsets = raw_data.view().offsets();
 
+  auto device_partial_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
+  auto device_partial_int_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
+  auto device_partial_high_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
+
   // Initialize device memory
   alpaka::memset(queue, device_mask, 0);
   alpaka::memset(queue, device_charge, 0);
@@ -41,37 +45,65 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   uint32_t* host_estimated_size = new uint32_t[1];
   uint32_t* host_int_cut_ct = new uint32_t[1];
   uint32_t* host_high_cut_ct = new uint32_t[1];
-  std::vector<int8_t> host_charge(size);
-  std::vector<uint8_t> host_mask(size);
+  std::vector<int8_t> host_charge(size, 0);
+  std::vector<uint8_t> host_mask(size, 0);
+
+  uint32_t* host_partial_size = new uint32_t[1];
+  uint32_t* host_partial_int_cut_ct = new uint32_t[1];
+  uint32_t* host_partial_high_cut_ct = new uint32_t[1];
+
+  host_estimated_size[0] = 0;
+  host_int_cut_ct[0] = 0;
+  host_high_cut_ct[0] = 0;
 
   std::array<uint32_t, 3564+1> host_offsets{};
   alpaka::memcpy(queue, createView(host, host_offsets, Vec<alpaka::DimInt<1>>(3564+1)), createView(alpaka::getDev(queue), device_offsets, Vec<alpaka::DimInt<1>>(3564+1)));
   alpaka::wait(queue);
 
   // Combinatorics
+  size_t pass = 0;
   for (size_t bx_idx = 0; bx_idx < raw_data.const_view().bx().size(); bx_idx++) {
     auto begin = host_offsets[bx_idx];
     auto end = host_offsets[bx_idx+1];
-    Filter(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_int_cut_ct.data(), device_high_cut_ct.data());
-  }
+    if (end - begin == 0) 
+      continue;
 
-  // Get number of particles that pass criteria
-  EstimateSize(queue, device_mask.data(), size, device_estimated_size.data());
-  
-  alpaka::memcpy(queue, createView(host, host_estimated_size, Vec<alpaka::DimInt<1>>(1)), device_estimated_size);
-  alpaka::memcpy(queue, createView(host, host_int_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_int_cut_ct);
-  alpaka::memcpy(queue, createView(host, host_high_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_high_cut_ct);
-  alpaka::memcpy(queue, createView(host, host_charge, extent), device_charge);
-  alpaka::memcpy(queue, createView(host, host_mask, extent), device_mask);
+    alpaka::memset(queue, device_partial_size, 0);
+    alpaka::memset(queue, device_partial_int_cut_ct, 0);
+    alpaka::memset(queue, device_partial_high_cut_ct, 0);
+
+    Filter(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_partial_int_cut_ct.data(), device_partial_high_cut_ct.data());
+    EstimateSize(queue, device_mask.data(), begin, end, device_partial_size.data());
+
+    alpaka::memcpy(queue, createView(host, host_partial_size, Vec<alpaka::DimInt<1>>(1)), device_partial_size);
+    alpaka::memcpy(queue, createView(host, host_partial_int_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_partial_int_cut_ct);
+    alpaka::memcpy(queue, createView(host, host_partial_high_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_partial_high_cut_ct);
+    // alpaka::memcpy(queue, createView(host, host_estimated_size, Vec<alpaka::DimInt<1>>(1)), device_estimated_size);
+    // alpaka::memcpy(queue, createView(host, host_int_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_int_cut_ct);
+    // alpaka::memcpy(queue, createView(host, host_high_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_high_cut_ct);
+
+    host_estimated_size[0] += host_partial_size[0];
+    host_int_cut_ct[0] += host_partial_int_cut_ct[0];
+    host_high_cut_ct[0] += host_partial_high_cut_ct[0];
+
+    auto pions_ct = host_partial_size[0];
+    auto int_cut_ct = host_partial_int_cut_ct[0];
+    auto high_cut_ct = host_partial_high_cut_ct[0];
+
+    if (pions_ct < 3 || int_cut_ct < 2 || high_cut_ct < 1) 
+      continue;
+    pass++;
+  }
 
   // Debug
   std::cout << "Particles Num L1 Filter: " << host_estimated_size[0] << std::endl;
   std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
   std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
+  std::cout << "Candidates Num L1: " << pass << std::endl;
   std::cout << std::endl;
 
   // Return reduced particles set for further analysis
-  PuppiCollection collection(host_estimated_size[0], queue);
+  PuppiCollection collection(1, queue);
   return collection;
 }
 
@@ -125,8 +157,6 @@ public:
 template<typename T, typename U, typename Tc>
 void Isolation::Filter(Queue& queue, PuppiCollection::ConstView const_view, uint32_t begin, uint32_t end, T* __restrict__ mask, U* __restrict__ charge, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct) const {
   auto size = end - begin;
-  if (size == 0) 
-    return;
   uint32_t threads_per_block = 64;
   uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
@@ -136,10 +166,10 @@ void Isolation::Filter(Queue& queue, PuppiCollection::ConstView const_view, uint
 class EstimateSizeKernel {
 public:
   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename Tc>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, T* mask,  uint32_t const size, Tc* accumulator) const {
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, T* mask, uint32_t begin, uint32_t end, Tc* accumulator) const {
     // Naive slow summation for simplicity
     // TODO: replace with reduction in the future
-    for (auto idx : uniform_elements(acc, 1, size)) {
+    for (auto idx : uniform_elements(acc, begin, end)) {
       if (mask[idx] == static_cast<uint32_t>(1)) {
         alpaka::atomicAdd(acc, &accumulator[0], static_cast<uint32_t>(1));
       }
@@ -170,11 +200,12 @@ public:
 };
 
 template<typename T, typename Tc>
-void Isolation::EstimateSize(Queue& queue, T* mask, uint32_t const size, Tc* accumulator) const {
+void Isolation::EstimateSize(Queue& queue, T* __restrict__ mask, uint32_t begin, uint32_t end, Tc* __restrict__ accumulator) const {
+  auto size = end - begin;
   uint32_t threads_per_block = 64;
   uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, EstimateSizeKernel{}, mask, size, accumulator);
+  alpaka::exec<Acc1D>(queue, grid, EstimateSizeKernel{}, mask, begin, end, accumulator);
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
