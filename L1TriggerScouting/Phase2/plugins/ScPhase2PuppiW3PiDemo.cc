@@ -265,7 +265,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
   int global_l1_pass = 0;
 
   for (unsigned int ibx = 0, nbx = src.bx.size(); ibx < nbx; ++ibx) {
-    // if (ibx != 1180 && ibx != 1524 && ibx != 2625)
+    // if (ibx != 3526)
     //   continue;
     countSOA_++;
     unsigned int offs = src.offsets[ibx];
@@ -326,20 +326,31 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         // printf("1");
         if (i2 == i1 || pts[ix[i2]] < cuts.minpt2)
           continue;
-        if (pts[ix[i2]] > pts[ix[i1]] || (pts[ix[i2]] == pts[ix[i1]] and i2 < i1))
-          continue;  //intermediate pt cut
+        if (pts[ix[i2]] > pts[ix[i1]] || (pts[ix[i2]] == pts[ix[i1]] and i2 < i1)) {
+            // printf("M0 ");
+            continue;
+          }
         if (!deltar(etas[ix[i1]], etas[ix[i2]], phis[ix[i1]], phis[ix[i2]]))
-          continue;  //angular sep of top 2 pions
+         {
+            // printf("1st ang sep ");
+            continue;
+          }
         for (unsigned int i3 = 0; i3 < npions; ++i3) {
           // printf("2");
           if (i3 == i1 or i3 == i2)
             continue;
-          if (pts[ix[i2]] < cuts.minpt1)
-            continue;  //low pt cut
-          if (pts[ix[i3]] > pts[ix[i1]] || (pts[ix[i3]] == pts[ix[i1]] and i3 < i1))
+          if (pts[ix[i2]] < cuts.minpt1) {
+            // printf("low_pt_cut ");
             continue;
-          if (pts[ix[i3]] > pts[ix[i2]] || (pts[ix[i3]] == pts[ix[i2]] and i3 < i2))
+          }
+          if (pts[ix[i3]] > pts[ix[i1]] || (pts[ix[i3]] == pts[ix[i1]] and i3 < i1)) {
+            // printf("M1 ");
             continue;
+          }
+          if (pts[ix[i3]] > pts[ix[i2]] || (pts[ix[i3]] == pts[ix[i2]] and i3 < i2)) {
+            // printf("M2 ");
+            continue;
+          }
           std::array<unsigned int, 3> tr{{ix[i1], ix[i2], ix[i3]}};  //triplet of indeces
 
           if (std::abs(charge[i1] + charge[i2] + charge[i3]) == 1) {
@@ -348,6 +359,37 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
             auto mass = tripletmass(tr, pts, etas, phis);
             if (mass >= cuts.minmass and mass <= cuts.maxmass) {  //MASS test
               // printf("4");
+
+              // printf("\nid: %d; ", ix[i1]);
+              // printf("pt: %f; ",pts[ix[i1]]);
+              // printf("eta: %f; ", etas[ix[i1]]);
+              // printf("phi: %f; ", phis[ix[i1]]);
+              // printf("z0: %f; ", z0[ix[i1]]);
+              // printf("dxy: %f; ", dxy[ix[i1]]);
+              // printf("puppiw: %f; ", puppiw[ix[i1]]);
+              // printf("pdgId: %d; ", pdgIds[ix[i1]]);
+              // printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i1]]));
+              // printf("\n");
+              // printf("\nid: %d; ", ix[i2]);
+              // printf("pt: %f; ",pts[ix[i2]]);
+              // printf("eta: %f; ", etas[ix[i2]]);
+              // printf("phi: %f; ", phis[ix[i2]]);
+              // printf("z0: %f; ", z0[ix[i2]]);
+              // printf("dxy: %f; ", dxy[ix[i2]]);
+              // printf("puppiw: %f; ", puppiw[ix[i2]]);
+              // printf("pdgId: %d; ", pdgIds[ix[i2]]);
+              // printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i2]]));
+              // printf("\n");
+              // printf("\nid: %d; ", ix[i3]);
+              // printf("pt: %f; ",pts[ix[i3]]);
+              // printf("eta: %f; ", etas[ix[i3]]);
+              // printf("phi: %f; ", phis[ix[i3]]);
+              // printf("z0: %f; ", z0[ix[i3]]);
+              // printf("dxy: %f; ", dxy[ix[i3]]);
+              // printf("puppiw: %f; ", puppiw[ix[i3]]);
+              // printf("pdgId: %d; ", pdgIds[ix[i3]]);
+              // printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i3]]));
+              // printf("\n");
               if (deltar(etas[ix[i1]], etas[ix[i3]], phis[ix[i1]], phis[ix[i3]]) and
                   deltar(etas[ix[i2]], etas[ix[i3]], phis[ix[i2]], phis[ix[i3]])) {
                 // printf("5");
@@ -364,14 +406,18 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
                     bestTripletScore = ptsum;
                   }
                 }  // iso
+              } else {
+                // printf("WARNING ======== ANG_SEP -> ");
               }    // delta R
             } else {
-              printf("WARNING ======== FAKE -> ");
+              // printf("WARNING ======== MASS -> ");
             }     // mass
-          }        //charge
-        }          //low pt cut
-      }            //intermediate pt cut
-    }              //high pt cut
+          } else {
+            // printf("WARNING ======== CHARGE -> ");
+          }       //charge
+        } //low pt cut
+      } //intermediate pt cut
+    }            //high pt cut
 
     if (bestTripletScore > 0) {
       offsets.push_back(offsets.back() + size);

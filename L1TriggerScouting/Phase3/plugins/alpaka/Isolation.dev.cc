@@ -124,7 +124,7 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Combinatorics
   size_t pass = 0;
   for (size_t bx_idx = 0; bx_idx < raw_data.const_view().bx().size(); bx_idx++) {
-    // if (bx_idx != 1180 && bx_idx != 1524 && bx_idx != 2625)
+    // if (bx_idx != 3526)
     //   continue;
     auto begin = host_offsets[bx_idx];
     auto end = host_offsets[bx_idx+1];
@@ -234,16 +234,25 @@ public:
         // printf("0");
         // printf("PASSED: %d", thread_idx - begin);
         for (uint32_t i = begin; i < end; i++) {
+          if (mask[i] == static_cast<uint8_t>(0))
+            continue;
           // printf("1");
           if (i == thread_idx || data.pt()[i] < int_threshold) // minpt2
             continue;
           // printf("2");
-          if (data.pt()[i] > data.pt()[thread_idx] || (data.pt()[i] == data.pt()[thread_idx] && i < thread_idx)) //intermediate pt cut
+          if (data.pt()[i] > data.pt()[thread_idx] || (data.pt()[i] == data.pt()[thread_idx] && i < thread_idx)) {//intermediate pt cut 
+            // printf("M0 ");
             continue;
+          }
+            
           // printf("3");
-          if (!AngularSeparation(acc, data, thread_idx, i))  //angular sep of top 2 pions  
-            continue; 
+          if (!AngularSeparation(acc, data, thread_idx, i)) {//intermediate pt cut 
+            // printf("1st ang sep ");
+            continue;
+          }
           for (uint32_t j = begin; j < end; j++) {
+            if (mask[j] == static_cast<uint8_t>(0))
+              continue;
             // printf("2");
             if (j == thread_idx || j == i)
               continue;
@@ -261,6 +270,34 @@ public:
             if (mass < 40 || mass > 150) // minmass maxmass
               continue;
             // printf("4");
+            // printf("\nid: %d; ", thread_idx - begin);
+            // printf("pt: %f; ", data.pt()[thread_idx]);
+            // printf("eta: %f; ", data.eta()[thread_idx]);
+            // printf("phi: %f; ", data.phi()[thread_idx]);
+            // printf("z0: %f; ", data.z0()[thread_idx]);
+            // printf("dxy: %f; ", data.dxy()[thread_idx]);
+            // printf("puppiw: %f; ", data.puppiw()[thread_idx]);
+            // printf("pdgId: %d; ", data.pdgId()[thread_idx]);
+            // printf("quality: %d; ", static_cast<unsigned short>(data.quality()[thread_idx]));
+            // printf("\nid: %d; ", i - begin);
+            // printf("pt: %f; ", data.pt()[i]);
+            // printf("eta: %f; ", data.eta()[i]);
+            // printf("phi: %f; ", data.phi()[i]);
+            // printf("z0: %f; ", data.z0()[i]);
+            // printf("dxy: %f; ", data.dxy()[i]);
+            // printf("puppiw: %f; ", data.puppiw()[i]);
+            // printf("pdgId: %d; ", data.pdgId()[i]);
+            // printf("quality: %d; ", static_cast<unsigned short>(data.quality()[i]));
+            // printf("\nid: %d; ", j - begin);
+            // printf("pt: %f; ", data.pt()[j]);
+            // printf("eta: %f; ", data.eta()[j]);
+            // printf("phi: %f; ", data.phi()[j]);
+            // printf("z0: %f; ", data.z0()[j]);
+            // printf("dxy: %f; ", data.dxy()[j]);
+            // printf("puppiw: %f; ", data.puppiw()[j]);
+            // printf("pdgId: %d; ", data.pdgId()[j]);
+            // printf("quality: %d; ", static_cast<unsigned short>(data.quality()[j]));
+            // printf("\n");
             if (AngularSeparation(acc, data, thread_idx, j) && AngularSeparation(acc, data, i, j)) {
               // printf("5");
               if (ConeIsolation(acc, data, i, begin, end) && ConeIsolation(acc, data, j, begin, end)) {
