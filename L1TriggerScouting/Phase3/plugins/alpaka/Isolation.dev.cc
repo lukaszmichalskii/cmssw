@@ -38,24 +38,28 @@ ALPAKA_FN_ACC bool AngularSeparation(TAcc const& acc, PuppiCollection::ConstView
 }
 
 template<typename TAcc>
-ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView data, int32_t thread_idx) {
+ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView data, uint32_t thread_idx, uint32_t span_begin, uint32_t span_end) {
   // Cut thresholds
   const float min_threshold = 0.01 * 0.01; // mindr2
   const float max_threshold = 0.25 * 0.25; // maxdr2
   const float max_isolation_threshold = 2.0; // maxiso
 
-  float accumulated = 0;
-  for (int32_t idx = 0; idx < data.metadata().size(); idx++) {
+  float accumulated = 0.0f;
+  for (auto idx = span_begin; idx < span_end; idx++) {
     if (thread_idx == idx) 
       continue;
+    // printf("idx: %d; etat: %f; eta: %f; phit: %f; phi: %f;\n", idx, data.eta()[thread_idx], data.eta()[idx], data.phi()[thread_idx], data.phi()[idx]);
     auto delta_eta = data.eta()[thread_idx] - data.eta()[idx];
     auto delta_phi = DeltaPhi(acc, data.phi()[thread_idx], data.phi()[idx]);
-  
+    
     float th_value = delta_eta * delta_eta + delta_phi * delta_phi;
+    // printf("deta: %f; dphi: %f; ", delta_eta, delta_phi);
+    // printf("dr: %f;\n", th_value);
     if (th_value >= min_threshold && th_value <= max_threshold) {
       accumulated += data.pt()[thread_idx];
     }
   }
+  // printf("accu: %f\n", accumulated);
   return accumulated <= max_isolation_threshold * data.pt()[thread_idx];
 }
 
@@ -121,6 +125,8 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Combinatorics
   size_t pass = 0;
   for (size_t bx_idx = 0; bx_idx < raw_data.const_view().bx().size(); bx_idx++) {
+    if (bx_idx != 1180 && bx_idx != 1524 && bx_idx != 2625)
+      continue;
     auto begin = host_offsets[bx_idx];
     auto end = host_offsets[bx_idx+1];
     if (end - begin == 0) 
@@ -151,15 +157,36 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
 
     std::cout << "Idx: " << bx_idx << "; [" << begin << ", " << end << "]; " << "Best Score: " << host_best_score[0] << std::endl;
 
+    PuppiHostCollection h_collection(raw_data.view().metadata().size(), queue);
+    alpaka::memcpy(queue, h_collection.buffer(), raw_data.const_buffer());
+    alpaka::wait(queue);
+
+    // Puppi collection on device
+    std::cout << "Puppi collection on device:\n";
+    size_t id = 0;
+    for (auto i = begin; i < end; ++i) {
+      std::cout << "id: " << id << "; ";
+      std::cout << "pt: " << h_collection.view().pt()[i] << "; ";
+      std::cout << "eta: " <<h_collection.view().eta()[i] << "; ";
+      std::cout << "phi: " <<h_collection.view().phi()[i] << "; ";
+      std::cout << "z0: " <<h_collection.view().z0()[i] << "; ";
+      std::cout << "dxy: " << h_collection.view().dxy()[i] << "; ";
+      std::cout << "puppiw: " << h_collection.view().puppiw()[i] << "; ";
+      std::cout << "pdgId: " << h_collection.view().pdgId()[i] << "; ";
+      std::cout << "quality: " << static_cast<unsigned short>(h_collection.view().quality()[i]) << "; " << std::endl;
+      id++;
+    }
+
     if (host_best_score[0] > 0)
       w3pi++;
+    // break;
   }
 
   // Debug
   std::cout << "Particles Num L1 Filter: " << host_estimated_size[0] << std::endl;
   std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
   std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
-  std::cout << "Candidates Num L1: " << pass << std::endl;
+  // std::cout << "Candidates Num L1: " << pass << std::endl;
   std::cout << std::endl;
 
   return w3pi;
@@ -188,17 +215,16 @@ public:
     const uint8_t int_threshold = 12;  // minpt2
     const uint8_t high_threshold = 15;  // minpt3 
 
-    for (auto thread_idx : uniform_elements(acc, begin, end)) {
+    for (uint32_t thread_idx : uniform_elements(acc, begin, end)) {
       if (mask[thread_idx] != static_cast<uint8_t>(1))
         continue;  
-      printf("o");    
       if (data.pt()[thread_idx] < high_threshold) //intermediate pt cut
         continue;
-      printf("0");      
-      if (ConeIsolation(acc, data, thread_idx) == 0)
+      if (!ConeIsolation(acc, data, thread_idx, begin, end))
         continue;
+      // printf("0");
       for (uint32_t i = begin; i < end; i++) {
-        printf("1");
+        // printf("1");
         if (i == thread_idx || data.pt()[i] < int_threshold) // minpt2
           continue;
         if (data.pt()[i] > data.pt()[thread_idx] || (data.pt()[i] == data.pt()[thread_idx] && i < thread_idx)) //intermediate pt cut
@@ -206,7 +232,7 @@ public:
         if (!AngularSeparation(acc, data, thread_idx, i))  //angular sep of top 2 pions  
           continue; 
         for (uint32_t j = begin; j < end; j++) {
-          printf("2");
+          // printf("2");
           if (j == thread_idx || j == i)
             continue;
           if (data.pt()[i] < min_threshold) //low pt cut
@@ -218,18 +244,18 @@ public:
 
           if (abs(charge[thread_idx] + charge[i] + charge[j]) != 1)
             continue;
-          printf("3");
+          // printf("3");
           auto mass = TripletMass(acc, data, thread_idx, i, j);
           if (mass < 40 || mass > 150) // minmass maxmass
             continue;
-          printf("4");
+          // printf("4");
           if (AngularSeparation(acc, data, thread_idx, j) && AngularSeparation(acc, data, i, j)) {
-            printf("5");
-            if (ConeIsolation(acc, data, i) && ConeIsolation(acc, data, j)) {
-              printf("6");
+            // printf("5");
+            if (ConeIsolation(acc, data, i, begin, end) && ConeIsolation(acc, data, j, begin, end)) {
+              // printf("6");
               auto pt_sum = data.pt()[thread_idx] + data.pt()[i] + data.pt()[j];  
               if (pt_sum > best_score[0]) {
-                printf("7");
+                // printf("7");
                 best_score[0] = pt_sum;
               }
               // alpaka::atomicMax(acc, &best_score, pt_sum);

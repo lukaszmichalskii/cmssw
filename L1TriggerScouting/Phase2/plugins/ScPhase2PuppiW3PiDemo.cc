@@ -265,6 +265,8 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
   int global_l1_pass = 0;
 
   for (unsigned int ibx = 0, nbx = src.bx.size(); ibx < nbx; ++ibx) {
+    if (ibx != 1180 && ibx != 1524 && ibx != 2625)
+      continue;
     countSOA_++;
     unsigned int offs = src.offsets[ibx];
     unsigned int size = src.offsets[ibx + 1] - offs;
@@ -272,6 +274,10 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
     const float *etas = &src.eta[offs];
     const float *phis = &src.phi[offs];
     const int16_t *pdgIds = &src.pdgId[offs];
+    const auto *z0 = &src.z0[offs];
+    const auto *dxy = &src.dxy[offs];
+    const auto *puppiw = &src.puppiw[offs];
+    const auto *quality = &src.quality[offs];
     ix.clear();
     charge.clear();
     int intermediatecut = 0;
@@ -304,9 +310,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         continue;  //high pt cut
       if (isolation(ix[i1], size, etas, phis, pts, iso[i1]) == 0)
         continue;  //check iso of high pt pion
-      printf("0");
+      // printf("0");
       for (unsigned int i2 = 0; i2 < npions; ++i2) {
-        printf("1");
+        // printf("1");
         if (i2 == i1 || pts[ix[i2]] < cuts.minpt2)
           continue;
         if (pts[ix[i2]] > pts[ix[i1]] || (pts[ix[i2]] == pts[ix[i1]] and i2 < i1))
@@ -314,7 +320,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         if (!deltar(etas[ix[i1]], etas[ix[i2]], phis[ix[i1]], phis[ix[i2]]))
           continue;  //angular sep of top 2 pions
         for (unsigned int i3 = 0; i3 < npions; ++i3) {
-          printf("2");
+          // printf("2");
           if (i3 == i1 or i3 == i2)
             continue;
           if (pts[ix[i2]] < cuts.minpt1)
@@ -326,22 +332,22 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
           std::array<unsigned int, 3> tr{{ix[i1], ix[i2], ix[i3]}};  //triplet of indeces
 
           if (std::abs(charge[i1] + charge[i2] + charge[i3]) == 1) {
-            printf("3");
+            // printf("3");
             //make Lorentz vectors for each triplet
             auto mass = tripletmass(tr, pts, etas, phis);
             if (mass >= cuts.minmass and mass <= cuts.maxmass) {  //MASS test
-              printf("4");
+              // printf("4");
               if (deltar(etas[ix[i1]], etas[ix[i3]], phis[ix[i1]], phis[ix[i3]]) and
                   deltar(etas[ix[i2]], etas[ix[i3]], phis[ix[i2]], phis[ix[i3]])) {
-                printf("5");
+                // printf("5");
                 //ISOLATION test for lower 4 pions
                 bool isop = isolation(ix[i2], size, etas, phis, pts, iso[i2]) &&
                             isolation(ix[i3], size, etas, phis, pts, iso[i3]);
                 if (isop == true) {
-                  printf("6");
+                  // printf("6");
                   float ptsum = pts[ix[i1]] + pts[ix[i2]] + pts[ix[i3]];
                   if (ptsum > bestTripletScore) {
-                    printf("7");
+                    // printf("7");
                     std::copy_n(tr.begin(), 3, bestTriplet.begin());
                     bestTripletScore = ptsum;
                   }
@@ -365,10 +371,24 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       ret->puppiw.insert(ret->puppiw.end(), &src.puppiw[offs], &src.puppiw[offs + size]);
       ret->quality.insert(ret->quality.end(), &src.quality[offs], &src.quality[offs + size]);
       passSOA_++;
-      printf("Increment");
+      // printf("Increment");
     }
 
-    std::cout << "Idx: " << ibx << "; [" << src.offsets[ibx] << ", " << src.offsets[ibx+1] << "]; "<< "; Best Score: " << bestTripletScore << std::endl;
+    std::cout << "Idx: " << ibx << "; [" << src.offsets[ibx] << ", " << src.offsets[ibx+1] << "]; "<< "Best Score: " << bestTripletScore << std::endl;
+    std::cout << "Puppi collection on device:\n";
+    for (uint32_t i = 0; i < size; ++i) {
+      std::cout << "id: " << i << "; ";
+      std::cout << "pt: " << pts[i] << "; ";
+      std::cout << "eta: " << etas[i] << "; ";
+      std::cout << "phi: " << phis[i] << "; ";
+      std::cout << "z0: " << z0[i] << "; ";
+      std::cout << "dxy: " << dxy[i] << "; ";
+      std::cout << "puppiw: " << puppiw[i] << "; ";
+      std::cout << "pdgId: " << pdgIds[i] << "; ";
+      std::cout << "quality: " << static_cast<unsigned short>(quality[i]) << "; " << std::endl;
+    }
+    // break;
+  
   }  // loop on BXs
 
   std::cout << "Particles Num L1 Filter: " << global_l1_pass << std::endl;
@@ -397,6 +417,7 @@ bool ScPhase2PuppiW3PiDemo::isolation(unsigned int pidex, const T *cands, unsign
   }
   if (psum <= cuts.maxiso * cands[pidex].pt())
     passed = true;
+  printf("accu: %f\n", psum);
   return passed;
 }
 
@@ -407,13 +428,17 @@ bool ScPhase2PuppiW3PiDemo::isolation(
   for (unsigned int j = 0u, n = npx; j < n; ++j) {  //loop over other particles
     if (pidex == j)
       continue;
+    // printf("idx: %d; etat: %f; eta: %f; phit: %f; phi: %f;\n", j, eta[pidex], eta[j], phi[pidex], phi[j]);  
     float deta = eta[pidex] - eta[j], dphi = ROOT::VecOps::DeltaPhi<float>(phi[pidex], phi[j]);
+    // printf("deta: %f; dphi: %f; ", deta, dphi);
     float dr2 = deta * deta + dphi * dphi;
+    // printf("dr: %f;\n", dr2);
     if (dr2 >= cuts.mindr2 && dr2 <= cuts.maxdr2)
       psum += pt[j];
   }
   if (psum <= cuts.maxiso * pt[pidex])
     passed = true;
+  // printf("accu: %f\n", psum);
   return passed;
 }
 
