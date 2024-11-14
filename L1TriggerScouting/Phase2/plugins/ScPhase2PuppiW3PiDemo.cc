@@ -265,8 +265,8 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
   int global_l1_pass = 0;
 
   for (unsigned int ibx = 0, nbx = src.bx.size(); ibx < nbx; ++ibx) {
-    if (ibx != 1180 && ibx != 1524 && ibx != 2625)
-      continue;
+    // if (ibx != 1180 && ibx != 1524 && ibx != 2625)
+    //   continue;
     countSOA_++;
     unsigned int offs = src.offsets[ibx];
     unsigned int size = src.offsets[ibx + 1] - offs;
@@ -306,11 +306,22 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
     bestTripletScore = 0;
 
     for (unsigned int i1 = 0; i1 < npions; ++i1) {
+      // printf("id: %d; ", ix[i1]);
+      // printf("pt: %f; ",pts[ix[i1]]);
+      // printf("eta: %f; ", etas[ix[i1]]);
+      // printf("phi: %f; ", phis[ix[i1]]);
+      // printf("z0: %f; ", z0[ix[i1]]);
+      // printf("dxy: %f; ", dxy[ix[i1]]);
+      // printf("puppiw: %f; ", puppiw[ix[i1]]);
+      // printf("pdgId: %d; ", pdgIds[ix[i1]]);
+      // printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i1]]));
+      // printf("\n");
       if (pts[ix[i1]] < cuts.minpt3)
         continue;  //high pt cut
       if (isolation(ix[i1], size, etas, phis, pts, iso[i1]) == 0)
         continue;  //check iso of high pt pion
       // printf("0");
+      // printf("PASSED: %d", ix[i1]);
       for (unsigned int i2 = 0; i2 < npions; ++i2) {
         // printf("1");
         if (i2 == i1 || pts[ix[i2]] < cuts.minpt2)
@@ -346,6 +357,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
                 if (isop == true) {
                   // printf("6");
                   float ptsum = pts[ix[i1]] + pts[ix[i2]] + pts[ix[i3]];
+                  // printf("%d: %f; %f; %f; %f;\n", ix[i1], pts[ix[i1]], pts[ix[i2]], pts[ix[i3]], ptsum); 
                   if (ptsum > bestTripletScore) {
                     // printf("7");
                     std::copy_n(tr.begin(), 3, bestTriplet.begin());
@@ -353,7 +365,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
                   }
                 }  // iso
               }    // delta R
-            }      // mass
+            } else {
+              printf("WARNING ======== FAKE -> ");
+            }     // mass
           }        //charge
         }          //low pt cut
       }            //intermediate pt cut
@@ -374,19 +388,19 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       // printf("Increment");
     }
 
-    std::cout << "Idx: " << ibx << "; [" << src.offsets[ibx] << ", " << src.offsets[ibx+1] << "]; "<< "Best Score: " << bestTripletScore << std::endl;
-    std::cout << "Puppi collection on device:\n";
-    for (uint32_t i = 0; i < size; ++i) {
-      std::cout << "id: " << i << "; ";
-      std::cout << "pt: " << pts[i] << "; ";
-      std::cout << "eta: " << etas[i] << "; ";
-      std::cout << "phi: " << phis[i] << "; ";
-      std::cout << "z0: " << z0[i] << "; ";
-      std::cout << "dxy: " << dxy[i] << "; ";
-      std::cout << "puppiw: " << puppiw[i] << "; ";
-      std::cout << "pdgId: " << pdgIds[i] << "; ";
-      std::cout << "quality: " << static_cast<unsigned short>(quality[i]) << "; " << std::endl;
-    }
+    std::cout << "Idx: " << ibx << "; [" << src.offsets[ibx] << ", " << src.offsets[ibx+1] << "]; "<< "Best Score: " << bestTripletScore << std::endl << std::endl;
+    // std::cout << "Puppi collection on device:\n";
+    // for (uint32_t i = 0; i < size; ++i) {
+    //   std::cout << "id: " << i << "; ";
+    //   std::cout << "pt: " << pts[i] << "; ";
+    //   std::cout << "eta: " << etas[i] << "; ";
+    //   std::cout << "phi: " << phis[i] << "; ";
+    //   std::cout << "z0: " << z0[i] << "; ";
+    //   std::cout << "dxy: " << dxy[i] << "; ";
+    //   std::cout << "puppiw: " << puppiw[i] << "; ";
+    //   std::cout << "pdgId: " << pdgIds[i] << "; ";
+    //   std::cout << "quality: " << static_cast<unsigned short>(quality[i]) << "; " << std::endl;
+    // }
     // break;
   
   }  // loop on BXs
@@ -417,7 +431,7 @@ bool ScPhase2PuppiW3PiDemo::isolation(unsigned int pidex, const T *cands, unsign
   }
   if (psum <= cuts.maxiso * cands[pidex].pt())
     passed = true;
-  printf("accu: %f\n", psum);
+  // printf("accu: %f\n", psum);
   return passed;
 }
 
@@ -447,6 +461,7 @@ bool ScPhase2PuppiW3PiDemo::deltar(float eta1, float eta2, float phi1, float phi
   float deta = eta1 - eta2;
   float dphi = ROOT::VecOps::DeltaPhi<float>(phi1, phi2);
   float dr2 = deta * deta + dphi * dphi;
+  // printf("ang: %f; deta: %f; dphi: %f\n", dr2, deta, dphi);
   if (dr2 < cuts.mindeltar2) {
     passed = false;
     return passed;

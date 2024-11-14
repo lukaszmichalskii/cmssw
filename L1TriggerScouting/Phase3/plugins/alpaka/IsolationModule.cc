@@ -36,7 +36,7 @@ void IsolationModule::produce(device::Event& event, device::EventSetup const& ev
 
   auto& raw_data_collection = event.get(raw_token_);
   auto product = Isolate(event.queue(), raw_data_collection);
-  std::cout << "W3Pi Analysis: " << raw_data_collection.view().metadata().size() << " -> " << product << std::endl;
+  std::cout << "W3Pi Analysis: " << raw_data_collection.view().bx().size() << " -> " << product << std::endl;
   event.emplace(token_, std::move(PuppiCollection(1, event.queue())));
 
   //////////////////////////////////////////////////////////////////////////////////////
