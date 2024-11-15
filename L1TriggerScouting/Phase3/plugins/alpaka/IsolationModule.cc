@@ -1,6 +1,8 @@
 #include <chrono>
 
 #include "IsolationModule.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "FWCore/MessageLogger/interface/MessageDrop.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -27,8 +29,8 @@ size_t IsolationModule::Isolate(Queue &queue, PuppiCollection const& raw_collect
 }
 
 void IsolationModule::produce(device::Event& event, device::EventSetup const& event_setup) {
-  LogSeparator();
-  auto start = Tick();
+  // LogSeparator();
+  // auto start = Tick();
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// CODE BLOCK /////////////////////////////////////
@@ -36,19 +38,34 @@ void IsolationModule::produce(device::Event& event, device::EventSetup const& ev
 
   auto& raw_data_collection = event.get(raw_token_);
   auto product = Isolate(event.queue(), raw_data_collection);
-  std::cout << "W3Pi Analysis: " << raw_data_collection.view().bx().size() << " -> " << product << std::endl;
+  w3pi_num_ += raw_data_collection.view().bx().size();
+  w3pi_results_ += product;
   event.emplace(token_, std::move(PuppiCollection(1, event.queue())));
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// END CODE BLOCK /////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
-  auto end = Tick();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  // auto end = Tick();
+  // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   
-  Summary(duration.count());
-  LogSeparator();
+  // Summary(duration.count());
+  // LogSeparator();
 }
+
+void IsolationModule::beginStream(edm::StreamID) {
+  w3pi_results_ = 0;
+  w3pi_num_ = 0;
+  start_ = std::chrono::high_resolution_clock::now();
+}
+
+void IsolationModule::endStream() {
+  end_ = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
+  std::cout << "W3Pi SOA analysis: " << w3pi_num_ << " -> " << w3pi_results_ << std::endl;
+  std::cout << "W3Pi SOA analysis took: " << duration.count() << " ms" << std::endl;
+}
+
 
 void IsolationModule::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;

@@ -68,7 +68,6 @@ ALPAKA_FN_ACC bool AngularSeparation(TAcc const& acc, PuppiCollection::ConstView
   float delta_eta = data.eta()[pidx] - data.eta()[idx];
   float delta_phi = DeltaPhi(acc, data.phi()[pidx], data.phi()[idx]);
   float ang_sep = delta_eta * delta_eta + delta_phi * delta_phi;
-  // printf("ang: %f; deta: %f; dphi: %f;\n", ang_sep, delta_eta, delta_phi);
   if (ang_sep < ang_sep_lower_bound)
     return false;
   return true;
@@ -76,10 +75,9 @@ ALPAKA_FN_ACC bool AngularSeparation(TAcc const& acc, PuppiCollection::ConstView
 
 template<typename TAcc>
 ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView data, uint32_t thread_idx, uint32_t span_begin, uint32_t span_end) {
-  // Cut thresholds
-  const float min_threshold = 0.01 * 0.01; // mindr2
-  const float max_threshold = 0.25 * 0.25; // maxdr2
-  const float max_isolation_threshold = 2.0; // maxiso
+  const float min_threshold = 0.01 * 0.01;
+  const float max_threshold = 0.25 * 0.25; 
+  const float max_isolation_threshold = 2.0;
 
   float accumulated = 0.0f;
   for (auto idx = span_begin; idx < span_end; idx++) {
@@ -93,22 +91,13 @@ ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView dat
       accumulated += data.pt()[idx];
     }
   }
-  // printf("accu: %f\n", accumulated);
   return accumulated <= max_isolation_threshold * data.pt()[thread_idx];
-}
-
-template<typename TAcc>
-ALPAKA_FN_ACC float TripletMass(TAcc const& acc, PuppiCollection::ConstView data, uint32_t i, uint32_t j, uint32_t k) {
-  // ROOT::Math::PtEtaPhiMVector p1(data.pt()[i], data.eta()[i], data.phi()[i], 0.1396);
-  // ROOT::Math::PtEtaPhiMVector p2(data.pt()[j], data.eta()[j], data.phi()[j], 0.1396);
-  // ROOT::Math::PtEtaPhiMVector p3(data.pt()[k], data.eta()[k], data.phi()[k], 0.1396);
-  // return (p1 + p2 + p3).M();
-  return 60.0f;
 }
 
 size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   const size_t size = raw_data.view().metadata().size();
   size_t w3pi = 0;
+
   // Prepare mask for filtering and isolation
   Vec<alpaka::DimInt<1>> extent(size);
   Vec<alpaka::DimInt<1>> var_extent(1); 
@@ -116,7 +105,6 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Allocate device memory
   auto device_mask = alpaka::allocAsyncBuf<uint8_t, Idx>(queue, extent);
   auto device_charge = alpaka::allocAsyncBuf<int8_t, Idx>(queue, extent);
-  auto device_isolation = alpaka::allocAsyncBuf<uint8_t, Idx>(queue, extent);
   auto device_estimated_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto device_int_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto device_high_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
@@ -130,7 +118,6 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Initialize device memory
   alpaka::memset(queue, device_mask, 0);
   alpaka::memset(queue, device_charge, 0);
-  alpaka::memset(queue, device_isolation, 0);
   alpaka::memset(queue, device_estimated_size, 0);
   alpaka::memset(queue, device_int_cut_ct, 0);
   alpaka::memset(queue, device_high_cut_ct, 0);
@@ -141,7 +128,6 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   uint32_t* host_high_cut_ct = new uint32_t[1];
   std::vector<int8_t> host_charge(size, 0);
   std::vector<uint8_t> host_mask(size, 0);
-  std::vector<uint8_t> host_isolation(size, 0);
 
   uint32_t* host_partial_size = new uint32_t[1];
   uint32_t* host_partial_int_cut_ct = new uint32_t[1];
@@ -159,10 +145,9 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Combinatorics
   size_t pass = 0;
   for (size_t bx_idx = 0; bx_idx < raw_data.const_view().bx().size(); bx_idx++) {
-    // if (bx_idx != 3526)
-    //   continue;
     auto begin = host_offsets[bx_idx];
     auto end = host_offsets[bx_idx+1];
+
     if (end - begin == 0) 
       continue;
 
@@ -186,34 +171,12 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
       continue;
     pass++;
 
-    Combinatorics(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_isolation.data(), device_partial_size.data(), device_partial_int_cut_ct.data(), device_partial_high_cut_ct.data(), device_best_score.data());
+
+    Combinatorics(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_partial_size.data(), device_partial_int_cut_ct.data(), device_partial_high_cut_ct.data(), device_best_score.data());
     alpaka::memcpy(queue, createView(host, host_best_score, Vec<alpaka::DimInt<1>>(1)), device_best_score);
-
-    std::cout << "Idx: " << bx_idx << "; [" << begin << ", " << end << "]; " << "Best Score: " << host_best_score[0] << std::endl << std::endl;
-
-    PuppiHostCollection h_collection(raw_data.view().metadata().size(), queue);
-    alpaka::memcpy(queue, h_collection.buffer(), raw_data.const_buffer());
-    alpaka::wait(queue);
-
-    // Puppi collection on device
-    // std::cout << "Puppi collection on device:\n";
-    // size_t id = 0;
-    // for (auto i = begin; i < end; ++i) {
-    //   std::cout << "id: " << id << "; ";
-    //   std::cout << "pt: " << h_collection.view().pt()[i] << "; ";
-    //   std::cout << "eta: " <<h_collection.view().eta()[i] << "; ";
-    //   std::cout << "phi: " <<h_collection.view().phi()[i] << "; ";
-    //   std::cout << "z0: " <<h_collection.view().z0()[i] << "; ";
-    //   std::cout << "dxy: " << h_collection.view().dxy()[i] << "; ";
-    //   std::cout << "puppiw: " << h_collection.view().puppiw()[i] << "; ";
-    //   std::cout << "pdgId: " << h_collection.view().pdgId()[i] << "; ";
-    //   std::cout << "quality: " << static_cast<unsigned short>(h_collection.view().quality()[i]) << "; " << std::endl;
-    //   id++;
-    // }
 
     if (host_best_score[0] > 0)
       w3pi++;
-    // break;
   }
 
   // Debug
@@ -221,21 +184,11 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
   std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
   std::cout << "Candidates Num L1: " << pass << std::endl;
+  std::cout << "W3Pi Num: " << w3pi << std::endl;
   std::cout << std::endl;
 
   return w3pi;
 }
-// struct Cuts {
-//     float minpt1 = 7;   // 9
-//     float minpt2 = 12;  // 15
-//     float minpt3 = 15;  // 20
-//     float mindeltar2 = 0.5 * 0.5;
-//     float minmass = 40;   // 60
-//     float maxmass = 150;  // 100
-//     float mindr2 = 0.01 * 0.01;
-//     float maxdr2 = 0.25 * 0.25;
-//     float maxiso = 2.0;  //0.4
-//   } cuts;
 
 class CombinatoricsKernel {
 public:
@@ -243,109 +196,51 @@ public:
   ALPAKA_FN_ACC void operator()(
       TAcc const& acc, PuppiCollection::ConstView data, 
       uint32_t begin, uint32_t end, 
-      T* __restrict__ mask, U* __restrict__ charge, T* __restrict__ isolation, 
+      T* __restrict__ mask, U* __restrict__ charge, 
       Tc* __restrict__ pions_num, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct, Tf* __restrict__ best_score) const {
-    const uint8_t min_threshold = 7;  // minpt1
-    const uint8_t int_threshold = 12;  // minpt2
-    const uint8_t high_threshold = 15;  // minpt3 
+    const uint8_t min_threshold = 7;  
+    const uint8_t int_threshold = 12; 
+    const uint8_t high_threshold = 15; 
+    const float invariant_mass_upper_bound = 150.0;
+    const float invariant_mass_lower_bound = 40.0;
 
     for (uint32_t thread_idx : uniform_elements(acc, begin, end)) {
       if (mask[thread_idx] == static_cast<uint8_t>(1)) {
-        // printf("%d: ", thread_idx - begin);
-        // printf("id: %d; ", thread_idx - begin);
-        // printf("pt: %f; ", data.pt()[thread_idx]);
-        // printf("eta: %f; ", data.eta()[thread_idx]);
-        // printf("phi: %f; ", data.phi()[thread_idx]);
-        // printf("z0: %f; ", data.z0()[thread_idx]);
-        // printf("dxy: %f; ", data.dxy()[thread_idx]);
-        // printf("puppiw: %f; ", data.puppiw()[thread_idx]);
-        // printf("pdgId: %d; ", data.pdgId()[thread_idx]);
-        // printf("quality: %d; ", static_cast<unsigned short>(data.quality()[thread_idx]));
-        // printf("\n");
-        if (data.pt()[thread_idx] < high_threshold) //intermediate pt cut
+        if (data.pt()[thread_idx] < high_threshold)
           continue;
         if (!ConeIsolation(acc, data, thread_idx, begin, end))
           continue;
-        // printf("0");
-        // printf("PASSED: %d", thread_idx - begin);
         for (uint32_t i = begin; i < end; i++) {
           if (mask[i] == static_cast<uint8_t>(0))
             continue;
-          // printf("1");
-          if (i == thread_idx || data.pt()[i] < int_threshold) // minpt2
+          if (i == thread_idx || data.pt()[i] < int_threshold)
             continue;
-          // printf("2");
-          if (data.pt()[i] > data.pt()[thread_idx] || (data.pt()[i] == data.pt()[thread_idx] && i < thread_idx)) {//intermediate pt cut 
-            // printf("M0 ");
+          if (data.pt()[i] > data.pt()[thread_idx] || (data.pt()[i] == data.pt()[thread_idx] && i < thread_idx))
             continue;
-          }
-            
-          // printf("3");
-          if (!AngularSeparation(acc, data, thread_idx, i)) {//intermediate pt cut 
-            // printf("1st ang sep ");
+          if (!AngularSeparation(acc, data, thread_idx, i))
             continue;
-          }
           for (uint32_t j = begin; j < end; j++) {
             if (mask[j] == static_cast<uint8_t>(0))
               continue;
-            // printf("2");
             if (j == thread_idx || j == i)
               continue;
-            if (data.pt()[i] < min_threshold) //low pt cut
+            if (data.pt()[i] < min_threshold)
               continue;
             if (data.pt()[j] > data.pt()[thread_idx] || (data.pt()[j] == data.pt()[thread_idx] && j < thread_idx))
               continue;
             if (data.pt()[j] > data.pt()[i] || (data.pt()[j] == data.pt()[i] && j < i))
               continue;
-
             if (abs(charge[thread_idx] + charge[i] + charge[j]) != 1)
               continue;
-            // printf("3");
-            // auto mass = TripletMass(acc, data, thread_idx, i, j);
             auto mass = MassInvariant(acc, data, thread_idx, i, j);
-            printf("mass -> %f\n", mass);
-            if (mass < 40 || mass > 150) // minmass maxmass
+            if (mass < invariant_mass_lower_bound || mass > invariant_mass_upper_bound) 
               continue;
-            // printf("4");
-            // printf("\nid: %d; ", thread_idx - begin);
-            // printf("pt: %f; ", data.pt()[thread_idx]);
-            // printf("eta: %f; ", data.eta()[thread_idx]);
-            // printf("phi: %f; ", data.phi()[thread_idx]);
-            // printf("z0: %f; ", data.z0()[thread_idx]);
-            // printf("dxy: %f; ", data.dxy()[thread_idx]);
-            // printf("puppiw: %f; ", data.puppiw()[thread_idx]);
-            // printf("pdgId: %d; ", data.pdgId()[thread_idx]);
-            // printf("quality: %d; ", static_cast<unsigned short>(data.quality()[thread_idx]));
-            // printf("\nid: %d; ", i - begin);
-            // printf("pt: %f; ", data.pt()[i]);
-            // printf("eta: %f; ", data.eta()[i]);
-            // printf("phi: %f; ", data.phi()[i]);
-            // printf("z0: %f; ", data.z0()[i]);
-            // printf("dxy: %f; ", data.dxy()[i]);
-            // printf("puppiw: %f; ", data.puppiw()[i]);
-            // printf("pdgId: %d; ", data.pdgId()[i]);
-            // printf("quality: %d; ", static_cast<unsigned short>(data.quality()[i]));
-            // printf("\nid: %d; ", j - begin);
-            // printf("pt: %f; ", data.pt()[j]);
-            // printf("eta: %f; ", data.eta()[j]);
-            // printf("phi: %f; ", data.phi()[j]);
-            // printf("z0: %f; ", data.z0()[j]);
-            // printf("dxy: %f; ", data.dxy()[j]);
-            // printf("puppiw: %f; ", data.puppiw()[j]);
-            // printf("pdgId: %d; ", data.pdgId()[j]);
-            // printf("quality: %d; ", static_cast<unsigned short>(data.quality()[j]));
-            // printf("\n");
             if (AngularSeparation(acc, data, thread_idx, j) && AngularSeparation(acc, data, i, j)) {
-              // printf("5");
               if (ConeIsolation(acc, data, i, begin, end) && ConeIsolation(acc, data, j, begin, end)) {
-                // printf("6");
                 float pt_sum = data.pt()[thread_idx] + data.pt()[i] + data.pt()[j]; 
-                // printf("%d: %f; %f; %f; %f;\n", thread_idx - begin, data.pt()[thread_idx], data.pt()[i], data.pt()[j], pt_sum); 
                 if (pt_sum > best_score[0]) {
-                  // printf("7");
                   best_score[0] = pt_sum;
                 }
-                // alpaka::atomicMax(acc, &best_score, pt_sum);
               }
             }          
           }
@@ -359,23 +254,23 @@ template<typename T, typename U, typename Tc, typename Tf>
 void Isolation::Combinatorics(
     Queue& queue, PuppiCollection::ConstView const_view,
     uint32_t begin, uint32_t end, 
-    T* __restrict__ mask, U* __restrict__ charge, T* __restrict__ isolation, 
+    T* __restrict__ mask, U* __restrict__ charge, 
     Tc* __restrict__ pions_num, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct, Tf* __restrict__ best_score) const {
 
   auto size = end - begin;
   uint32_t threads_per_block = 64;
   uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, CombinatoricsKernel{}, const_view, begin, end, mask, charge, isolation, pions_num, int_cut_ct, high_cut_ct, best_score);
+  alpaka::exec<Acc1D>(queue, grid, CombinatoricsKernel{}, const_view, begin, end, mask, charge, pions_num, int_cut_ct, high_cut_ct, best_score);
 }
 
 class FilterKernel {
 public:
   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename U, typename Tc>
   ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, uint32_t begin, uint32_t end, T* __restrict__ mask, U* __restrict__ charge, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct) const {
-    const uint8_t min_threshold = 7;  // minpt1
-    const uint8_t int_threshold = 12;  // minpt2
-    const uint8_t high_threshold = 15;  // minpt3
+    const uint8_t min_threshold = 7; 
+    const uint8_t int_threshold = 12;  
+    const uint8_t high_threshold = 15;
 
     for (auto thread_idx : uniform_elements(acc, begin, end)) {
       if (abs(data.pdgId()[thread_idx]) == 211 || abs(data.pdgId()[thread_idx]) == 11) {

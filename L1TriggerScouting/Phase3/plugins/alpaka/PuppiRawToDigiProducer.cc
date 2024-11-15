@@ -65,8 +65,8 @@ PuppiCollection PuppiRawToDigiProducer::UnpackCollection(Queue &queue, const SDS
 }
 
 void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup const& event_setup) {
-  LogSeparator();
-  auto start = Tick();
+  // LogSeparator();
+  // auto start = Tick();
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// CODE BLOCK /////////////////////////////////////
@@ -77,11 +77,6 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
 
   // Unpack collection on device
   auto product = UnpackCollection(event.queue(), *raw_data_collection);
-  std::cout << "Size of PuppiCollection after decoding: " << product.view().metadata().size() << std::endl;
-  PuppiHostCollection h_collection(product.view().metadata().size(), event.queue());
-  alpaka::memcpy(event.queue(), h_collection.buffer(), product.const_buffer());
-  alpaka::wait(event.queue());
-
   // Put device product into event (transferred to host automatically if needed)
   event.emplace(token_, std::move(product));
 
@@ -89,11 +84,11 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
   ///////////////////////////////////// END CODE BLOCK /////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
-  auto end = Tick();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  // auto end = Tick();
+  // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   
-  Summary(duration.count());
-  LogSeparator();
+  // Summary(duration.count());
+  // LogSeparator();
 }
 
 void PuppiRawToDigiProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

@@ -33,6 +33,8 @@ public:
 
   // Virtual methods
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
+  void beginStream(edm::StreamID) override;
+  void endStream() override;
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
@@ -42,6 +44,10 @@ private:
 
   // Pipeline kernels
   Isolation isolation_;
+
+  size_t w3pi_results_ = 0;
+  size_t w3pi_num_ = 0;
+  std::chrono::high_resolution_clock::time_point start_, end_;
 
   // Pipeline methods
   size_t Isolate(Queue &queue, PuppiCollection const& raw_collection);

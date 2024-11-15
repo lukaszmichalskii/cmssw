@@ -30,6 +30,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, PuppiCollection::View out, size_t size) const {
       if (once_per_grid(acc)) { // prefix sum sequential workaround
+        out.offsets()[0] = 0;
         for (uint32_t idx = 1; idx <= size; idx++) {
           out.offsets()[idx] = out.offsets()[idx-1] + static_cast<uint32_t>(data[idx-1] & 0xFFF);    
         }
@@ -76,11 +77,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         int16_t pid = (bits64 >> 37) & 0x7;
         out.pdgId()[idx] = PARTICLE_DGROUP_MAP[pid];
 
-        if (pid > 1) { // Charged particle XDDDDDDDDDDDDDDDDDDD!!!!!!!!! pid > 0 XDDDDDDD
+        if (pid > 1) { // Charged particle
           int z0int = ((bits64 >> 49) & 1) ? ((bits64 >> 40) | (-0x200)) : ((bits64 >> 40) & 0x3FF);
           out.z0()[idx] = z0int * .05f;
           int dxyint = ((bits64 >> 57) & 1) ? ((bits64 >> 50) | (-0x100)) : ((bits64 >> 50) & 0xFF);
-          out.dxy()[idx] = dxyint * 0.05f;          // PLACEHOLDER
+          out.dxy()[idx] = dxyint * 0.05f; 
           out.quality()[idx] = (bits64 >> 58) & 0x7;
           out.puppiw()[idx] = 1.0f;
         } else {  // Neutral particle

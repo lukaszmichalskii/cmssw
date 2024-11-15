@@ -226,7 +226,7 @@ std::unique_ptr<l1Scouting::PuppiSOA> ScPhase2PuppiRawToDigi::unpackSOA(const SD
   }
   ret.pdgId.resize(i0);
   ret.quality.resize(i0);
-  std::cout << "Size of PuppiCollection after decoding: " << ret.pt.size() << std::endl;
+  // std::cout << "Size of PuppiCollection after decoding: " << ret.pt.size() << std::endl;
   auto retptr = std::make_unique<l1Scouting::PuppiSOA>(std::move(ret));
   return retptr;
 }
