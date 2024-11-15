@@ -357,6 +357,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
             // printf("3");
             //make Lorentz vectors for each triplet
             auto mass = tripletmass(tr, pts, etas, phis);
+            printf("mass -> %f\n", mass);
             if (mass >= cuts.minmass and mass <= cuts.maxmass) {  //MASS test
               // printf("4");
 

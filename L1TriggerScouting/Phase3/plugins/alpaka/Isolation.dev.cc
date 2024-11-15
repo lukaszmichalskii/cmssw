@@ -16,6 +16,41 @@ DevHost host = alpaka::getDevByIdx(platform, 0);
 using namespace cms::alpakatools;
 
 template<typename TAcc>
+ALPAKA_FN_ACC float Energy(TAcc const& acc, float pt, float eta, float mass) {
+  float pz = pt * alpaka::math::sinh(acc, eta);
+  float p = alpaka::math::sqrt(acc, pt * pt + pz * pz);
+  return alpaka::math::sqrt(acc, p * p + mass * mass);
+}
+
+template<typename TAcc>
+ALPAKA_FN_ACC float MassInvariant(TAcc const& acc, PuppiCollection::ConstView data, uint32_t i, uint32_t j, uint32_t k) {
+  auto px1 = data.pt()[i] * alpaka::math::cos(acc, data.phi()[i]);
+  auto py1 = data.pt()[i] * alpaka::math::sin(acc, data.phi()[i]);
+  auto pz1 = data.pt()[i] * alpaka::math::sinh(acc, data.eta()[i]);
+  auto e1 = Energy(acc, data.pt()[i], data.eta()[i], 0.1396);
+
+  auto px2 = data.pt()[j] * alpaka::math::cos(acc, data.phi()[j]);
+  auto py2 = data.pt()[j] * alpaka::math::sin(acc, data.phi()[j]);
+  auto pz2 = data.pt()[j] * alpaka::math::sinh(acc, data.eta()[j]);
+  auto e2 = Energy(acc, data.pt()[j], data.eta()[j], 0.1396);
+
+  auto px3 = data.pt()[k] * alpaka::math::cos(acc, data.phi()[k]);
+  auto py3 = data.pt()[k] * alpaka::math::sin(acc, data.phi()[k]);
+  auto pz3 = data.pt()[k] * alpaka::math::sinh(acc, data.eta()[k]);
+  auto e3 = Energy(acc, data.pt()[k], data.eta()[k], 0.1396);
+
+  auto t_energy = e1 + e2 + e3;
+  auto t_px = px1 + px2 + px3;
+  auto t_py = py1 + py2 + py3;
+  auto t_pz = pz1 + pz2 + pz3;
+
+  auto t_momentum = t_px * t_px + t_py * t_py + t_pz * t_pz;
+  auto invariant_mass = t_energy * t_energy - t_momentum;
+
+  return invariant_mass > 0 ? alpaka::math::sqrt(acc, invariant_mass) : 0.0f;
+}
+
+template<typename TAcc>
 ALPAKA_FN_ACC float DeltaPhi(TAcc const& acc, float phi1, float phi2) {
   const float M_PI_CONST = 3.14159265358979323846;
   const float M_2_PI_CONST = 2.0 * M_PI_CONST;
@@ -266,7 +301,9 @@ public:
             if (abs(charge[thread_idx] + charge[i] + charge[j]) != 1)
               continue;
             // printf("3");
-            auto mass = TripletMass(acc, data, thread_idx, i, j);
+            // auto mass = TripletMass(acc, data, thread_idx, i, j);
+            auto mass = MassInvariant(acc, data, thread_idx, i, j);
+            printf("mass -> %f\n", mass);
             if (mass < 40 || mass > 150) // minmass maxmass
               continue;
             // printf("4");
