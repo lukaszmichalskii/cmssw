@@ -105,7 +105,7 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Allocate device memory
   auto device_mask = alpaka::allocAsyncBuf<uint8_t, Idx>(queue, extent);
   auto device_charge = alpaka::allocAsyncBuf<int8_t, Idx>(queue, extent);
-  auto device_estimated_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
+  // auto device_estimated_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto device_int_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto device_high_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto& device_offsets = raw_data.view().offsets();
@@ -118,32 +118,32 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Initialize device memory
   alpaka::memset(queue, device_mask, 0);
   alpaka::memset(queue, device_charge, 0);
-  alpaka::memset(queue, device_estimated_size, 0);
+  // alpaka::memset(queue, device_estimated_size, 0);
   alpaka::memset(queue, device_int_cut_ct, 0);
   alpaka::memset(queue, device_high_cut_ct, 0);
 
   // Destination memory for data to be copied to debug and size estimation
-  uint32_t* host_estimated_size = new uint32_t[1];
-  uint32_t* host_int_cut_ct = new uint32_t[1];
-  uint32_t* host_high_cut_ct = new uint32_t[1];
-  std::vector<int8_t> host_charge(size, 0);
-  std::vector<uint8_t> host_mask(size, 0);
+  // uint32_t* host_estimated_size = new uint32_t[1];
+  // uint32_t* host_int_cut_ct = new uint32_t[1];
+  // uint32_t* host_high_cut_ct = new uint32_t[1];
+  // std::vector<int8_t> host_charge(size, 0);
+  // std::vector<uint8_t> host_mask(size, 0);
 
-  uint32_t* host_partial_size = new uint32_t[1];
-  uint32_t* host_partial_int_cut_ct = new uint32_t[1];
-  uint32_t* host_partial_high_cut_ct = new uint32_t[1];
+  // uint32_t* host_partial_size = new uint32_t[1];
+  // uint32_t* host_partial_int_cut_ct = new uint32_t[1];
+  // uint32_t* host_partial_high_cut_ct = new uint32_t[1];
   float* host_best_score = new float[1];
 
-  host_estimated_size[0] = 0;
-  host_int_cut_ct[0] = 0;
-  host_high_cut_ct[0] = 0;
+  // host_estimated_size[0] = 0;
+  // host_int_cut_ct[0] = 0;
+  // host_high_cut_ct[0] = 0;
 
   std::array<uint32_t, 3564+1> host_offsets{};
   alpaka::memcpy(queue, createView(host, host_offsets, Vec<alpaka::DimInt<1>>(3564+1)), createView(alpaka::getDev(queue), device_offsets, Vec<alpaka::DimInt<1>>(3564+1)));
   alpaka::wait(queue);
 
   // Combinatorics
-  size_t pass = 0;
+  // size_t pass = 0;
   for (size_t bx_idx = 0; bx_idx < raw_data.const_view().bx().size(); bx_idx++) {
     auto begin = host_offsets[bx_idx];
     auto end = host_offsets[bx_idx+1];
@@ -159,17 +159,17 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
     Filter(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_partial_int_cut_ct.data(), device_partial_high_cut_ct.data());
     EstimateSize(queue, device_mask.data(), begin, end, device_partial_size.data());
 
-    alpaka::memcpy(queue, createView(host, host_partial_size, Vec<alpaka::DimInt<1>>(1)), device_partial_size);
-    alpaka::memcpy(queue, createView(host, host_partial_int_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_partial_int_cut_ct);
-    alpaka::memcpy(queue, createView(host, host_partial_high_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_partial_high_cut_ct);
+    // alpaka::memcpy(queue, createView(host, host_partial_size, Vec<alpaka::DimInt<1>>(1)), device_partial_size);
+    // alpaka::memcpy(queue, createView(host, host_partial_int_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_partial_int_cut_ct);
+    // alpaka::memcpy(queue, createView(host, host_partial_high_cut_ct, Vec<alpaka::DimInt<1>>(1)), device_partial_high_cut_ct);
 
-    host_estimated_size[0] += host_partial_size[0];
-    host_int_cut_ct[0] += host_partial_int_cut_ct[0];
-    host_high_cut_ct[0] += host_partial_high_cut_ct[0];
+    // host_estimated_size[0] += host_partial_size[0];
+    // host_int_cut_ct[0] += host_partial_int_cut_ct[0];
+    // host_high_cut_ct[0] += host_partial_high_cut_ct[0];
 
-    if (host_partial_size[0] < 3 || host_partial_int_cut_ct[0] < 2 || host_partial_high_cut_ct[0] < 1) 
-      continue;
-    pass++;
+    // if (host_partial_size[0] < 3 || host_partial_int_cut_ct[0] < 2 || host_partial_high_cut_ct[0] < 1) 
+    //   continue;
+    // pass++;
 
 
     Combinatorics(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_partial_size.data(), device_partial_int_cut_ct.data(), device_partial_high_cut_ct.data(), device_best_score.data());
@@ -180,12 +180,12 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   }
 
   // Debug
-  std::cout << "Particles Num L1 Filter: " << host_estimated_size[0] << std::endl;
-  std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
-  std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
-  std::cout << "Candidates Num L1: " << pass << std::endl;
-  std::cout << "W3Pi Num: " << w3pi << std::endl;
-  std::cout << std::endl;
+  // std::cout << "Particles Num L1 Filter: " << host_estimated_size[0] << std::endl;
+  // std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
+  // std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
+  // std::cout << "Candidates Num L1: " << pass << std::endl;
+  // std::cout << "W3Pi Num: " << w3pi << std::endl;
+  // std::cout << std::endl;
 
   return w3pi;
 }
@@ -203,6 +203,9 @@ public:
     const uint8_t high_threshold = 15; 
     const float invariant_mass_upper_bound = 150.0;
     const float invariant_mass_lower_bound = 40.0;
+
+    if (pions_num[0] < 3 || int_cut_ct[0] < 2 || high_cut_ct[0] < 1) 
+      return;
 
     for (uint32_t thread_idx : uniform_elements(acc, begin, end)) {
       if (mask[thread_idx] == static_cast<uint8_t>(1)) {
@@ -272,17 +275,33 @@ public:
     const uint8_t int_threshold = 12;  
     const uint8_t high_threshold = 15;
 
+    auto& shared_int_cut = alpaka::declareSharedVar<uint32_t[1], __COUNTER__>(acc);
+    auto& shared_high_cut = alpaka::declareSharedVar<uint32_t[1], __COUNTER__>(acc);
+
+    if (once_per_block(acc)) {
+      shared_int_cut[0] = static_cast<uint32_t>(0);
+      shared_high_cut[0] = static_cast<uint32_t>(0);
+    }
+
     for (auto thread_idx : uniform_elements(acc, begin, end)) {
-      if (abs(data.pdgId()[thread_idx]) == 211 || abs(data.pdgId()[thread_idx]) == 11) {
+      auto pdgid_abs = abs(data.pdgId()[thread_idx]);
+      auto pt = data.pt()[thread_idx];
+
+      if (pdgid_abs == 211 || pdgid_abs == 11) {
         if (data.pt()[thread_idx] >= min_threshold) {
           mask[thread_idx] = static_cast<uint8_t>(1);
-          charge[thread_idx] = static_cast<int8_t>(abs(data.pdgId()[thread_idx]) == 11 ? (data.pdgId()[thread_idx] > 0 ? -1 : +1) : (data.pdgId()[thread_idx] > 0 ? +1 : -1));
-          if (data.pt()[thread_idx] >= int_threshold)
-            alpaka::atomicAdd(acc, &int_cut_ct[0], static_cast<uint32_t>(1));
-          if (data.pt()[thread_idx] >= high_threshold)
-            alpaka::atomicAdd(acc, &high_cut_ct[0], static_cast<uint32_t>(1));
+          charge[thread_idx] = static_cast<int8_t>(pdgid_abs == 11 ? (data.pdgId()[thread_idx] > 0 ? -1 : +1) : (data.pdgId()[thread_idx] > 0 ? +1 : -1));
+          if (pt >= int_threshold)
+            alpaka::atomicAdd(acc, &shared_int_cut[0], static_cast<uint32_t>(1));
+          if (pt >= high_threshold)
+            alpaka::atomicAdd(acc, &shared_high_cut[0], static_cast<uint32_t>(1));
         }
       }
+    }
+
+    if (once_per_block(acc)) {
+      alpaka::atomicAdd(acc, &int_cut_ct[0], shared_int_cut[0]);
+      alpaka::atomicAdd(acc, &high_cut_ct[0], shared_high_cut[0]);
     }
   }
 };
