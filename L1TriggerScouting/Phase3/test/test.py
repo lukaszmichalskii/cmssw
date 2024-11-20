@@ -75,7 +75,7 @@ process.source = cms.Source("DAQSource",
 )
 os.system("touch " + buDirs[0] + "/" + "fu.lock")
 
-process.PuppiRawToDigiStruct = cms.EDProducer('PuppiRawToDigiProducer@alpaka',
+process.UnpackStruct = cms.EDProducer('UnpackModule@alpaka',
     src = cms.InputTag('rawDataCollector'),
     fedIDs = cms.vuint32(),
     alpaka = cms.untracked.PSet(
@@ -84,16 +84,16 @@ process.PuppiRawToDigiStruct = cms.EDProducer('PuppiRawToDigiProducer@alpaka',
 )
 
 process.IsolationStruct = cms.EDProducer("IsolationModule@alpaka",
-    src = cms.InputTag("PuppiRawToDigiStruct"),
+    src = cms.InputTag("UnpackStruct"),
     alpaka = cms.untracked.PSet(
        backend = cms.untracked.string(options.backend)
     ),
 )
 
-process.PuppiRawToDigiStruct.fedIDs = [*puppiStreamIDs]
+process.UnpackStruct.fedIDs = [*puppiStreamIDs]
 
-# for params testing
-process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone(
+# setup for testing
+process.Unpack = process.UnpackStruct.clone(
     src = cms.InputTag('rawDataCollector'),
     fedIDs = [*puppiStreamIDs],
     alpaka = cms.untracked.PSet(
@@ -101,18 +101,18 @@ process.PuppiRawToDigi = process.PuppiRawToDigiStruct.clone(
     ),
 )
 process.Isolation = process.IsolationStruct.clone(
-    src = cms.InputTag("PuppiRawToDigi"),
+    src = cms.InputTag("Unpack"),
     alpaka = cms.untracked.PSet(
        backend = cms.untracked.string(options.backend)
     ),
 )
 
 # process.unpacking = cms.Path(
-#    process.PuppiRawToDigi
+#    process.Unpack
 # )
 
 process.unpacking = cms.Path(
-   process.PuppiRawToDigi +
+   process.Unpack +
    process.Isolation
 )
 

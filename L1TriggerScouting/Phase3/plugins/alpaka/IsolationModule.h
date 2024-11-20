@@ -1,3 +1,6 @@
+#ifndef L1TriggerScouting_Phase3_plugins_alpaka_IsolationModule_h
+#define L1TriggerScouting_Phase3_plugins_alpaka_IsolationModule_h
+
 #include <alpaka/alpaka.hpp>
 
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -42,20 +45,13 @@ private:
   const device::EDGetToken<PuppiCollection> raw_token_;
   device::EDPutToken<PuppiCollection> token_;
 
-  // Pipeline kernels
-  Isolation isolation_;
-
-  size_t w3pi_results_ = 0;
-  size_t w3pi_num_ = 0;
-  std::chrono::high_resolution_clock::time_point start_, end_;
-
-  // Pipeline methods
-  size_t Isolate(Queue &queue, PuppiCollection const& raw_collection);
+  // Pipeline utility methods
+  Isolation utils_;
 
   // Debugging helpers
-  std::chrono::high_resolution_clock::time_point Tick();
-  void Summary(const long &duration);
-  void LogSeparator();
+  std::chrono::high_resolution_clock::time_point start_, end_;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+
+#endif // L1TriggerScouting_Phase3_plugins_alpaka_IsolationModule_h

@@ -1,3 +1,6 @@
+#ifndef L1TriggerScouting_Phase3_plugins_alpaka_UnpackModule_h
+#define L1TriggerScouting_Phase3_plugins_alpaka_UnpackModule_h
+
 #include <alpaka/alpaka.hpp>
 
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -13,12 +16,12 @@
 #include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
 
-#include "PuppiUnpack.h"
+#include "Unpack.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 /**
- * @class PuppiRawToDigiProducer
+ * @class UnpackModule
  * @brief Producer of Puppi struct-of-array for CPU, CUDA, ROCm architectures
  * 
  * Takes as input raw data collection.
@@ -26,15 +29,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
  * Transfer data from host to device and launch decoding pipeline kernels.
  * The product stays on device memory and can be automatically transferred to host if needed.
  */
-class PuppiRawToDigiProducer : public stream::EDProducer<> {
+class UnpackModule : public stream::EDProducer<> {
 
 public:
   // Constructor & destructor
-  PuppiRawToDigiProducer(const edm::ParameterSet& params);
-  ~PuppiRawToDigiProducer() override = default;
+  UnpackModule(const edm::ParameterSet& params);
+  ~UnpackModule() override = default;
 
   // Virtual methods
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
+  // void beginStream(edm::StreamID) override;
+  // void endStream() override;
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
@@ -45,8 +50,8 @@ private:
   int bunch_crossing_ = 0;  /**< bunch crossing counter */
   std::vector<unsigned int> fed_ids_;  /**< fed identifiers */
 
-  // Pipeline kernels
-  PuppiUnpack unpacker_;  /**< automatically resolve target device to schedule */
+  // Pipeline utility methods
+  Unpack utils_;
 
   // Pipeline methods
   template<typename T> 
@@ -54,9 +59,9 @@ private:
   PuppiCollection UnpackCollection(Queue &queue, const SDSRawDataCollection &raw_data);
 
   // Debugging helpers
-  std::chrono::high_resolution_clock::time_point Tick();
-  void Summary(const long &duration);
-  void LogSeparator();
+  std::chrono::high_resolution_clock::time_point start_, end_;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+
+#endif // L1TriggerScouting_Phase3_plugins_alpaka_UnpackModule_h

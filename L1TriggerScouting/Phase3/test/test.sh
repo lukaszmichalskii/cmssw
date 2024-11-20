@@ -15,11 +15,11 @@ fi
 
 if [ "${TARGET}" == "cpu" ]; then
     echo "Running CPU-only test"
-    cmsRun ${TEST_DIR}/testRawToDigi_cfg.py runNumber=$3 buBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw fuBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw buNumStreams=1 maxEvents=$2 backend=serial_sync
+    cmsRun ${TEST_DIR}/test.py runNumber=$3 buBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw fuBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw buNumStreams=1 maxEvents=$2 backend=serial_sync
 elif [ "${TARGET}" == "cuda" ]; then
     echo "Running CUDA test"
-    cmsRun ${TEST_DIR}/testRawToDigi_cfg.py runNumber=$3 buBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw fuBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw buNumStreams=1 maxEvents=$2 backend=cuda_async
+    cmsRun ${TEST_DIR}/test.py runNumber=$3 buBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw fuBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw buNumStreams=1 maxEvents=$2 backend=cuda_async
 elif [ "${TARGET}" == "rocm" ]; then
     echo "Running ROCm test"
-    cmsRun ${TEST_DIR}/testRawToDigi_cfg.py runNumber=$3 buBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw fuBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw buNumStreams=1 maxEvents=$2 backend=rocm_async
+    cmsRun ${TEST_DIR}/test.py runNumber=$3 buBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw fuBaseDir=/mnt/ngt/ramdisk_00/lmichals/raw buNumStreams=1 maxEvents=$2 backend=rocm_async
 fi

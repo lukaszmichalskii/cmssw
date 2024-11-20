@@ -5,7 +5,7 @@
 
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 
-#include "PuppiUnpack.h"
+#include "Unpack.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -42,7 +42,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     }
   };
 
-  void PuppiUnpack::ProcessHeaders(
+  void Unpack::ProcessHeaders(
       Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const {
     size_t size = data.size();
     auto device_buffer = CopyToDevice<uint64_t>(queue, data);
@@ -95,7 +95,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     }
   };
 
-  void PuppiUnpack::ProcessData(
+  void Unpack::ProcessData(
       Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const {
     size_t size = data.size();
     auto device_buffer = CopyToDevice<uint64_t>(queue, data);
@@ -105,54 +105,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
     alpaka::exec<Acc1D>(queue, grid, ProcessDataKernel{}, device_buffer.data(), collection.view());
-  }
-
-  class FillKernel {
-  public:
-    template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::View view, int value) const {
-      for (int32_t idx : uniform_elements(acc, view.metadata().size())) {
-        view[idx].pt() = static_cast<float>(value);
-        view[idx].eta() = static_cast<float>(value);
-        view[idx].phi() = static_cast<float>(value);
-        view[idx].z0() = static_cast<float>(value);
-        view[idx].dxy() = static_cast<float>(value);
-        view[idx].puppiw() = static_cast<float>(value);
-        view[idx].pdgId() = static_cast<int16_t>(value);
-        view[idx].quality() = static_cast<uint8_t>(value);
-      }
-    }
-  };
-
-  void PuppiUnpack::Fill(Queue& queue, PuppiCollection& collection, int value) const {
-    uint32_t items = 64;
-    uint32_t groups = divide_up_by(collection->metadata().size(), items);
-    auto workDiv = make_workdiv<Acc1D>(groups, items);
-    alpaka::exec<Acc1D>(queue, workDiv, FillKernel{}, collection.view(), value);
-  }
-
-  class AssertKernel {
-  public:
-    template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView view, int value) const {
-      for (int32_t idx : uniform_elements(acc, view.metadata().size())) {
-        ALPAKA_ASSERT_ACC(view.bx().size() == 3564);
-        ALPAKA_ASSERT_ACC(view.offsets().size() == 3564+1);
-        ALPAKA_ASSERT_ACC(view[idx].pt() == static_cast<float>(value));
-        ALPAKA_ASSERT_ACC(view[idx].eta() == static_cast<float>(value));
-        ALPAKA_ASSERT_ACC(view[idx].phi() == static_cast<float>(value));
-        ALPAKA_ASSERT_ACC(view[idx].z0() == static_cast<float>(value));
-        ALPAKA_ASSERT_ACC(view[idx].dxy() == static_cast<float>(value));
-        ALPAKA_ASSERT_ACC(view[idx].puppiw() == static_cast<float>(value));
-        ALPAKA_ASSERT_ACC(view[idx].pdgId() == static_cast<int16_t>(value));
-        ALPAKA_ASSERT_ACC(view[idx].quality() == static_cast<uint8_t>(value));
-      }
-    }
-  };
-
-  void PuppiUnpack::Assert(Queue& queue, PuppiCollection const& collection, int value) const {
-    auto workDiv = make_workdiv<Acc1D>(1, 32);
-    alpaka::exec<Acc1D>(queue, workDiv, AssertKernel{}, collection.const_view(), value);
   }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

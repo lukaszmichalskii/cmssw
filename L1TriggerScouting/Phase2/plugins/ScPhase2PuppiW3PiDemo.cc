@@ -273,10 +273,12 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
 
   size_t ctr = 0;
   size_t passed = 0;
+  auto full = 0;
   for (unsigned int ibx = 0, nbx = src.bx.size(); ibx < nbx; ++ibx) {
     // if (ibx != 3526)
     //   continue;
     countSOA_++;
+    auto se = std::chrono::high_resolution_clock::now();
     unsigned int offs = src.offsets[ibx];
     unsigned int size = src.offsets[ibx + 1] - offs;
     const float *pts = &src.pt[offs];
@@ -303,6 +305,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         }
       }
     }
+    auto es = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(es - se);
+    full += duration.count();
 
     global_int_cut += intermediatecut;
     global_high_cut += highcut;
@@ -568,6 +573,8 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
 
 
   iEvent.put(std::move(ret));
+  std::cout << "Isolation Module: OK [" << full << " us]" << std::endl;
+
 }
 
 //TEST functions

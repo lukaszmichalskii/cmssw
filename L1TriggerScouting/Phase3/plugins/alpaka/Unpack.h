@@ -1,5 +1,5 @@
-#ifndef L1TriggerScouting_Phase3_plugins_alpaka_PuppiUnpack_h
-#define L1TriggerScouting_Phase3_plugins_alpaka_PuppiUnpack_h
+#ifndef L1TriggerScouting_Phase3_plugins_alpaka_Unpack_h
+#define L1TriggerScouting_Phase3_plugins_alpaka_Unpack_h
 
 #include <alpaka/alpaka.hpp>
 
@@ -8,16 +8,12 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-class PuppiUnpack {
-
+class Unpack {
   public:
-    void Fill(Queue& queue, PuppiCollection& collection, int value = 1) const;
-    void Assert(Queue& queue, PuppiCollection const& collection, int value = 1) const;
-
     void ProcessHeaders(Queue& queue, std::vector<uint64_t>& headers, PuppiCollection& collection) const;
     void ProcessData(Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const;
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-#endif  // L1TriggerScouting_Phase3_plugins_alpaka_PuppiUnpack_h
+#endif  // L1TriggerScouting_Phase3_plugins_alpaka_Unpack_h

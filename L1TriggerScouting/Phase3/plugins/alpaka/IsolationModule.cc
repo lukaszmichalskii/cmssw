@@ -10,60 +10,26 @@ IsolationModule::IsolationModule(edm::ParameterSet const& params)
   : raw_token_(consumes(params.getParameter<edm::InputTag>("src"))),
     token_{produces()} {}
 
-void IsolationModule::Summary(const long &duration) {
-  std::cout << "W3Pi Analysis took: " << duration << " ms"  << std::endl;
-}
-
-std::chrono::high_resolution_clock::time_point IsolationModule::Tick() {
-  return std::chrono::high_resolution_clock::now();
-}
-
-void IsolationModule::LogSeparator() {
-  std::cout << std::endl;
-  std::cout << "===============================================================" << std::endl;
-  std::cout << std::endl;
-}
-
-size_t IsolationModule::Isolate(Queue &queue, PuppiCollection const& raw_collection) {  
-  return isolation_.Isolate(queue, raw_collection);
-}
-
 void IsolationModule::produce(device::Event& event, device::EventSetup const& event_setup) {
-  // LogSeparator();
-  // auto start = Tick();
-
-  //////////////////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////// CODE BLOCK /////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////////////
+  auto s = std::chrono::high_resolution_clock::now();
 
   auto& raw_data_collection = event.get(raw_token_);
-  auto product = Isolate(event.queue(), raw_data_collection);
-  w3pi_num_ += raw_data_collection.view().bx().size();
-  w3pi_results_ += product;
-  event.emplace(token_, std::move(PuppiCollection(1, event.queue())));
+  auto product = utils_.Isolate(event.queue(), raw_data_collection);
+  event.emplace(token_, std::move(product));
 
-  //////////////////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////// END CODE BLOCK /////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////////////
-
-  // auto end = Tick();
-  // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  
-  // Summary(duration.count());
-  // LogSeparator();
+  auto e = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(s - e);
+  std::cout << "Iteration Isolation Module: OK [" << duration.count() << " us]" << std::endl;
 }
 
 void IsolationModule::beginStream(edm::StreamID) {
-  w3pi_results_ = 0;
-  w3pi_num_ = 0;
   start_ = std::chrono::high_resolution_clock::now();
 }
 
 void IsolationModule::endStream() {
   end_ = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
-  std::cout << "W3Pi SOA analysis: " << w3pi_num_ << " -> " << w3pi_results_ << std::endl;
-  std::cout << "W3Pi SOA analysis took: " << duration.count() << " ms" << std::endl;
+  std::cout << "Isolation Module: OK [" << duration.count() << " ms]" << std::endl;
 }
 
 

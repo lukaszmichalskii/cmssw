@@ -1,0 +1,8 @@
+#ifndef L1TriggerScouting_Phase3_plugins_alpaka_Combinatorics_h
+#define L1TriggerScouting_Phase3_plugins_alpaka_Combinatorics_h
+
+namespace ALPAKA_ACCELERATOR_NAMESPACE {
+
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+
+#endif  // L1TriggerScouting_Phase3_plugins_alpaka_Combinatorics_h
