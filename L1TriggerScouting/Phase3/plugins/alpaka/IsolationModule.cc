@@ -18,7 +18,7 @@ void IsolationModule::produce(device::Event& event, device::EventSetup const& ev
   event.emplace(token_, std::move(product));
 
   auto e = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(s - e);
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
   std::cout << "Iteration Isolation Module: OK [" << duration.count() << " us]" << std::endl;
 }
 
