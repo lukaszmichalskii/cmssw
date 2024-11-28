@@ -1,6 +1,6 @@
 #include <chrono>
-
 #include "UnpackModule.h"
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -37,32 +37,21 @@ std::tuple<std::vector<T>, std::vector<T>> UnpackModule::MemoryScan(const SDSRaw
 PuppiCollection UnpackModule::UnpackCollection(Queue &queue, const SDSRawDataCollection &raw_data) {  
   auto [buffer, headers] = MemoryScan<uint64_t>(raw_data);
   PuppiCollection collection(buffer.size(), queue);
-  utils_.ProcessHeaders(queue, headers, collection);
-  utils_.ProcessData(queue, buffer, collection);
+  utils_.Unpacking(queue, headers, buffer, collection);
   return collection;
 }
 
 void UnpackModule::produce(device::Event& event, device::EventSetup const& event_setup) {
-  start_ = std::chrono::high_resolution_clock::now();
+  auto s = std::chrono::high_resolution_clock::now();
 
   auto raw_data_collection = event.getHandle(raw_token_);
   auto product = UnpackCollection(event.queue(), *raw_data_collection);
   event.emplace(token_, std::move(product));
 
-  end_ = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_ - start_);
-  std::cout << "Unpack Module: OK [" << duration.count() << " us]" << std::endl;
+  auto e = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
+  std::cout << "Unpack: OK [" << duration.count() << " us]" << std::endl;
 }
-
-// void UnpackModule::beginStream(edm::StreamID) {
-//   start_ = std::chrono::high_resolution_clock::now();
-// }
-
-// void UnpackModule::endStream() {
-//   end_ = std::chrono::high_resolution_clock::now();
-//   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
-//   std::cout << "Unpack Module: OK [" << duration.count() << " ms]" << std::endl;
-// }
 
 void UnpackModule::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;

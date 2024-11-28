@@ -50,7 +50,6 @@ process.FastMonitoringService = cms.Service("FastMonitoringService")
 process.load( "HLTrigger.Timer.FastTimerService_cfi" )
 process.FastTimerService.writeJSONSummary = cms.untracked.bool(True)
 process.FastTimerService.jsonFileName = cms.untracked.string(f'resources.{os.uname()[1]}.{options.task}.json')
-#process.MessageLogger.cerr.FastReport = cms.untracked.PSet( limit = cms.untracked.int32( 10000000 ) )
 
 fuDir = options.fuBaseDir+("/run%06d" % options.runNumber)
 buDirs = [b+("/run%06d" % options.runNumber) for b in options.buBaseDir]
@@ -90,6 +89,13 @@ process.IsolationStruct = cms.EDProducer("IsolationModule@alpaka",
     ),
 )
 
+process.CombinatoricsStruct = cms.EDProducer("CombinatoricsModule@alpaka",
+    src = cms.InputTag("IsolationStruct"),
+    alpaka = cms.untracked.PSet(
+       backend = cms.untracked.string(options.backend)
+    ),
+)
+
 process.UnpackStruct.fedIDs = [*puppiStreamIDs]
 
 # setup for testing
@@ -106,14 +112,17 @@ process.Isolation = process.IsolationStruct.clone(
        backend = cms.untracked.string(options.backend)
     ),
 )
-
-# process.unpacking = cms.Path(
-#    process.Unpack
-# )
-
-process.unpacking = cms.Path(
-   process.Unpack +
-   process.Isolation
+process.Combinatorics = process.CombinatoricsStruct.clone(
+    src = cms.InputTag("Isolation"),
+    alpaka = cms.untracked.PSet(
+       backend = cms.untracked.string(options.backend)
+    ),
 )
 
-process.schedule = cms.Schedule(process.unpacking)
+process.w3pi = cms.Path(
+   process.Unpack +
+   process.Isolation +
+   process.Combinatorics
+)
+
+process.schedule = cms.Schedule(process.w3pi)

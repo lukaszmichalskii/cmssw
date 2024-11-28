@@ -1,8 +1,6 @@
 #include <chrono>
-
 #include "IsolationModule.h"
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/MessageLogger/interface/MessageDrop.h"
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -19,19 +17,8 @@ void IsolationModule::produce(device::Event& event, device::EventSetup const& ev
 
   auto e = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
-  std::cout << "Iteration Isolation Module: OK [" << duration.count() << " us]" << std::endl;
+  std::cout << "Isolation: OK [" << duration.count() << " us]" << std::endl;
 }
-
-void IsolationModule::beginStream(edm::StreamID) {
-  start_ = std::chrono::high_resolution_clock::now();
-}
-
-void IsolationModule::endStream() {
-  end_ = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
-  std::cout << "Isolation Module: OK [" << duration.count() << " ms]" << std::endl;
-}
-
 
 void IsolationModule::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;

@@ -2,19 +2,16 @@
 #define L1TriggerScouting_Phase3_plugins_alpaka_IsolationModule_h
 
 #include <alpaka/alpaka.hpp>
-
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
-
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
-
 #include "Isolation.h"
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -36,8 +33,6 @@ public:
 
   // Virtual methods
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
-  void beginStream(edm::StreamID) override;
-  void endStream() override;
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
