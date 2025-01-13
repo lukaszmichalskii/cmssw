@@ -232,7 +232,12 @@ public:
               continue;
             if (abs(charge[thread_idx] + charge[i] + charge[j]) != 1)
               continue;
+            if (data.pdgId()[thread_idx] != 211 && data.pdgId()[i] != 11 && data.pdgId()[j] != -11) {
+              // printf("Indices: [%d, %d, %d] -> FAILED\n", thread_idx - begin, i - begin, j - begin);
+              continue;
+            }
             auto mass = MassInvariant(acc, data, thread_idx, i, j);
+            // printf("Indices: [%d, %d, %d], Mass: %.3f\n", thread_idx - begin, i - begin, j - begin, mass);
             if (mass < invariant_mass_lower_bound || mass > invariant_mass_upper_bound) 
               continue;
             if (AngularSeparation(acc, data, thread_idx, j) && AngularSeparation(acc, data, i, j)) {

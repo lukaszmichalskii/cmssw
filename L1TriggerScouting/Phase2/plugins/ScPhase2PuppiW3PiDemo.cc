@@ -216,6 +216,7 @@ void ScPhase2PuppiW3PiDemo::runObj(const OrbitCollection<T> &src,
           if (std::abs(cands[ix[i1]].charge() + cands[ix[i2]].charge() + cands[ix[i3]].charge()) == 1) {
             //make Lorentz vectors for each triplet
             auto mass = (cands[ix[i1]].p4() + cands[ix[i2]].p4() + cands[ix[i3]].p4()).mass();
+            
             if (mass >= cuts.minmass and mass <= cuts.maxmass) {  //MASS test
               if (deltar(cands[ix[i1]].eta(), cands[ix[i3]].eta(), cands[ix[i1]].phi(), cands[ix[i3]].phi()) and
                   deltar(cands[ix[i2]].eta(), cands[ix[i3]].eta(), cands[ix[i2]].phi(), cands[ix[i3]].phi())) {
@@ -316,7 +317,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
     bestTripletScore = 0;
 
     for (unsigned int i1 = 0; i1 < npions; ++i1) {
-      if (ix[i1] != 0) break;
+      // if (ix[i1] != 0) break;
       // printf("id: %d; ", ix[i1]);
       // printf("pt: %f; ",pts[ix[i1]]);
       // printf("eta: %f; ", etas[ix[i1]]);
@@ -334,7 +335,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       // printf("0");
       // printf("PASSED: %d", ix[i1]);
       for (unsigned int i2 = 0; i2 < npions; ++i2) {
-        if (ix[i2] != 8) continue;
+        // if (ix[i2] != 8) continue;
         // printf("\nid: %d; ", ix[i1]);
         // printf("pt: %f; ",pts[ix[i1]]);
         // printf("eta: %f; ", etas[ix[i1]]);
@@ -379,60 +380,65 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         // printf("2");
  
         for (unsigned int i3 = 0; i3 < npions; ++i3) {
-          if (ix[i3] != 11) continue;
+          // if (ix[i3] != 11) continue;
           if (i3 == i1 or i3 == i2)
             continue;
           if (pts[ix[i2]] < cuts.minpt1) {
-            printf("low_pt_cut ");
+            // printf("low_pt_cut ");
             continue;
           }
           if (pts[ix[i3]] > pts[ix[i1]] || (pts[ix[i3]] == pts[ix[i1]] and i3 < i1)) {
-            printf("M1 ");
+            // printf("M1 ");
             continue;
           }
           if (pts[ix[i3]] > pts[ix[i2]] || (pts[ix[i3]] == pts[ix[i2]] and i3 < i2)) {
-            printf("M2 ");
+            // printf("M2 ");
             continue;
           }
           std::array<unsigned int, 3> tr{{ix[i1], ix[i2], ix[i3]}};  //triplet of indeces
           // printf("3\n");
           if (std::abs(charge[i1] + charge[i2] + charge[i3]) == 1) {
             //make Lorentz vectors for each triplet
-            if (pdgIds[ix[i1]] != 211 && pdgIds[ix[i2]] != 11 && pdgIds[ix[i3]] != -11) continue;
-            auto mass = tripletmass(tr, pts, etas, phis);
-            if (mass < 160 && mass > 140) {
-              printf("mass -> %f", mass);
-              printf("\nid: %d; ", ix[i1]);
-              printf("pt: %f; ",pts[ix[i1]]);
-              printf("eta: %f; ", etas[ix[i1]]);
-              printf("phi: %f; ", phis[ix[i1]]);
-              printf("z0: %f; ", z0[ix[i1]]);
-              printf("dxy: %f; ", dxy[ix[i1]]);
-              printf("puppiw: %f; ", puppiw[ix[i1]]);
-              printf("pdgId: %d; ", pdgIds[ix[i1]]);
-              printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i1]]));
-              printf("\n");
-              printf("id: %d; ", ix[i2]);
-              printf("pt: %f; ",pts[ix[i2]]);
-              printf("eta: %f; ", etas[ix[i2]]);
-              printf("phi: %f; ", phis[ix[i2]]);
-              printf("z0: %f; ", z0[ix[i2]]);
-              printf("dxy: %f; ", dxy[ix[i2]]);
-              printf("puppiw: %f; ", puppiw[ix[i2]]);
-              printf("pdgId: %d; ", pdgIds[ix[i2]]);
-              printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i2]]));
-              printf("\n");
-              printf("id: %d; ", ix[i3]);
-              printf("pt: %f; ",pts[ix[i3]]);
-              printf("eta: %f; ", etas[ix[i3]]);
-              printf("phi: %f; ", phis[ix[i3]]);
-              printf("z0: %f; ", z0[ix[i3]]);
-              printf("dxy: %f; ", dxy[ix[i3]]);
-              printf("puppiw: %f; ", puppiw[ix[i3]]);
-              printf("pdgId: %d; ", pdgIds[ix[i3]]);
-              printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i3]]));
-              printf("\n\n");
+
+            if (pdgIds[ix[i1]] != 211 && pdgIds[ix[i2]] != 11 && pdgIds[ix[i3]] != -11) {
+              // printf("Indices: [%d, %d, %d] -> FAILED\n", ix[i1], ix[i2], ix[i3]);
+              continue;
             }
+            auto mass = tripletmass(tr, pts, etas, phis);
+            // printf("Indices: [%d, %d, %d], Mass: %.3f\n", ix[i1], ix[i2], ix[i3], mass);
+            // if (mass < 160 && mass > 140) {
+            //   printf("mass -> %f", mass);
+            //   printf("\nid: %d; ", ix[i1]);
+            //   printf("pt: %f; ",pts[ix[i1]]);
+            //   printf("eta: %f; ", etas[ix[i1]]);
+            //   printf("phi: %f; ", phis[ix[i1]]);
+            //   printf("z0: %f; ", z0[ix[i1]]);
+            //   printf("dxy: %f; ", dxy[ix[i1]]);
+            //   printf("puppiw: %f; ", puppiw[ix[i1]]);
+            //   printf("pdgId: %d; ", pdgIds[ix[i1]]);
+            //   printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i1]]));
+            //   printf("\n");
+            //   printf("id: %d; ", ix[i2]);
+            //   printf("pt: %f; ",pts[ix[i2]]);
+            //   printf("eta: %f; ", etas[ix[i2]]);
+            //   printf("phi: %f; ", phis[ix[i2]]);
+            //   printf("z0: %f; ", z0[ix[i2]]);
+            //   printf("dxy: %f; ", dxy[ix[i2]]);
+            //   printf("puppiw: %f; ", puppiw[ix[i2]]);
+            //   printf("pdgId: %d; ", pdgIds[ix[i2]]);
+            //   printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i2]]));
+            //   printf("\n");
+            //   printf("id: %d; ", ix[i3]);
+            //   printf("pt: %f; ",pts[ix[i3]]);
+            //   printf("eta: %f; ", etas[ix[i3]]);
+            //   printf("phi: %f; ", phis[ix[i3]]);
+            //   printf("z0: %f; ", z0[ix[i3]]);
+            //   printf("dxy: %f; ", dxy[ix[i3]]);
+            //   printf("puppiw: %f; ", puppiw[ix[i3]]);
+            //   printf("pdgId: %d; ", pdgIds[ix[i3]]);
+            //   printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i3]]));
+            //   printf("\n\n");
+            // }
             if (mass >= cuts.minmass and mass <= cuts.maxmass) {  //MASS test
               // printf("4");
 
@@ -481,36 +487,36 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
                     // printf("7");
                     std::copy_n(tr.begin(), 3, bestTriplet.begin());
                     bestTripletScore = ptsum;
-                    printf("\nid: %d; ", ix[i1]);
-                    printf("pt: %f; ",pts[ix[i1]]);
-                    printf("eta: %f; ", etas[ix[i1]]);
-                    printf("phi: %f; ", phis[ix[i1]]);
-                    printf("z0: %f; ", z0[ix[i1]]);
-                    printf("dxy: %f; ", dxy[ix[i1]]);
-                    printf("puppiw: %f; ", puppiw[ix[i1]]);
-                    printf("pdgId: %d; ", pdgIds[ix[i1]]);
-                    printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i1]]));
-                    printf("\n");
-                    printf("id: %d; ", ix[i2]);
-                    printf("pt: %f; ",pts[ix[i2]]);
-                    printf("eta: %f; ", etas[ix[i2]]);
-                    printf("phi: %f; ", phis[ix[i2]]);
-                    printf("z0: %f; ", z0[ix[i2]]);
-                    printf("dxy: %f; ", dxy[ix[i2]]);
-                    printf("puppiw: %f; ", puppiw[ix[i2]]);
-                    printf("pdgId: %d; ", pdgIds[ix[i2]]);
-                    printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i2]]));
-                    printf("\n");
-                    printf("id: %d; ", ix[i3]);
-                    printf("pt: %f; ",pts[ix[i3]]);
-                    printf("eta: %f; ", etas[ix[i3]]);
-                    printf("phi: %f; ", phis[ix[i3]]);
-                    printf("z0: %f; ", z0[ix[i3]]);
-                    printf("dxy: %f; ", dxy[ix[i3]]);
-                    printf("puppiw: %f; ", puppiw[ix[i3]]);
-                    printf("pdgId: %d; ", pdgIds[ix[i3]]);
-                    printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i3]]));
-                    printf("\n");
+                    // printf("\nid: %d; ", ix[i1]);
+                    // printf("pt: %f; ",pts[ix[i1]]);
+                    // printf("eta: %f; ", etas[ix[i1]]);
+                    // printf("phi: %f; ", phis[ix[i1]]);
+                    // printf("z0: %f; ", z0[ix[i1]]);
+                    // printf("dxy: %f; ", dxy[ix[i1]]);
+                    // printf("puppiw: %f; ", puppiw[ix[i1]]);
+                    // printf("pdgId: %d; ", pdgIds[ix[i1]]);
+                    // printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i1]]));
+                    // printf("\n");
+                    // printf("id: %d; ", ix[i2]);
+                    // printf("pt: %f; ",pts[ix[i2]]);
+                    // printf("eta: %f; ", etas[ix[i2]]);
+                    // printf("phi: %f; ", phis[ix[i2]]);
+                    // printf("z0: %f; ", z0[ix[i2]]);
+                    // printf("dxy: %f; ", dxy[ix[i2]]);
+                    // printf("puppiw: %f; ", puppiw[ix[i2]]);
+                    // printf("pdgId: %d; ", pdgIds[ix[i2]]);
+                    // printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i2]]));
+                    // printf("\n");
+                    // printf("id: %d; ", ix[i3]);
+                    // printf("pt: %f; ",pts[ix[i3]]);
+                    // printf("eta: %f; ", etas[ix[i3]]);
+                    // printf("phi: %f; ", phis[ix[i3]]);
+                    // printf("z0: %f; ", z0[ix[i3]]);
+                    // printf("dxy: %f; ", dxy[ix[i3]]);
+                    // printf("puppiw: %f; ", puppiw[ix[i3]]);
+                    // printf("pdgId: %d; ", pdgIds[ix[i3]]);
+                    // printf("quality: %d; ", static_cast<unsigned short>(quality[ix[i3]]));
+                    // printf("\n");
                   }
                 }  // iso
               } else {
@@ -559,12 +565,12 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
   
   }  // loop on BXs
 
-  // std::cout << "Particles Num L1 Filter: " << global_l1_pass << std::endl;
-  // std::cout << "Paritcles Num L1 IntCut: " << global_int_cut << std::endl;
-  // std::cout << "Paritcles Num L1  HiCut: "  << global_high_cut << std::endl;
-  // std::cout << "Candidates Num L1: " << ctr << std::endl;
-  // std::cout << "W3Pi Num: " << passed << std::endl;
-  // std::cout << std::endl;
+  std::cout << "Particles Num L1 Filter: " << global_l1_pass << std::endl;
+  std::cout << "Paritcles Num L1 IntCut: " << global_int_cut << std::endl;
+  std::cout << "Paritcles Num L1  HiCut: "  << global_high_cut << std::endl;
+  std::cout << "Candidates Num L1: " << ctr << std::endl;
+  std::cout << "W3Pi Num: " << passed << std::endl;
+  std::cout << std::endl;
 
 
   iEvent.put(std::move(ret));
