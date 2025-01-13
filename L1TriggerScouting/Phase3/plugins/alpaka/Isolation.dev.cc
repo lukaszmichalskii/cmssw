@@ -51,22 +51,22 @@ ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView dat
   return accumulated <= max_isolation_threshold * data.pt()[thread_idx];
 }
 
-class EstimateSizeKernel {
-public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename Tc>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, T* mask, uint32_t size, Tc* accumulator) const {
-    for (uint32_t tid: uniform_elements(acc, size)) {
-      if (mask[tid] == static_cast<uint32_t>(1)) {
-        alpaka::atomicAdd(acc, &accumulator[0], static_cast<uint32_t>(1));
-      }
-    }
-  }
-};
+// class EstimateSizeKernel {
+// public:
+//   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename Tc>
+//   ALPAKA_FN_ACC void operator()(TAcc const& acc, T* mask, uint32_t size, Tc* accumulator) const {
+//     for (uint32_t tid: uniform_elements(acc, size)) {
+//       if (mask[tid] == static_cast<uint32_t>(1)) {
+//         alpaka::atomicAdd(acc, &accumulator[0], static_cast<uint32_t>(1));
+//       }
+//     }
+//   }
+// };
 
 class FilterKernel {
 public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, T* mask) const {
+  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename Tc, typename U>
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, T* mask, Tc* accumulator, U* offsets) const {
     const uint8_t min_threshold = 7; 
     uint32_t grid_dim = alpaka::getWorkDiv<alpaka::Grid, alpaka::Blocks>(acc)[0];
     for (uint32_t block_idx: independent_groups(acc, grid_dim)) {
@@ -79,70 +79,86 @@ public:
         auto pdgid_11 = abs(data.pdgId()[thread_idx]) == 11;
         auto min_th_pass = data.pt()[thread_idx] >= min_threshold;
         if ((pdgid_211 || pdgid_11) && min_th_pass && ConeIsolation(acc, data, thread_idx, begin, end)) {
-          mask[thread_idx] = 1;
+          mask[thread_idx] = static_cast<uint8_t>(1);
+          alpaka::atomicAdd(acc, &accumulator[0], static_cast<uint32_t>(1));
+          alpaka::atomicAdd(acc, &offsets[block_idx], static_cast<uint32_t>(1));
         }
       }
     }
   }
 };
 
-class TransformKernel {
-public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, PuppiCollection::View filtered, T* mask) const {
-    // uint32_t grid_dim = alpaka::getWorkDiv<alpaka::Grid, alpaka::Blocks>(acc)[0];
-    // for (uint32_t block_idx: independent_groups(acc, grid_dim)) {
-    //   uint32_t begin = data.offsets()[block_idx];
-    //   uint32_t end = data.offsets()[block_idx + 1];
-    //   uint32_t block_dim = end - begin;
-    //   uint32_t filtered_begin = filtered.offsets()[block_idx];
-    //   uint32_t filtered_end = 0;
-    //   for (uint32_t tid: independent_group_elements(acc, block_dim)) {
-    //     auto thread_idx = tid + begin; // global index
+// class TransformKernel {
+// public:
+//   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
+//   ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, PuppiCollection::View filtered, T* mask) const {
+//     // uint32_t grid_dim = alpaka::getWorkDiv<alpaka::Grid, alpaka::Blocks>(acc)[0];
+//     // for (uint32_t block_idx: independent_groups(acc, grid_dim)) {
+//     //   uint32_t begin = data.offsets()[block_idx];
+//     //   uint32_t end = data.offsets()[block_idx + 1];
+//     //   uint32_t block_dim = end - begin;
+//     //   uint32_t filtered_begin = filtered.offsets()[block_idx];
+//     //   uint32_t filtered_end = 0;
+//     //   for (uint32_t tid: independent_group_elements(acc, block_dim)) {
+//     //     auto thread_idx = tid + begin; // global index
 
-    //     if (mask[thread_idx] == static_cast<uint32_t>(1)) {
-    //       alpaka::atomicAdd(acc, &filtered_end, static_cast<uint32_t>(1));
-    //     }
-    //   }
-    //   filtered.offsets()[block_idx + 1] = filtered_begin + filtered_end;
-    // }
-  }
-};
+//     //     if (mask[thread_idx] == static_cast<uint32_t>(1)) {
+//     //       alpaka::atomicAdd(acc, &filtered_end, static_cast<uint32_t>(1));
+//     //     }
+//     //   }
+//     //   filtered.offsets()[block_idx + 1] = filtered_begin + filtered_end;
+//     // }
+//   }
+// };
 
 PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   const size_t size = raw_data.view().metadata().size();
 
   // Prepare mask for filtering and isolation
   Vec<alpaka::DimInt<1>> extent(size);
+  Vec<alpaka::DimInt<1>> fixed_extent(raw_data.view().bx().size());
   Vec<alpaka::DimInt<1>> variable(1);
 
   // Allocate device memory
-  auto mask = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, extent);
+  auto mask = alpaka::allocAsyncBuf<uint8_t, Idx>(queue, extent);
+  auto bx_mask = alpaka::allocAsyncBuf<uint8_t, Idx>(queue, fixed_extent);
+  auto offsets = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, fixed_extent);
   auto estimated_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, variable);
   auto copy_ptr = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, variable);
 
   // Initialize device memory
   alpaka::memset(queue, mask, 0);
-  alpaka::memset(queue, estimated_size, static_cast<uint32_t>(0));
-  alpaka::memset(queue, copy_ptr, static_cast<uint32_t>(0));
+  alpaka::memset(queue, offsets, 0);
+  alpaka::memset(queue, estimated_size, 0);
+  alpaka::memset(queue, copy_ptr, 0);
 
   // Accelerator setup
   uint32_t threads_per_block = 128; // conservative constraint of particles per single processing block on hardware.
   uint32_t blocks_per_grid = raw_data.view().bx().size();
   // uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view(), mask.data());
+  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view(), mask.data(), estimated_size.data(), offsets.data());
 
-  threads_per_block = 1024;
-  blocks_per_grid = divide_up_by(size, threads_per_block);
-  grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, EstimateSizeKernel{}, mask.data(), size, estimated_size.data());
+  // threads_per_block = 1024;
+  // blocks_per_grid = divide_up_by(size, threads_per_block);
+  // grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
+  // alpaka::exec<Acc1D>(queue, grid, EstimateSizeKernel{}, mask.data(), size, estimated_size.data());
 
   uint32_t h_estimated_size = 0;
   alpaka::memcpy(queue, createView(DEVICE_HOST, &h_estimated_size, variable), estimated_size); 
 
-  PuppiCollection filtered(h_estimated_size, queue);
-  alpaka::exec<Acc1D>(queue, grid, TransformKernel{}, raw_data.const_view(), filtered.view(), mask.data());
+  uint32_t* h_offsets = new uint32_t[raw_data.view().bx().size()];
+  alpaka::memcpy(queue, createView(DEVICE_HOST, h_offsets, fixed_extent), offsets); 
+
+  auto ct = 0;
+  std::cout << "Offsets: " << std::endl;
+  for (uint32_t i = 0; i < raw_data.view().bx().size(); ++i) {
+    // std::cout << i << " -> " << h_offsets[i] << std::endl;
+    if (h_offsets[i] >= 3)
+      ct++;
+  }
+  std::cout << "Min 3 (>=) offsets: " << ct << std::endl;
+  std::cout << std::endl;
 
   std::cout << "Expected: " << size << std::endl;
   std::cout << "Estimated size: " << h_estimated_size << std::endl;
