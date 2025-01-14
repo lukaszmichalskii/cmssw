@@ -77,7 +77,11 @@ void ScPhase2PuppiRawToDigi::produce(edm::Event &iEvent, const edm::EventSetup &
     iEvent.put(unpackObj(iEvent.id().event(), *scoutingRawDataCollection, structBuffer_));
   }
   if (doSOA_) {
+    auto start = std::chrono::high_resolution_clock::now();
     iEvent.put(unpackSOA(*scoutingRawDataCollection));
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Unpacking OK (" << duration.count() << " us)" << std::endl;
   }
   if (doCandidate_ || doStruct_ || doSOA_) {
     iEvent.put(std::make_unique<unsigned int>(nbx_), "nbx");
