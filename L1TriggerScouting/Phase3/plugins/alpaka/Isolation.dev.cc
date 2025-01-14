@@ -106,8 +106,6 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   auto device_mask = alpaka::allocAsyncBuf<uint8_t, Idx>(queue, extent);
   auto device_charge = alpaka::allocAsyncBuf<int8_t, Idx>(queue, extent);
   auto device_estimated_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
-  auto device_int_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
-  auto device_high_cut_ct = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   auto& device_offsets = raw_data.view().offsets();
 
   auto device_partial_size = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
@@ -119,8 +117,6 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   alpaka::memset(queue, device_mask, 0);
   alpaka::memset(queue, device_charge, 0);
   alpaka::memset(queue, device_estimated_size, 0);
-  alpaka::memset(queue, device_int_cut_ct, 0);
-  alpaka::memset(queue, device_high_cut_ct, 0);
 
   // Destination memory for data to be copied to debug and size estimation
   uint32_t* host_estimated_size = new uint32_t[1];
@@ -138,8 +134,9 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   host_int_cut_ct[0] = 0;
   host_high_cut_ct[0] = 0;
 
-  std::array<uint32_t, 3564+1> host_offsets{};
-  alpaka::memcpy(queue, createView(host, host_offsets, Vec<alpaka::DimInt<1>>(3564+1)), createView(alpaka::getDev(queue), device_offsets, Vec<alpaka::DimInt<1>>(3564+1)));
+  auto osize = raw_data.const_view().offsets().size();
+  std::vector<uint32_t> host_offsets(osize);
+  alpaka::memcpy(queue, createView(host, host_offsets, Vec<alpaka::DimInt<1>>(osize)), createView(alpaka::getDev(queue), device_offsets, Vec<alpaka::DimInt<1>>(osize)));
   alpaka::wait(queue);
 
   // Combinatorics
@@ -147,10 +144,11 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   for (size_t bx_idx = 0; bx_idx < raw_data.const_view().bx().size(); bx_idx++) {
     auto begin = host_offsets[bx_idx];
     auto end = host_offsets[bx_idx+1];
-
-    if (end - begin == 0) 
+    // printf("begin: %d, end: %d (%zu)\n", begin, end, bx_idx);
+    if (end == 0xFFFFFFFF) // stream termination signal
+      break;
+    if (end - begin == 0)
       continue;
-
     alpaka::memset(queue, device_partial_size, 0);
     alpaka::memset(queue, device_partial_int_cut_ct, 0);
     alpaka::memset(queue, device_partial_high_cut_ct, 0);
@@ -174,18 +172,21 @@ size_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
 
     Combinatorics(queue, raw_data.const_view(), begin, end, device_mask.data(), device_charge.data(), device_partial_size.data(), device_partial_int_cut_ct.data(), device_partial_high_cut_ct.data(), device_best_score.data());
     alpaka::memcpy(queue, createView(host, host_best_score, Vec<alpaka::DimInt<1>>(1)), device_best_score);
-
     if (host_best_score[0] > 0)
       w3pi++;
   }
 
   // Debug
-  std::cout << "Particles Num L1 Filter: " << host_estimated_size[0] << std::endl;
-  std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
-  std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
-  std::cout << "Candidates Num L1: " << pass << std::endl;
-  std::cout << "W3Pi Num: " << w3pi << std::endl;
-  std::cout << std::endl;
+  // std::cout << "==========================================" << std::endl;
+  // std::cout << "Particles Num L1 Filter: " << host_estimated_size[0] << std::endl;
+  // std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
+  // std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
+  // std::cout << "Candidates Num L1: " << pass << std::endl;
+  // std::cout << "W3Pi Num: " << w3pi << std::endl;
+  // std::cout << "Detected Particles: " << w3pi << std::endl;
+  // std::cout << "==========================================" << std::endl;
+
+  // std::cout << std::endl;
 
   return w3pi;
 }
@@ -244,6 +245,39 @@ public:
               if (ConeIsolation(acc, data, i, begin, end) && ConeIsolation(acc, data, j, begin, end)) {
                 float pt_sum = data.pt()[thread_idx] + data.pt()[i] + data.pt()[j]; 
                 if (pt_sum > best_score[0]) {
+                  // printf("Indices: [%d, %d, %d], Mass: %.0f, Range: (%d, %d)\n", thread_idx - begin, i - begin, j - begin, mass, begin, end);
+                  // if (thread_idx - begin == 3 && i - begin == 8 && j - begin == 15) {
+                  //   printf("\nid: %d; ", thread_idx - begin);
+                  //   printf("pt: %f; ",data.pt()[thread_idx]);
+                  //   printf("eta: %f; ", data.eta()[thread_idx]);
+                  //   printf("phi: %f; ", data.phi()[thread_idx]);
+                  //   printf("z0: %f; ", data.z0()[thread_idx]);
+                  //   printf("dxy: %f; ", data.dxy()[thread_idx]);
+                  //   printf("puppiw: %f; ", data.puppiw()[thread_idx]);
+                  //   printf("pdgId: %d; ", data.pdgId()[thread_idx]);
+                  //   printf("quality: %d; ", static_cast<unsigned short>(data.quality()[thread_idx]));
+                  //   printf("\n");
+                  //   printf("id: %d; ", i - begin);
+                  //   printf("pt: %f; ",data.pt()[i]);
+                  //   printf("eta: %f; ", data.eta()[i]);
+                  //   printf("phi: %f; ", data.phi()[i]);
+                  //   printf("z0: %f; ", data.z0()[i]);
+                  //   printf("dxy: %f; ", data.dxy()[i]);
+                  //   printf("puppiw: %f; ", data.puppiw()[i]);
+                  //   printf("pdgId: %d; ", data.pdgId()[i]);
+                  //   printf("quality: %d; ", static_cast<unsigned short>(data.quality()[i]));
+                  //   printf("\n");
+                  //   printf("id: %d; ", j - begin);
+                  //   printf("pt: %f; ",data.pt()[j]);
+                  //   printf("eta: %f; ", data.eta()[j]);
+                  //   printf("phi: %f; ", data.phi()[j]);
+                  //   printf("z0: %f; ", data.z0()[j]);
+                  //   printf("dxy: %f; ", data.dxy()[j]);
+                  //   printf("puppiw: %f; ", data.puppiw()[j]);
+                  //   printf("pdgId: %d; ", data.pdgId()[j]);
+                  //   printf("quality: %d; ", static_cast<unsigned short>(data.quality()[j]));
+                  //   printf("\n");
+                  // }
                   best_score[0] = pt_sum;
                 }
               }
@@ -277,14 +311,34 @@ public:
     const uint8_t int_threshold = 12;  
     const uint8_t high_threshold = 15;
 
+    // for (auto thread_idx : uniform_elements(acc, begin, end)) {
+    //   // printf("thread_idx: %d\n", thread_idx);
+    //   if (abs(data.pdgId()[thread_idx]) == 211 || abs(data.pdgId()[thread_idx]) == 11) {
+    //     // printf("pdgId: %d\n", data.pdgId()[thread_idx]);
+    //     if (data.pt()[thread_idx] >= min_threshold) {
+    //       // printf("pt: %f\n", data.pt()[thread_idx]);
+    //       mask[thread_idx] = static_cast<uint8_t>(1);
+    //       charge[thread_idx] = static_cast<int8_t>(abs(data.pdgId()[thread_idx]) == 11 ? (data.pdgId()[thread_idx] > 0 ? -1 : +1) : (data.pdgId()[thread_idx] > 0 ? +1 : -1));
+    //       // printf("masking\n");
+    //       if (data.pt()[thread_idx] >= int_threshold)
+    //         alpaka::atomicAdd(acc, &int_cut_ct[0], static_cast<uint32_t>(1));
+    //       if (data.pt()[thread_idx] >= high_threshold)
+    //         alpaka::atomicAdd(acc, &high_cut_ct[0], static_cast<uint32_t>(1));
+    //     }
+    //   }
+    //   // printf("next loop jump\n");
+    // }
+
     for (auto thread_idx : uniform_elements(acc, begin, end)) {
-      if (abs(data.pdgId()[thread_idx]) == 211 || abs(data.pdgId()[thread_idx]) == 11) {
-        if (data.pt()[thread_idx] >= min_threshold) {
+      auto cls = alpaka::math::abs(acc, static_cast<int>(data.pdgId()[thread_idx]));
+      if (cls == 211 || cls == 11) {
+        auto pt = data.pt()[thread_idx];
+        if (pt >= min_threshold) {
           mask[thread_idx] = static_cast<uint8_t>(1);
-          charge[thread_idx] = static_cast<int8_t>(abs(data.pdgId()[thread_idx]) == 11 ? (data.pdgId()[thread_idx] > 0 ? -1 : +1) : (data.pdgId()[thread_idx] > 0 ? +1 : -1));
-          if (data.pt()[thread_idx] >= int_threshold)
+          charge[thread_idx] = static_cast<int8_t>(cls == 11 ? (cls > 0 ? -1 : +1) : (cls > 0 ? +1 : -1));
+          if (pt >= int_threshold)
             alpaka::atomicAdd(acc, &int_cut_ct[0], static_cast<uint32_t>(1));
-          if (data.pt()[thread_idx] >= high_threshold)
+          if (pt >= high_threshold)
             alpaka::atomicAdd(acc, &high_cut_ct[0], static_cast<uint32_t>(1));
         }
       }

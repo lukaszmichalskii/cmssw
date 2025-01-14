@@ -47,6 +47,7 @@ private:
 
   size_t w3pi_results_ = 0;
   size_t w3pi_num_ = 0;
+  size_t product_ = 0;
   std::chrono::high_resolution_clock::time_point start_, end_;
 
   // Pipeline methods

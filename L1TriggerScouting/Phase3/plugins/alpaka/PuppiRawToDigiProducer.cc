@@ -10,7 +10,7 @@ PuppiRawToDigiProducer::PuppiRawToDigiProducer(edm::ParameterSet const& config)
     fed_ids_(config.getParameter<std::vector<unsigned int>>("fedIDs")) {}
 
 void PuppiRawToDigiProducer::Summary(const long &duration) {
-  std::cout << "Decoding raw to digi took: " << duration << " ms"  << std::endl;
+  std::cout << "Unpacking OK (" << duration << " us)"  << std::endl;
 }
 
 std::chrono::high_resolution_clock::time_point PuppiRawToDigiProducer::Tick() {
@@ -66,7 +66,7 @@ PuppiCollection PuppiRawToDigiProducer::UnpackCollection(Queue &queue, const SDS
 
 void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup const& event_setup) {
   // LogSeparator();
-  // auto start = Tick();
+  auto start = Tick();
 
   //////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////// CODE BLOCK /////////////////////////////////////
@@ -84,10 +84,10 @@ void PuppiRawToDigiProducer::produce(device::Event& event, device::EventSetup co
   ///////////////////////////////////// END CODE BLOCK /////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
-  // auto end = Tick();
-  // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  auto end = Tick();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
   
-  // Summary(duration.count());
+  Summary(duration.count());
   // LogSeparator();
 }
 
