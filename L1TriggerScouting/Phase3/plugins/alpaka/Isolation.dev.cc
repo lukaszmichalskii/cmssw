@@ -53,19 +53,29 @@ ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView dat
 
 class FilterKernel {
 public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename Tc, typename U>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, T* mask, Tc* size, U* offsets) const {
+  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data) const {
     const uint8_t min_threshold = 7; 
     const uint8_t int_threshold = 12;
     const uint8_t high_threshold = 15;
-    auto prev_size = size[0];
+
+    // auto& high_cut_ct = alpaka::declareSharedVar<int, __COUNTER__>(acc);
+    // auto& int_cut_ct = alpaka::declareSharedVar<int, __COUNTER__>(acc);
+    auto& size = alpaka::declareSharedVar<int, __COUNTER__>(acc);
+    auto& mask = alpaka::declareSharedVar<int[128], __COUNTER__>(acc);
+
+    if (once_per_block(acc)) {
+      size = 0;
+      for (auto idx = 0; idx < 128; idx++)
+        mask[idx] = 0;
+    }
 
     uint32_t grid_dim = alpaka::getWorkDiv<alpaka::Grid, alpaka::Blocks>(acc)[0];
     for (uint32_t block_idx: independent_groups(acc, grid_dim)) {
       uint32_t begin = data.offsets()[block_idx];
       uint32_t end = data.offsets()[block_idx + 1];
       if (end == 0xFFFFFFFF)
-        break;
+        continue;
       if (end - begin == 0) 
         continue;
       uint32_t block_dim = end - begin;
@@ -77,11 +87,26 @@ public:
         auto pt = data.pt()[thread_idx];
         if (pt < min_threshold)
           continue;
-        // if (!ConeIsolation(acc, data, thread_idx, begin, end))
-        //   continue;
-        mask[thread_idx] = 1;
-        alpaka::atomicAdd(acc, &size[0], static_cast<uint32_t>(1));
+        alpaka::atomicAdd(acc, &mask[tid], 1);
       }
+
+      alpaka::syncBlockThreads(acc);
+
+      if (once_per_block(acc)) {
+        for (auto idx = 0; idx < 128; idx++) {
+          if (mask[idx] == 1)
+            alpaka::atomicAdd(acc, &size, 1);
+        }
+        if (size < 3)
+          continue;
+        // printf("(%d, %d) -> %d\n", begin, end, size);
+      }
+        
+      // for (uint32_t tid: independent_group_elements(acc, block_dim)) {
+      //   auto thread_id = tid + begin; // global index
+      //   if (mask[thread_idx] == 0)
+      //     continue;
+      // }
     }
     // printf("Size: %d (%d)\n", size[0], size[0] - prev_size);
     // prev_size = size[0];
@@ -94,63 +119,11 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   uint32_t blocks_per_grid = raw_data.view().bx().size();
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
-  // Prepare mask for filtering and isolation
-  Vec<alpaka::DimInt<1>> extent(raw_data.const_view().metadata().size());
-  Vec<alpaka::DimInt<1>> fixed_extent(raw_data.const_view().offsets().size());
-  Vec<alpaka::DimInt<1>> variable(1);
-
-  // Allocate device memory
-  auto mask = alpaka::allocAsyncBuf<uint8_t, Idx>(queue, extent);
-  auto offsets = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, fixed_extent);
-  auto fsize = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, variable);
-
-  // Initialize device memory
-  alpaka::memset(queue, mask, 0);
-  alpaka::memset(queue, fsize, 0);
-
   // Enqueue kernel
   auto t = std::chrono::high_resolution_clock::now();
-  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view(), mask.data(), fsize.data(), offsets.data());
+  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view());
+  alpaka::wait(queue);
   std::cout << "Kernel: OK [" << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t).count() << " ns]" << std::endl;
-
-  // Copy filtered data
-  auto u = std::chrono::high_resolution_clock::now();
-  uint32_t h_fsize = 0;
-  alpaka::memcpy(queue, createView(DEVICE_HOST, &h_fsize, variable), fsize); 
-  std::cout << "Copy: OK [" << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - u).count() << " ns]" << std::endl;
-  auto v = std::chrono::high_resolution_clock::now();
-  auto data = PuppiCollection(h_fsize, queue);
-  std::cout << "Memalloc: OK [" << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - v).count() << " ns]" << std::endl;
-  std::cout << "Filtered size: " << data.const_view().metadata().size() << std::endl;
-
-  // uint32_t h_estimated_size = 0;
-  // alpaka::memcpy(queue, createView(DEVICE_HOST, &h_estimated_size, variable), estimated_size); 
-
-  // uint32_t* h_offsets = new uint32_t[raw_data.view().bx().size()];
-  // alpaka::memcpy(queue, createView(DEVICE_HOST, h_offsets, fixed_extent), offsets); 
-
-  // std::cout << "==========================================" << std::endl;
-  // std::cout << "Particles Num L1 Filter: " << host_estimated_size << std::endl;
-  // std::cout << "Paritcles Num L1 IntCut: " << host_int_cut_ct[0] << std::endl;
-  // std::cout << "Paritcles Num L1  HiCut: "  << host_high_cut_ct[0] << std::endl;
-  // std::cout << "Candidates Num L1: " << pass << std::endl;
-  // std::cout << "W3Pi Num: " << w3pi << std::endl;
-  // std::cout << "Detected Particles: " << w3pi << std::endl;
-  // std::cout << "==========================================" << std::endl;
-
-  // auto ct = 0;
-  // std::cout << "Offsets: " << std::endl;
-  // for (uint32_t i = 0; i < raw_data.view().bx().size(); ++i) {
-  //   // std::cout << i << " -> " << h_offsets[i] << std::endl;
-  //   if (h_offsets[i] >= 3)
-  //     ct++;
-  // }
-  // std::cout << "Min 3 (>=) offsets: " << ct << std::endl;
-  // std::cout << std::endl;
-
-  // std::cout << "Expected: " << size << std::endl;
-  // std::cout << "Estimated size: " << h_estimated_size << std::endl;
-  // std::cout << "Reduction: " << static_cast<float>((size - h_estimated_size)) / size * 100.0f << "% (" << size - h_estimated_size << ")" << std::endl;
 
   return PuppiCollection(1, queue);
 }

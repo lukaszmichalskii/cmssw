@@ -274,6 +274,8 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
   size_t ctr = 0;
   size_t passed = 0;
   auto full = 0;
+  int ct = 0;
+  std::vector<int> times;
   for (unsigned int ibx = 0, nbx = src.bx.size(); ibx < nbx; ++ibx) {
     // if (ibx != 3526)
     //   continue;
@@ -293,6 +295,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
     charge.clear();
     int intermediatecut = 0;
     int highcut = 0;
+    auto t = std::chrono::high_resolution_clock::now();
     for (unsigned int i = 0; i < size; ++i) {  //make list of all hadrons
       if ((std::abs(pdgIds[i]) == 211 or std::abs(pdgIds[i]) == 11)) {
         if (pts[i] >= cuts.minpt1) {
@@ -305,6 +308,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         }
       }
     }
+    ct += ix.size();
+    times.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t).count());
+    printf("s: %zu, i: %d, h: %d (%d, %d) -> %d\n", ix.size(), intermediatecut, highcut, src.offsets[ibx], src.offsets[ibx + 1], src.offsets[ibx + 1] - src.offsets[ibx]);
     auto es = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(es - se);
     full += duration.count();
@@ -573,6 +579,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
 
 
   iEvent.put(std::move(ret));
+  auto mean = std::accumulate(times.begin(), times.end(), 0.0f) / times.size();
+  std::cout << "Kernel: OK [" << mean << " ns]" << std::endl;
+  std::cout << "Filtered Size: " << ct << std::endl; 
   std::cout << "Isolation Module: OK [" << full << " us]" << std::endl;
 
 }
