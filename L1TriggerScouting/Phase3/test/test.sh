@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# 27K	run000037
+# 128M	run000034
+# 486M	run000036
+# 1.6G	run000035
+# 2.9G	run000030
+# 5.0G	total
+
 function die { echo Failed $1: status $2 ; exit $2 ; }
 
 TEST_DIR=L1TriggerScouting/Phase3/test

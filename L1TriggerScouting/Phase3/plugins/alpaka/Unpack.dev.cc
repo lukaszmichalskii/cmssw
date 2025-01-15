@@ -31,8 +31,11 @@ public:
   ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, PuppiCollection::View out, size_t size) const {
     if (once_per_grid(acc)) { // prefix sum sequential workaround
       out.offsets()[0] = 0;
-      for (uint32_t idx = 1; idx <= size; idx++) {
-        out.offsets()[idx] = out.offsets()[idx-1] + static_cast<uint32_t>(data[idx-1] & 0xFFF);    
+      for (uint32_t idx = 1; idx < out.offsets().size(); idx++) {
+        if (idx <= size)
+          out.offsets()[idx] = out.offsets()[idx-1] + static_cast<uint32_t>(data[idx-1] & 0xFFF);  
+        else 
+          out.offsets()[idx] = 0xFFFFFFFF;
       }
     }
     
