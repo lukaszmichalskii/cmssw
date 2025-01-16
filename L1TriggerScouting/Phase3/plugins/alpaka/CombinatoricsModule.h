@@ -35,6 +35,9 @@ public:
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
+  void beginStream(edm::StreamID);
+  void endStream();
+
 private:
   // Tokens to read/write
   const device::EDGetToken<PuppiCollection> raw_token_;

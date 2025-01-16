@@ -9,15 +9,15 @@ IsolationModule::IsolationModule(edm::ParameterSet const& params)
     token_{produces()} {}
 
 void IsolationModule::produce(device::Event& event, device::EventSetup const& event_setup) {
-  auto s = std::chrono::high_resolution_clock::now();
+  // auto s = std::chrono::high_resolution_clock::now();
 
   auto& raw_data_collection = event.get(raw_token_);
   auto product = utils_.Isolate(event.queue(), raw_data_collection);
   event.emplace(token_, std::move(product));
 
-  auto e = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
-  std::cout << "Isolation: OK [" << duration.count() << " us]" << std::endl;
+  // auto e = std::chrono::high_resolution_clock::now();
+  // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
+  // std::cout << "Isolation: OK [" << duration.count() << " us]" << std::endl;
 }
 
 void IsolationModule::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

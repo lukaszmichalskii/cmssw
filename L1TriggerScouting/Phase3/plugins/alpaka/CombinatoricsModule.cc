@@ -9,21 +9,31 @@ CombinatoricsModule::CombinatoricsModule(edm::ParameterSet const& params)
     token_{produces()} {}
 
 void CombinatoricsModule::produce(device::Event& event, device::EventSetup const& event_setup) {
-  auto s = std::chrono::high_resolution_clock::now();
+  // auto s = std::chrono::high_resolution_clock::now();
 
   auto& raw_data_collection = event.get(raw_token_);
   auto product = utils_.Combinatorial(event.queue(), raw_data_collection);
   event.emplace(token_, std::move(product));
 
-  auto e = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
-  std::cout << "Combinatorics: OK [" << duration.count() << " us]" << std::endl;
+  // auto e = std::chrono::high_resolution_clock::now();
+  // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
+  // std::cout << "Combinatorics: OK [" << duration.count() << " us]" << std::endl;
 }
 
 void CombinatoricsModule::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("src");
   descriptions.addWithDefaultLabel(desc);
+}
+
+void CombinatoricsModule::beginStream(edm::StreamID) {
+  start_ = std::chrono::high_resolution_clock::now();
+}
+
+void CombinatoricsModule::endStream() {
+  end_ = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
+  std::cout << "W3PI: (" << duration.count() << " ms)" << std::endl;
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

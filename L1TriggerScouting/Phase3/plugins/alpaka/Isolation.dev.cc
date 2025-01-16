@@ -16,14 +16,8 @@ PlatformHost platform;
 DevHost DEVICE_HOST = alpaka::getDevByIdx(platform, 0);
 
 template<typename TAcc>
-ALPAKA_FN_ACC float Charge(TAcc const& acc, PuppiCollection::ConstView data, uint32_t i, uint32_t j, uint32_t k) {
-  auto cls1 = alpaka::math::abs(acc, static_cast<int>(data.pdgId()[i]));
-  auto cls2 = alpaka::math::abs(acc, static_cast<int>(data.pdgId()[j]));
-  auto cls3 = alpaka::math::abs(acc, static_cast<int>(data.pdgId()[k]));
-  auto c1 = cls1 == 11 ? (cls1 > 0 ? -1 : +1) : (cls1 > 0 ? +1 : -1);
-  auto c2 = cls2 == 11 ? (cls2 > 0 ? -1 : +1) : (cls2 > 0 ? +1 : -1);
-  auto c3 = cls3 == 11 ? (cls3 > 0 ? -1 : +1) : (cls3 > 0 ? +1 : -1);
-  return alpaka::math::abs(acc, c1 + c2 + c3) == 1;
+ALPAKA_FN_ACC int8_t Charge(TAcc const& acc, int16_t cls) {
+  return alpaka::math::abs(acc, static_cast<int>(cls)) == 11 ? (cls > 0 ? -1 : +1) : (cls > 0 ? +1 : -1);
 }
 
 
@@ -136,7 +130,7 @@ public:
       uint32_t end = data.offsets()[block_idx + 1];
       if (end == 0xFFFFFFFF)
         continue;
-      if (end - begin == 0) 
+      if (end - begin == 0)
         continue;
       uint32_t block_dim = end - begin;
       for (uint32_t tid: independent_group_elements(acc, block_dim)) {
@@ -169,39 +163,37 @@ public:
           continue;
         if (!ConeIsolation(acc, data, thread_idx, begin, end))
           continue;
-        for (uint32_t i = begin; i < end; i++) {
+        for (uint32_t i = 0; i < block_dim; i++) {
+          auto global_i_idx = i + begin;
           if (mask[i] == 0)
             continue;
-          if (i == thread_idx || data.pt()[i] < int_threshold)
+          if (global_i_idx == thread_idx || data.pt()[global_i_idx] < int_threshold)
+            continue; 
+          if (data.pt()[global_i_idx] > data.pt()[thread_idx] || (data.pt()[global_i_idx] == data.pt()[thread_idx] && global_i_idx < thread_idx))
             continue;
-          if (data.pt()[i] > data.pt()[thread_idx] || (data.pt()[i] == data.pt()[thread_idx] && i < thread_idx))
+          if (!AngularSeparation(acc, data, thread_idx, global_i_idx))
             continue;
-          if (!AngularSeparation(acc, data, thread_idx, i))
-            continue;
-          for (uint32_t j = begin; j < end; j++) {
+          for (uint32_t j = 0; j < block_dim; j++) {
+            auto global_j_idx = j + begin;
             if (mask[j] == 0)
               continue;
-            if (j == thread_idx || j == i || data.pt()[i] < min_threshold)
+            if (global_j_idx == thread_idx || global_j_idx == global_i_idx || data.pt()[global_i_idx] < min_threshold)
               continue;
-            if (data.pt()[j] > data.pt()[thread_idx] || (data.pt()[j] == data.pt()[thread_idx] && j < thread_idx))
+            if (data.pt()[global_j_idx] > data.pt()[thread_idx] || (data.pt()[j] == data.pt()[thread_idx] && global_j_idx < thread_idx))
               continue;
-            if (data.pt()[j] > data.pt()[i] || (data.pt()[j] == data.pt()[i] && j < i))
+            if (data.pt()[global_j_idx] > data.pt()[global_i_idx] || (data.pt()[global_j_idx] == data.pt()[global_i_idx] && global_j_idx < global_i_idx))
               continue;
-            if (data.pdgId()[thread_idx] != 211 && data.pdgId()[i] != 11 && data.pdgId()[j] != -11)
+            if (alpaka::math::abs(acc, static_cast<int>(Charge(acc, data.pdgId()[thread_idx]) + Charge(acc, data.pdgId()[global_i_idx]) + Charge(acc, data.pdgId()[global_j_idx]))) != 1)
               continue;
-            if (!Charge(acc, data, thread_idx, i, j))
-              continue;
-            auto mass = MassInvariant(acc, data, thread_idx, i, j);
+            auto mass = MassInvariant(acc, data, thread_idx, global_i_idx, global_j_idx);
+            // printf("%d, %d, %d -> (%d, %d) ? %f\n", tid, i, j, begin, end, mass);
             if (mass < invariant_mass_lower_bound || mass > invariant_mass_upper_bound) 
               continue;
-            if (AngularSeparation(acc, data, thread_idx, j) && AngularSeparation(acc, data, i, j)) {
-              if (ConeIsolation(acc, data, i, begin, end) && ConeIsolation(acc, data, j, begin, end)) {
-                printf("%d, %d, %d", thread_idx, i, j);
-                // float accumulated_pt = data.pt()[thread_idx] + data.pt()[i] + data.pt()[j]; 
-                printf("%d, %d, %d", thread_idx, i, j);
-                // if (accumulated_pt > best_score) {
-                //   alpaka::atomicAdd(acc, &best_score, accumulated_pt);
-                // }
+            if (AngularSeparation(acc, data, thread_idx, global_j_idx) && AngularSeparation(acc, data, global_i_idx, global_j_idx)) {
+              if (ConeIsolation(acc, data, global_i_idx, begin, end) && ConeIsolation(acc, data, global_j_idx, begin, end)) {
+                float accumulated_pt = data.pt()[thread_idx] + data.pt()[global_i_idx] + data.pt()[global_j_idx]; 
+                if (accumulated_pt > best_score)
+                  alpaka::atomicExch(acc, &best_score, accumulated_pt);
               }
             }          
           }
@@ -212,7 +204,7 @@ public:
 
       if (once_per_block(acc)) {
         if (best_score > 0) {
-          printf("(%d, %d) -> OK", begin, end);
+          printf("%d: (%d, %d) -> Score: %.2f\n", block_idx, begin, end, best_score);
         }
       }
     }
@@ -226,10 +218,8 @@ PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
   // Enqueue kernel
-  auto t = std::chrono::high_resolution_clock::now();
   alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view());
   alpaka::wait(queue);
-  std::cout << "Kernel: OK [" << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t).count() << " ns]" << std::endl;
 
   return PuppiCollection(1, queue);
 }

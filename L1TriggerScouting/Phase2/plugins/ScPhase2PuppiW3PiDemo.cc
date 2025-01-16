@@ -295,7 +295,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
     charge.clear();
     int intermediatecut = 0;
     int highcut = 0;
-    auto t = std::chrono::high_resolution_clock::now();
+    // auto t = std::chrono::high_resolution_clock::now();
     for (unsigned int i = 0; i < size; ++i) {  //make list of all hadrons
       if ((std::abs(pdgIds[i]) == 211 or std::abs(pdgIds[i]) == 11)) {
         if (pts[i] >= cuts.minpt1) {
@@ -308,9 +308,9 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
         }
       }
     }
-    ct += ix.size();
-    times.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t).count());
-    printf("s: %zu, i: %d, h: %d (%d, %d) -> %d\n", ix.size(), intermediatecut, highcut, src.offsets[ibx], src.offsets[ibx + 1], src.offsets[ibx + 1] - src.offsets[ibx]);
+    // ct += ix.size();
+    // times.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t).count());
+    // printf("s: %zu, i: %d, h: %d (%d, %d) -> %d\n", ix.size(), intermediatecut, highcut, src.offsets[ibx], src.offsets[ibx + 1], src.offsets[ibx + 1] - src.offsets[ibx]);
     auto es = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(es - se);
     full += duration.count();
@@ -388,7 +388,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
             continue;
           }
         // printf("2");
- 
+
         for (unsigned int i3 = 0; i3 < npions; ++i3) {
           // if (ix[i3] != 11) continue;
           if (i3 == i1 or i3 == i2)
@@ -397,6 +397,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
             // printf("low_pt_cut ");
             continue;
           }
+
           if (pts[ix[i3]] > pts[ix[i1]] || (pts[ix[i3]] == pts[ix[i1]] and i3 < i1)) {
             // printf("M1 ");
             continue;
@@ -407,10 +408,14 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
           }
           std::array<unsigned int, 3> tr{{ix[i1], ix[i2], ix[i3]}};  //triplet of indeces
           // printf("3\n");
+          // printf("%d, %d, %d -> (%d, %d) ? %d\n", ix[i1], ix[i2], ix[i3], src.offsets[ibx], src.offsets[ibx + 1], std::abs(charge[i1] + charge[i2] + charge[i3]) == 1);
+
           if (std::abs(charge[i1] + charge[i2] + charge[i3]) == 1) {
+
             //make Lorentz vectors for each triplet
             // if (pdgIds[ix[i1]] != 211 && pdgIds[ix[i2]] != 11 && pdgIds[ix[i3]] != -11) continue;
             auto mass = tripletmass(tr, pts, etas, phis);
+            // printf("%d, %d, %d -> (%d, %d) ? %f\n", ix[i1], ix[i2], ix[i3], src.offsets[ibx], src.offsets[ibx + 1], mass);
             // if (mass < 160 && mass > 140) {
             //   printf("mass -> %f", mass);
             //   printf("\nid: %d; ", ix[i1]);
@@ -445,6 +450,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
             //   printf("\n\n");
             // }
             if (mass >= cuts.minmass and mass <= cuts.maxmass) {  //MASS test
+
               // printf("4");
 
               // printf("\nid: %d; ", ix[i1]);
@@ -492,6 +498,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
                     // printf("7");
                     std::copy_n(tr.begin(), 3, bestTriplet.begin());
                     bestTripletScore = ptsum;
+                    
                     // printf("\nid: %d; ", ix[i1]);
                     // printf("pt: %f; ",pts[ix[i1]]);
                     // printf("eta: %f; ", etas[ix[i1]]);
@@ -550,6 +557,8 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       ret->quality.insert(ret->quality.end(), &src.quality[offs], &src.quality[offs + size]);
       passSOA_++;
       passed++;
+      printf("%d: (%d, %d) -> Score: %.2f\n", ibx, src.offsets[ibx], src.offsets[ibx + 1], bestTripletScore); 
+
       // printf("Increment");
     }
 
@@ -579,10 +588,10 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
 
 
   iEvent.put(std::move(ret));
-  auto mean = std::accumulate(times.begin(), times.end(), 0.0f) / times.size();
-  std::cout << "Kernel: OK [" << mean << " ns]" << std::endl;
-  std::cout << "Filtered Size: " << ct << std::endl; 
-  std::cout << "Isolation Module: OK [" << full << " us]" << std::endl;
+  // auto mean = std::accumulate(times.begin(), times.end(), 0.0f) / times.size();
+  // std::cout << "Kernel: OK [" << mean << " ns]" << std::endl;
+  // std::cout << "Filtered Size: " << ct << std::endl; 
+  // std::cout << "Isolation Module: OK [" << full << " us]" << std::endl;
 
 }
 
