@@ -34,6 +34,8 @@ public:
   // Virtual methods
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+  void beginStream(edm::StreamID);
+  void endStream();
 
 private:
   // Tokens to read/write
@@ -45,6 +47,8 @@ private:
 
   // Debugging helpers
   std::chrono::high_resolution_clock::time_point start_, end_;
+  uint32_t w3pi_ct_ = 0;
+  uint32_t w3pi_candidates = 0;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

@@ -9,7 +9,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 class Isolation {
 public:
-  PuppiCollection Isolate(Queue& queue, PuppiCollection const& data) const;
+  uint32_t Isolate(Queue& queue, PuppiCollection const& data) const;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

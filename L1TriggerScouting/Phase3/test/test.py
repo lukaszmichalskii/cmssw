@@ -23,6 +23,8 @@ process.load('Configuration.StandardSequences.Accelerators_cff')
 process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.threshold = 'ERROR'
+
 
 if len(options.buNumStreams) != len(options.buBaseDir):
     raise RuntimeError("Mismatch between buNumStreams (%d) and buBaseDirs (%d)" % (len(options.buNumStreams), len(options.buBaseDir)))
@@ -89,12 +91,12 @@ process.IsolationStruct = cms.EDProducer("IsolationModule@alpaka",
     ),
 )
 
-process.CombinatoricsStruct = cms.EDProducer("CombinatoricsModule@alpaka",
-    src = cms.InputTag("IsolationStruct"),
-    alpaka = cms.untracked.PSet(
-       backend = cms.untracked.string(options.backend)
-    ),
-)
+# process.CombinatoricsStruct = cms.EDProducer("CombinatoricsModule@alpaka",
+#     src = cms.InputTag("IsolationStruct"),
+#     alpaka = cms.untracked.PSet(
+#        backend = cms.untracked.string(options.backend)
+#     ),
+# )
 
 process.UnpackStruct.fedIDs = [*puppiStreamIDs]
 
@@ -112,17 +114,22 @@ process.Isolation = process.IsolationStruct.clone(
        backend = cms.untracked.string(options.backend)
     ),
 )
-process.Combinatorics = process.CombinatoricsStruct.clone(
-    src = cms.InputTag("Isolation"),
-    alpaka = cms.untracked.PSet(
-       backend = cms.untracked.string(options.backend)
-    ),
-)
+# process.Combinatorics = process.CombinatoricsStruct.clone(
+#     src = cms.InputTag("Isolation"),
+#     alpaka = cms.untracked.PSet(
+#        backend = cms.untracked.string(options.backend)
+#     ),
+# )
+
+# process.w3pi = cms.Path(
+#    process.Unpack +
+#    process.Isolation + 
+#    process.Combinatorics
+# )
 
 process.w3pi = cms.Path(
    process.Unpack +
-   process.Isolation +
-   process.Combinatorics
+   process.Isolation
 )
 
 process.schedule = cms.Schedule(process.w3pi)

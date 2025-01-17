@@ -115,6 +115,7 @@ void ScPhase2PuppiW3PiDemo::beginStream(edm::StreamID) {
   passStruct_ = 0;
   passSOA_ = 0;
   start_ = std::chrono::high_resolution_clock::now();
+  std::cout << "=====================================" << std::endl;
 }
 
 void ScPhase2PuppiW3PiDemo::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
@@ -129,9 +130,11 @@ void ScPhase2PuppiW3PiDemo::produce(edm::Event &iEvent, const edm::EventSetup &i
     runObj(*src, iEvent, countStruct_, passStruct_, "");
   }
   if (doSOA_) {
+    auto t = std::chrono::high_resolution_clock::now();
     edm::Handle<l1Scouting::PuppiSOA> src;
     iEvent.getByToken(soaToken_, src);
     runSOA(*src, iEvent);
+    std::cout << "Analysis: OK [" << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t).count() << " us]" << std::endl;
   }
 }
 
@@ -144,8 +147,9 @@ void ScPhase2PuppiW3PiDemo::endStream() {
     edm::LogImportant("ScPhase2AnalysisSummary") << "W3Pi Struct analysis: " << countStruct_ << " -> " << passStruct_;
   if (doSOA_) {
     auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
-    edm::LogImportant("ScPhase2AnalysisSummary") << "W3Pi SOA analysis: " << countSOA_ << " -> " << passSOA_;
-    edm::LogImportant("ScPhase2AnalysisSummary") << "W3Pi SOA analysis took: " << t.count() << " ms";
+    std::cout << "-------------------------------------" << std::endl;
+    edm::LogImportant("ScPhase2AnalysisSummary") << "W3Pi: " << countSOA_ << " -> " << passSOA_ << " (" << t.count() << " ms)";
+    std::cout << "=====================================" << std::endl;
   }
 }
 
@@ -557,7 +561,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       ret->quality.insert(ret->quality.end(), &src.quality[offs], &src.quality[offs + size]);
       passSOA_++;
       passed++;
-      printf("%d: (%d, %d) -> Score: %.2f\n", ibx, src.offsets[ibx], src.offsets[ibx + 1], bestTripletScore); 
+      // printf("%d: (%d, %d) -> Score: %.2f\n", ibx, src.offsets[ibx], src.offsets[ibx + 1], bestTripletScore); 
 
       // printf("Increment");
     }

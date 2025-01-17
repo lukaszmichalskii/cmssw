@@ -13,9 +13,17 @@ TEST_DIR=L1TriggerScouting/Phase2/test
 EXECUTABLE=runScoutingPhase2Puppi_cfg.py
 DATA=~/private/data/raw/Data/raw/
 
-if [ "$#" != "2" ]; then
-    die "Need exactly 2 arguments: 1st ('num_events'), 2nd ('run_number'), got $#" 1
+if [ "$#" != "3" ]; then
+    die "Need exactly 3 arguments: 1st ('cpu'), 2nd ('num_events'), 3rd ('run_number'), got $#" 1
+fi
+if [[ "$1" =~ ^(cpu)$ ]]; then
+    TARGET=$1
+else
+    die "Argument needs to be 'cpu'; got '$1'" 1
 fi
 
-echo "Running CPU-only test"
-cmsRun ${TEST_DIR}/${EXECUTABLE} runNumber=$2 buBaseDir=${DATA} fuBaseDir=${DATA} buNumStreams=1 maxEvents=$1
+
+if [ "${TARGET}" == "cpu" ]; then
+    echo "Running CPU-only test"
+    cmsRun ${TEST_DIR}/${EXECUTABLE} runNumber=$3 buBaseDir=${DATA} fuBaseDir=${DATA} buNumStreams=1 maxEvents=$2
+fi

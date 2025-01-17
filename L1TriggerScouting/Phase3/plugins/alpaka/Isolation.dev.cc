@@ -15,6 +15,12 @@ using namespace cms::alpakatools;
 PlatformHost platform;
 DevHost DEVICE_HOST = alpaka::getDevByIdx(platform, 0);
 
+ALPAKA_FN_HOST uint32_t ThreadsPerBlockUpperBound(uint32_t val) {
+  if (val <= 0)
+    return 1;
+  return std::pow(2, std::ceil(std::log2(val)));
+}
+
 template<typename TAcc>
 ALPAKA_FN_ACC int8_t Charge(TAcc const& acc, int16_t cls) {
   return alpaka::math::abs(acc, static_cast<int>(cls)) == 11 ? (cls > 0 ? -1 : +1) : (cls > 0 ? +1 : -1);
@@ -102,8 +108,8 @@ ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView dat
 
 class FilterKernel {
 public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data) const {
+  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, T* __restrict__ counter) const {
     const uint8_t SHARED_MEM_BLOCK = 128;
     const uint8_t min_threshold = 7; 
     const uint8_t int_threshold = 12;
@@ -201,105 +207,35 @@ public:
       }
 
       alpaka::syncBlockThreads(acc);
-
       if (once_per_block(acc)) {
         if (best_score > 0) {
-          printf("%d: (%d, %d) -> Score: %.2f\n", block_idx, begin, end, best_score);
+          alpaka::atomicAdd(acc, &counter[0], static_cast<uint32_t>(1));
+          // printf("%d: (%d, %d) -> Score: %.2f\n", block_idx, begin, end, best_score);
         }
       }
     }
   }
 };
 
-PuppiCollection Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
+uint32_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
   // Accelerator setup
-  uint32_t threads_per_block = 128; // conservative constraint of particles per single processing block on hardware.
+  uint32_t threads_per_block = ThreadsPerBlockUpperBound(128); // conservative constraint of particles per single processing block on hardware.
   uint32_t blocks_per_grid = raw_data.view().bx().size();
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
+  Vec<alpaka::DimInt<1>> var_extent(1);
+  auto dev_counter = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
+  alpaka::memset(queue, dev_counter, 0x0);
+
   // Enqueue kernel
-  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view());
+  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view(), dev_counter.data());
+  // return 0;
+
+  // Return analysis stats to the caller
   alpaka::wait(queue);
-
-  return PuppiCollection(1, queue);
+  uint32_t* counter = new uint32_t[1];
+  alpaka::memcpy(queue, createView(DEVICE_HOST, counter, Vec<alpaka::DimInt<1>>(1)), dev_counter);
+  return counter[0];
 }
-
-// class CombinatoricsKernel {
-// public:
-//   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T, typename U, typename Tc, typename Tf>
-//   ALPAKA_FN_ACC void operator()(
-//       TAcc const& acc, PuppiCollection::ConstView data, 
-//       uint32_t begin, uint32_t end, 
-//       T* __restrict__ mask, U* __restrict__ charge, 
-//       Tc* __restrict__ pions_num, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct, Tf* __restrict__ best_score) const {
-//     const uint8_t min_threshold = 7;  
-//     const uint8_t int_threshold = 12; 
-//     const uint8_t high_threshold = 15; 
-//     const float invariant_mass_upper_bound = 150.0;
-//     const float invariant_mass_lower_bound = 40.0;
-
-//     if (pions_num[0] < 3 || int_cut_ct[0] < 2 || high_cut_ct[0] < 1) 
-//       return;
-
-    // for (uint32_t thread_idx : uniform_elements(acc, begin, end)) {
-    //   if (mask[thread_idx] == static_cast<uint8_t>(1)) {
-    //     if (data.pt()[thread_idx] < high_threshold)
-    //       continue;
-    //     if (!utils::ConeIsolation(acc, data, thread_idx, begin, end))
-    //       continue;
-    //     for (uint32_t i = begin; i < end; i++) {
-    //       if (mask[i] == static_cast<uint8_t>(0))
-    //         continue;
-    //       if (i == thread_idx || data.pt()[i] < int_threshold)
-    //         continue;
-    //       if (data.pt()[i] > data.pt()[thread_idx] || (data.pt()[i] == data.pt()[thread_idx] && i < thread_idx))
-    //         continue;
-    //       if (!utils::AngularSeparation(acc, data, thread_idx, i))
-    //         continue;
-    //       for (uint32_t j = begin; j < end; j++) {
-    //         if (mask[j] == static_cast<uint8_t>(0))
-    //           continue;
-    //         if (j == thread_idx || j == i)
-    //           continue;
-    //         if (data.pt()[i] < min_threshold)
-    //           continue;
-    //         if (data.pt()[j] > data.pt()[thread_idx] || (data.pt()[j] == data.pt()[thread_idx] && j < thread_idx))
-    //           continue;
-    //         if (data.pt()[j] > data.pt()[i] || (data.pt()[j] == data.pt()[i] && j < i))
-    //           continue;
-    //         if (abs(charge[thread_idx] + charge[i] + charge[j]) != 1)
-    //           continue;
-    //         auto mass = utils::MassInvariant(acc, data, thread_idx, i, j);
-    //         if (mass < invariant_mass_lower_bound || mass > invariant_mass_upper_bound) 
-    //           continue;
-    //         if (utils::AngularSeparation(acc, data, thread_idx, j) && utils::AngularSeparation(acc, data, i, j)) {
-    //           if (utils::ConeIsolation(acc, data, i, begin, end) && utils::ConeIsolation(acc, data, j, begin, end)) {
-    //             float pt_sum = data.pt()[thread_idx] + data.pt()[i] + data.pt()[j]; 
-    //             if (pt_sum > best_score[0]) {
-    //               best_score[0] = pt_sum;
-    //             }
-    //           }
-    //         }          
-    //       }
-    //     }
-    //   }
-    // }
-//   }
-// };
-
-// template<typename T, typename U, typename Tc, typename Tf>
-// void Isolation::Combinatorics(
-//     Queue& queue, PuppiCollection::ConstView const_view,
-//     uint32_t begin, uint32_t end, 
-//     T* __restrict__ mask, U* __restrict__ charge, 
-//     Tc* __restrict__ pions_num, Tc* __restrict__ int_cut_ct, Tc* __restrict__ high_cut_ct, Tf* __restrict__ best_score) const {
-
-//   auto size = end - begin;
-//   uint32_t threads_per_block = 64;
-//   uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);
-//   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-//   alpaka::exec<Acc1D>(queue, grid, CombinatoricsKernel{}, const_view, begin, end, mask, charge, pions_num, int_cut_ct, high_cut_ct, best_score);
-// }
-
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

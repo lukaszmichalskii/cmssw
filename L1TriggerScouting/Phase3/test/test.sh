@@ -23,7 +23,6 @@ else
 fi
 
 
-
 if [ "${TARGET}" == "cpu" ]; then
     echo "Running CPU-only test"
     cmsRun ${TEST_DIR}/${EXECUTABLE} runNumber=$3 buBaseDir=${DATA} fuBaseDir=${DATA} buNumStreams=1 maxEvents=$2 backend=serial_sync
