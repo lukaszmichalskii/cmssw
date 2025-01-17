@@ -91,6 +91,13 @@ process.goodOrbitsByNBX.unpackers = [ "scPhase2PuppiRawToDigiStruct" ]
 analysisModules = [getattr(process,f"{a}Struct") for a in analyses]
 process.s_analyses = cms.Sequence(sum(analysisModules[1:], analysisModules[0]))
 
+process.sc4Jets = cms.EDProducer("ScPhase2PuppiSCJetsDemo",
+    src = cms.InputTag("scPhase2PuppiRawToDigiCandidate"),
+)
+
+process.ak4Jets = cms.EDProducer("ScPhase2PuppiAKJetsDemo",
+    src = cms.InputTag("scPhase2PuppiRawToDigiCandidate"),
+)
 
 ## Configure selected outputs
 process.scPhase2SelectedBXs.analysisLabels = [cms.InputTag(f"{a}Struct", "selectedBx") for a in analyses]
@@ -155,6 +162,12 @@ process.p_all = cms.Path(
   process.w3piSOA
 )
 
+process.p_jets = cms.Path(
+  process.scPhase2PuppiRawToDigiCandidate +
+  process.sc4Jets + 
+  process.ak4Jets
+)
+
 process.p_fast = cms.Path(
   process.scPhase2PuppiRawToDigiStruct +
   process.scPhase2PuppiRawToDigiSOA +
@@ -175,9 +188,23 @@ process.o_nanoInclusive = cms.EndPath(process.scPhase2NanoAll)
 process.o_nanoSelected = cms.EndPath(process.scPhase2PuppiNanoSelected)
 process.o_nanoBoth = cms.EndPath(process.scPhase2NanoAll + process.scPhase2PuppiNanoSelected)
 
-sched = [ process.p_inclusive, process.p_selected ]
-if options.run != "both":  [ getattr(process, "p_" + options.run)]
+#sched = [ process.p_inclusive, process.p_selected ]
 
-if options.outMode != "none":
-  sched.append(getattr(process, "o_"+options.outMode))
+process.scPhase2NanoJet = cms.OutputModule("OrbitNanoAODOutputModule",
+    fileName = cms.untracked.string("all.root"),
+    SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring()),
+    outputCommands = cms.untracked.vstring("drop *", 
+        "keep l1ScoutingRun3OrbitFlatTable_*_*_*",
+    ),
+    compressionLevel = cms.untracked.int32(4),
+    compressionAlgorithm = cms.untracked.string("LZ4"),
+)
+
+process.o_nanoJet = cms.EndPath(process.scPhase2NanoJet)
+
+sched = [process.p_jets, process.o_nanoJet]
+#if options.run != "both":  [ getattr(process, "p_" + options.run)]
+
+#if options.outMode != "none":
+#  sched.append(getattr(process, "o_"+options.outMode))
 process.schedule = cms.Schedule(*sched)
