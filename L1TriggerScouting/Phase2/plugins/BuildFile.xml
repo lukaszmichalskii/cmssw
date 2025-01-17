@@ -6,4 +6,5 @@
 <use name="DataFormats/L1TParticleFlow"/>
 <use name="L1TriggerScouting/Utilities"/>
 <use name="L1TriggerScouting/Phase2"/>
+<use name="fastjet"/>
 <flags EDM_PLUGIN="1"/>

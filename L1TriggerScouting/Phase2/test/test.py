@@ -193,21 +193,7 @@ process.o_nanoBoth = cms.EndPath(process.scPhase2NanoAll + process.scPhase2Puppi
 
 #sched = [ process.p_inclusive, process.p_selected ]
 
-process.scPhase2NanoJet = cms.OutputModule("OrbitNanoAODOutputModule",
-    fileName = cms.untracked.string("all.root"),
-    SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring()),
-    outputCommands = cms.untracked.vstring("drop *", 
-        "keep l1ScoutingRun3OrbitFlatTable_*_*_*",
-    ),
-    compressionLevel = cms.untracked.int32(4),
-    compressionAlgorithm = cms.untracked.string("LZ4"),
-)
 
-process.o_nanoJet = cms.EndPath(process.scPhase2NanoJet)
-
-sched = [process.p_jets, process.o_nanoJet]
-#if options.run != "both":  [ getattr(process, "p_" + options.run)]
-
-#if options.outMode != "none":
-#  sched.append(getattr(process, "o_"+options.outMode))
-process.schedule = cms.Schedule(*sched)
+if options.outMode != "none":
+  sched.append(getattr(process, "o_"+options.outMode))
+process.schedule = cms.Schedule(process.p_soa)

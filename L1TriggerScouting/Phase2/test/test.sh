@@ -10,7 +10,7 @@
 function die { echo Failed $1: status $2 ; exit $2 ; }
 
 TEST_DIR=L1TriggerScouting/Phase2/test
-EXECUTABLE=runScoutingPhase2Puppi_cfg.py
+EXECUTABLE=test.py
 DATA=~/private/data/raw/Data/raw/
 
 if [ "$#" != "3" ]; then
