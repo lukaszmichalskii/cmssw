@@ -1,4 +1,5 @@
 #include <alpaka/alpaka.hpp>
+#include <chrono>
 
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -10,6 +11,11 @@
 
 #include "DataFormats/FEDRawData/interface/FEDRawData.h"
 #include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
+
+#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Unpacking.h"
+#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Clustering.h"
+#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Tagging.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -28,8 +34,19 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
+  void unpacking(Queue &queue, const SDSRawDataCollection &raw_data);
+  void clustering(Queue &queue);
+  void tagging(Queue &queue);
+
+  Unpacking unpacking_;
+  Clustering clustering_;
+  Tagging tagging_;
+
+  PuppiCollection data_;
   edm::EDGetTokenT<SDSRawDataCollection> raw_token_; 
   std::chrono::high_resolution_clock::time_point start_stamp_, end_stamp_;
+  int bunch_crossing_ = 0;  
+  std::vector<unsigned int> fed_ids_;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

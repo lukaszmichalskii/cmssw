@@ -29,8 +29,8 @@ void IsolationModule::fillDescriptions(edm::ConfigurationDescriptions& descripti
 }
 
 void IsolationModule::beginStream(edm::StreamID) {
-  start_ = std::chrono::high_resolution_clock::now();
   std::cout << "=====================================" << std::endl;
+  start_ = std::chrono::high_resolution_clock::now();
 }
 
 void IsolationModule::endStream() {
