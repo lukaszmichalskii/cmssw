@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Benchmarks collected: https://cernbox.cern.ch/s/Oz9HmY9uv0OONOd
+
 # 27K	run000037
 # 128M	run000034
 # 486M	run000036
