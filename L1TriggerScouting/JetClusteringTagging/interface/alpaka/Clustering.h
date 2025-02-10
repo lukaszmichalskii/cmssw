@@ -9,7 +9,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 class Clustering {
 public:
-  void Cluster(Queue& queue);
+  void Cluster(Queue& queue, PuppiCollection& data);
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

@@ -9,7 +9,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 class Tagging {
 public:
-  void Tag(Queue& queue);
+  void Tag(Queue& queue, PuppiCollection& data);
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

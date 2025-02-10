@@ -20,4 +20,11 @@ inline ALPAKA_FN_HOST uint32_t ThreadsPerBlockUpperBound(uint32_t val) {
   return std::pow(2, std::ceil(std::log2(val)));
 }
 
+template<typename T>
+inline ALPAKA_FN_ACC void swap(T &a, T &b) {
+    T temp = a;
+    a = b;
+    b = temp;
+}
+
 } // namespace ALPAKA_ACCELERATOR_NAMESPACE
