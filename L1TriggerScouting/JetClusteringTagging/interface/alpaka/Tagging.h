@@ -9,7 +9,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 class Tagging {
 public:
-  uint32_t Tag(Queue& queue, PuppiCollection const& data) const;
+  void Tag(Queue& queue);
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

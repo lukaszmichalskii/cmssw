@@ -4,6 +4,7 @@
 #endif
 
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
+#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Utils.h"
 #include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Unpacking.h"
 
 
@@ -13,12 +14,9 @@ using namespace cms::alpakatools;
 
 template<typename T>
 auto CopyToDevice(Queue &queue, std::vector<T>& data) {
-  PlatformHost platform;
-  DevHost host = alpaka::getDevByIdx(platform, 0);
-  // Copy data to device
   Vec<alpaka::DimInt<1>> extent(data.size());
   auto device_buffer = alpaka::allocAsyncBuf<T, Idx>(queue, extent);
-  auto host_buffer = createView(host, data, extent); // alpaka::View can be used instead of alpaka::Buf
+  auto host_buffer = createView(kDeviceHost, data, extent); // alpaka::View can be used instead of alpaka::Buf
   alpaka::memcpy(queue, device_buffer, host_buffer);  
   alpaka::wait(queue);
   return device_buffer;

@@ -9,7 +9,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 class Clustering {
 public:
-  uint32_t Cluster(Queue& queue, PuppiCollection const& data) const;
+  void Cluster(Queue& queue);
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
