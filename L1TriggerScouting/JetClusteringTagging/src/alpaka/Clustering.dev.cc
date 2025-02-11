@@ -101,7 +101,6 @@ void Clustering::Cluster(Queue& queue, PuppiCollection& data) {
   uint32_t blocks_per_grid = divide_up_by(data.const_view().bx().size(), threads_per_block);        
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
   alpaka::exec<Acc1D>(queue, grid, ClusteringKernel{}, data.view());
-  alpaka::wait(queue);
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
