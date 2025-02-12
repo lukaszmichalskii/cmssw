@@ -1,10 +1,19 @@
 <lcgdict>
+  <!-- Puppi Collection -->
   <class name="edm::StdArray<unsigned int,3565>" />
   <class name="edm::StdArray<unsigned short,3564>" />
-
   <class name="PuppiSoA"/>
   <class name="PuppiSoA::View"/>
   <class name="PuppiSoA::ConstView"/>
   <class name="PuppiHostCollection"/>
   <class name="edm::Wrapper<PuppiHostCollection>" splitLevel="0"/>
+
+  <!-- Jet Collection -->
+  <class name="edm::StdArray<unsigned int,42768>" />
+  <class name="edm::StdArray<unsigned int,42769>" />
+  <class name="JetSoA"/>
+  <class name="JetSoA::View"/>
+  <class name="JetSoA::ConstView"/>
+  <class name="JetHostCollection"/>
+  <class name="edm::Wrapper<JetHostCollection>" splitLevel="0"/>
 </lcgdict>

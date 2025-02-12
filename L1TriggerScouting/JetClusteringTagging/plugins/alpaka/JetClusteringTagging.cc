@@ -4,7 +4,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 JetClusteringTagging::JetClusteringTagging(edm::ParameterSet const& params)
   : raw_token_{consumes<SDSRawDataCollection>(params.getParameter<edm::InputTag>("src"))},
-    fed_ids_(params.getParameter<std::vector<unsigned int>>("fedIDs")) {}
+    fed_ids_(params.getParameter<std::vector<uint32_t>>("fedIDs")),
+    clusters_num_(params.getParameter<uint32_t>("clustersNum")) {}
 
 void JetClusteringTagging::unpacking(Queue &queue, const SDSRawDataCollection &raw_data) {
   auto t1 = std::chrono::high_resolution_clock::now();
@@ -47,7 +48,7 @@ void JetClusteringTagging::clustering(Queue &queue) {
   
   //////////////////////////////////////////////////////////////////////////////////////////
 
-  clustering_.Cluster(queue, data_);
+  clustering_.Cluster(queue, data_, clusters_num_);
 
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -82,7 +83,8 @@ void JetClusteringTagging::produce(device::Event& event, device::EventSetup cons
 void JetClusteringTagging::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("src", edm::InputTag("rawDataCollector"));
-  desc.add<std::vector<unsigned int>>("fedIDs");
+  desc.add<std::vector<uint32_t>>("fedIDs");
+  desc.add<uint32_t>("clustersNum");
   descriptions.addWithDefaultLabel(desc);
 }
 

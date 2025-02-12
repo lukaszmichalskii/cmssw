@@ -331,6 +331,8 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
     bestTripletScore = 0;
 
     for (unsigned int i1 = 0; i1 < npions; ++i1) {
+      // if (ibx == 3563)
+      //   printf("%d, %d, %d, %f", ibx, i1, ix[i1], pts[ix[i1]]);
       // if (ix[i1] != 0) break;
       // printf("id: %d; ", ix[i1]);
       // printf("pt: %f; ",pts[ix[i1]]);

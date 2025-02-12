@@ -126,3 +126,9 @@ options.register ('backend',
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,          # string, int, or float
                   "Accelerator backend: serial_sync, cuda_async, or rocm_async")
+
+options.register ('clustersNum',
+                  12,
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.int,          # string, int, or float
+                  "Number of clusters for seeded cone clustering. Default 12.")

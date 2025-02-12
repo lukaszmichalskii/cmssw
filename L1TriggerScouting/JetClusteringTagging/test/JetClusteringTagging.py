@@ -79,9 +79,8 @@ os.system("touch " + buDirs[0] + "/" + "fu.lock")
 process.JetClusteringTaggingStruct = cms.EDProducer('JetClusteringTagging@alpaka',
     src = cms.InputTag('rawDataCollector'),
     fedIDs = cms.vuint32(),
-    alpaka = cms.untracked.PSet(
-       backend = cms.untracked.string(options.backend)
-    ),
+    alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
+    clustersNum = cms.uint32(options.clustersNum),
 )
 
 process.JetClusteringTaggingStruct.fedIDs = [*puppiStreamIDs]
@@ -89,9 +88,8 @@ process.JetClusteringTaggingStruct.fedIDs = [*puppiStreamIDs]
 process.JetClusteringTagging = process.JetClusteringTaggingStruct.clone(
     src = cms.InputTag('rawDataCollector'),
     fedIDs = [*puppiStreamIDs],
-    alpaka = cms.untracked.PSet(
-        backend = cms.untracked.string(options.backend)
-    ),
+    alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
+    clustersNum = cms.uint32(options.clustersNum),
 )
 
 process.jct = cms.Path(process.JetClusteringTagging)

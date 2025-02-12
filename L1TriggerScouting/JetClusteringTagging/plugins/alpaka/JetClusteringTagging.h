@@ -46,7 +46,8 @@ private:
   edm::EDGetTokenT<SDSRawDataCollection> raw_token_; 
   std::chrono::high_resolution_clock::time_point start_stamp_, end_stamp_;
   int bunch_crossing_ = 0;  
-  std::vector<unsigned int> fed_ids_;
+  std::vector<uint32_t> fed_ids_;
+  uint32_t clusters_num_;
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
