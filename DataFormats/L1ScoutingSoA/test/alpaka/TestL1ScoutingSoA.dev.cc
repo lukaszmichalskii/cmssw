@@ -5,7 +5,6 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 
 #include "TestL1ScoutingSoA.h"
-#include "DataFormats/L1ScoutingSoA/interface/PuppiConstants.h"
 
 using namespace alpaka;
 
@@ -35,8 +34,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::test_l1_scouting_soa {
     template <typename TAcc, typename = std::enable_if_t<isAccelerator<TAcc>>>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiSoAView view, int value) const {
       for (uint32_t idx : cms::alpakatools::uniform_elements(acc, view.metadata().size())) {
-        ALPAKA_ASSERT_ACC(view.bx().size() == constants::BX_ARRAY_SIZE);
-        ALPAKA_ASSERT_ACC(view.offsets().size() == constants::OFFSETS_ARRAY_SIZE);
+        ALPAKA_ASSERT_ACC(view.bx().size() == 3564);
+        ALPAKA_ASSERT_ACC(view.offsets().size() == 3564+1);
         ALPAKA_ASSERT_ACC(view[idx].pt() == static_cast<float>(value));
         ALPAKA_ASSERT_ACC(view[idx].eta() == static_cast<float>(value));
         ALPAKA_ASSERT_ACC(view[idx].phi() == static_cast<float>(value));

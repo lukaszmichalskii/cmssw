@@ -6,8 +6,6 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 #include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Utils.h"
 #include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Clustering.h"
-#include "DataFormats/L1ScoutingSoA/interface/alpaka/JetCollection.h"
-
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -114,67 +112,67 @@ public:
       }
 
       // debug logs
-      if (once_per_block(acc)) {
-        bool flag = true;
-        for (auto idx = 0; idx < SHARED_MEM_BLOCK - 1; idx++) {
-          auto curr = shared_pt[idx];
-          auto next = shared_pt[idx+1];
-          if (next <= curr) 
-            continue;
-          flag = false;
-          break;
-        }
-        assert(flag);
+      // if (once_per_block(acc)) {
+      //   bool flag = true;
+      //   for (auto idx = 0; idx < SHARED_MEM_BLOCK - 1; idx++) {
+      //     auto curr = shared_pt[idx];
+      //     auto next = shared_pt[idx+1];
+      //     if (next <= curr) 
+      //       continue;
+      //     flag = false;
+      //     break;
+      //   }
+      //   assert(flag);
 
-        uint32_t max = 0, max_id = 0;
-        for (uint32_t idx = 0; idx < data.bx().size(); idx++) {
-          auto begin = data.offsets()[idx];
-          auto end = data.offsets()[idx+1];
-          if (end == 0xFFFFFFFF)
-            break;
-          if (end - begin > max) {
-            max = end - begin;
-            max_id = idx;
-          }
-        }
-        if (block_idx != max_id)
-          return;
+      //   uint32_t max = 0, max_id = 0;
+      //   for (uint32_t idx = 0; idx < data.bx().size(); idx++) {
+      //     auto begin = data.offsets()[idx];
+      //     auto end = data.offsets()[idx+1];
+      //     if (end == 0xFFFFFFFF)
+      //       break;
+      //     if (end - begin > max) {
+      //       max = end - begin;
+      //       max_id = idx;
+      //     }
+      //   }
+      //   if (block_idx != max_id)
+      //     return;
         
-        printf("\nSorted %s: %d -> (%d, %d) [%d]\n", flag == true ? "OK" : "FAILED", block_idx, begin, end, end-begin);
-        for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-          if (sorted_indices[idx] == -1)
-            break;
-          printf("|%8d", sorted_indices[idx]);
-        }
-        printf("\n");
-        for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-          if (shared_pt[idx] == -1.0f)
-            break;
-          printf("|%8.2f", shared_pt[idx]);
-        }
-        printf("\n");
-        printf("Clusters Associations (%d):\n", clusters_num);
-        for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-          if (sorted_indices[idx] == -1)
-            break;
-          printf("|%8d", mask[sorted_indices[idx]]);
-        }
-        printf("\n");
-        printf("Clusters Sizes:\n");
-        int gaccu = 0;
-        for (uint32_t idx = 1; idx < clusters_num; idx++) {
-          int accu = 0;
-          for (uint32_t i = 0; i < SHARED_MEM_BLOCK; i++) {
-            if (mask[i] == idx)
-              accu += 1;
-          }
-          gaccu += accu;
-          printf("|%8d", accu);
-        }
-        printf("\n");
-        printf("Particles Clusters %d -> %d (%.0f%s)", end-begin, gaccu, 100.*gaccu/(end-begin), "%");
-        printf("\n");
-      }
+      //   printf("\nSorted %s: %d -> (%d, %d) [%d]\n", flag == true ? "OK" : "FAILED", block_idx, begin, end, end-begin);
+      //   for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+      //     if (sorted_indices[idx] == -1)
+      //       break;
+      //     printf("|%8d", sorted_indices[idx]);
+      //   }
+      //   printf("\n");
+      //   for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+      //     if (shared_pt[idx] == -1.0f)
+      //       break;
+      //     printf("|%8.2f", shared_pt[idx]);
+      //   }
+      //   printf("\n");
+      //   printf("Clusters Associations (%d):\n", clusters_num);
+      //   for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+      //     if (sorted_indices[idx] == -1)
+      //       break;
+      //     printf("|%8d", mask[sorted_indices[idx]]);
+      //   }
+      //   printf("\n");
+      //   printf("Clusters Sizes:\n");
+      //   int gaccu = 0;
+      //   for (uint32_t idx = 1; idx < clusters_num; idx++) {
+      //     int accu = 0;
+      //     for (uint32_t i = 0; i < SHARED_MEM_BLOCK; i++) {
+      //       if (mask[i] == idx)
+      //         accu += 1;
+      //     }
+      //     gaccu += accu;
+      //     printf("|%8d", accu);
+      //   }
+      //   printf("\n");
+      //   printf("Particles Clusters %d -> %d (%.0f%s)", end-begin, gaccu, 100.*gaccu/(end-begin), "%");
+      //   printf("\n");
+      // }
     }
   }
 };
@@ -194,11 +192,8 @@ void Clustering::Cluster(Queue& queue, PuppiCollection& data, uint32_t clusters_
 
   uint32_t* host_clustered_particles = new uint32_t[1];
   alpaka::memcpy(queue, createView(kDeviceHost, host_clustered_particles, Vec<alpaka::DimInt<1>>(1)), clustered_particles);
-  printf("\nClustered particles: %d -> %d (%.0f%%)\n", 
+  printf("Clustered particles: %d -> %d (%.0f%%)\n", 
     data.const_view().metadata().size(), host_clustered_particles[0], 100.*host_clustered_particles[0]/data.const_view().metadata().size());
-
-  // auto jets = JetCollection(host_clustered_particles[0], queue);
-  // printf("JetCollection: %d", jets.view().metadata().size());
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
