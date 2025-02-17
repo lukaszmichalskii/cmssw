@@ -9,6 +9,7 @@ JetClusteringTagging::JetClusteringTagging(edm::ParameterSet const& params)
 
 void JetClusteringTagging::unpacking(Queue &queue, const SDSRawDataCollection &raw_data) {
   auto t1 = std::chrono::high_resolution_clock::now();
+  std::cout << "-------------------------------------" << std::endl;
 
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -38,13 +39,12 @@ void JetClusteringTagging::unpacking(Queue &queue, const SDSRawDataCollection &r
 
   auto t2 = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-  std::cout << "-------------------------------------" << std::endl;
   std::cout << "Unpack: OK [" << duration.count() << " us]" << std::endl;
-  
 } 
 
 void JetClusteringTagging::clustering(Queue &queue) {
   auto t1 = std::chrono::high_resolution_clock::now();
+  std::cout << "-------------------------------------" << std::endl;
   
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,12 +54,12 @@ void JetClusteringTagging::clustering(Queue &queue) {
 
   auto t2 = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-  std::cout << "-------------------------------------" << std::endl;
   std::cout << "Clustering: OK [" << duration.count() << " us]" << std::endl;
 } 
 
 void JetClusteringTagging::tagging(Queue &queue) {
   auto t1 = std::chrono::high_resolution_clock::now();
+  std::cout << "-------------------------------------" << std::endl;
   
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -69,7 +69,6 @@ void JetClusteringTagging::tagging(Queue &queue) {
 
   auto t2 = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-  std::cout << "-------------------------------------" << std::endl;
   std::cout << "Tagging: OK [" << duration.count() << " us]" << std::endl;
 } 
 

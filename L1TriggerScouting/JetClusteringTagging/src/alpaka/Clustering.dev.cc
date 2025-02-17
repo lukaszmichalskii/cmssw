@@ -153,13 +153,6 @@ public:
             printf("|%8.2f", shared_pt[idx]);
           }
           printf("\n\n");
-          printf("Mask:\n");
-          for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-            if (sorted_indices[idx] == -1)
-              break;
-            printf("|%2d -> %2d", sorted_indices[idx], mask[sorted_indices[idx]]);
-          }
-          printf("\n\n");
           printf("Clusters Associations Local Map:\n");
           for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
             if (sorted_indices[idx] == -1)
