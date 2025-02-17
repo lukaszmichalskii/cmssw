@@ -12,17 +12,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 using namespace cms::alpakatools;
 
-class ClusterClassificationKernel {
-public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::View data) const {
-  }
-};
-
 class ClusteringKernel {
 public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename Tc>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::View data, uint32_t clusters_num, Tc* clustered_particles) const {
+  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::View data, uint32_t clusters_num) const {
     const uint8_t SHARED_MEM_BLOCK = 128;
     auto& sorted_indices = alpaka::declareSharedVar<int[SHARED_MEM_BLOCK], __COUNTER__>(acc);
     auto& shared_pt = alpaka::declareSharedVar<float[SHARED_MEM_BLOCK], __COUNTER__>(acc); 
@@ -30,22 +23,22 @@ public:
     auto& cluster = alpaka::declareSharedVar<uint32_t, __COUNTER__>(acc);
     auto& clusters_ptrack = alpaka::declareSharedVar<int, __COUNTER__>(acc);
 
-    // TODO: can be skipped later, just for debugging purposes.
-    // fill shared mem (EOF flags)
-    if (once_per_block(acc)) {
-      for (auto idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-        sorted_indices[idx] = -1;
-        shared_pt[idx] = -1.0f;
-        mask[idx] = 0;
-        cluster = 1;
-        clusters_ptrack = 0;
-      }
-    }
-
     // define grid dimensions
     uint32_t grid_dim = alpaka::getWorkDiv<alpaka::Grid, alpaka::Blocks>(acc)[0];
     for (uint32_t block_idx: independent_groups(acc, grid_dim)) {
-      // associate range to block
+      // fill shared mem (EOF flags)
+      if (once_per_block(acc)) {
+        for (auto idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+          sorted_indices[idx] = -1;
+          shared_pt[idx] = -1.0f;
+          mask[idx] = 0;
+          cluster = 1;
+          clusters_ptrack = 0;
+        }
+      }
+      alpaka::syncBlockThreads(acc);
+
+      // bind range to hw block
       uint32_t begin = data.offsets()[block_idx];
       uint32_t end = data.offsets()[block_idx + 1];
       if (end == 0xFFFFFFFF)
@@ -61,7 +54,6 @@ public:
         sorted_indices[tid] = tid;
         shared_pt[tid] = data.pt()[thread_idx];
       }
-      // synchronize threads within block
       alpaka::syncBlockThreads(acc);
 
       // odd-even sort algorithm
@@ -108,92 +100,110 @@ public:
             break;
           alpaka::atomicAdd(acc, &cluster, static_cast<uint32_t>(1));
         }
-        alpaka::atomicAdd(acc, &clustered_particles[0], static_cast<uint32_t>(clusters_ptrack));
+        alpaka::atomicAdd(acc, &data.clusters_density(), static_cast<uint32_t>(clusters_ptrack));
+      }
+
+      // fill cluster association
+      if (once_per_block(acc)) {
+        for (uint32_t idx = 0; idx < block_dim - 1; idx++) {
+          if (sorted_indices[idx] == -1)
+            continue;
+          uint32_t thread_idx = sorted_indices[idx] + begin; // global index
+          data.cluster_association()[thread_idx] = mask[sorted_indices[idx]];
+        }
       }
 
       // debug logs
-      // if (once_per_block(acc)) {
-      //   bool flag = true;
-      //   for (auto idx = 0; idx < SHARED_MEM_BLOCK - 1; idx++) {
-      //     auto curr = shared_pt[idx];
-      //     auto next = shared_pt[idx+1];
-      //     if (next <= curr) 
-      //       continue;
-      //     flag = false;
-      //     break;
-      //   }
-      //   assert(flag);
+      if (once_per_block(acc)) {
+        bool flag = true;
+        for (auto idx = 0; idx < SHARED_MEM_BLOCK - 1; idx++) {
+          auto curr = shared_pt[idx];
+          auto next = shared_pt[idx+1];
+          if (next <= curr) 
+            continue;
+          flag = false;
+          break;
+        }
+        assert(flag);
 
-      //   uint32_t max = 0, max_id = 0;
-      //   for (uint32_t idx = 0; idx < data.bx().size(); idx++) {
-      //     auto begin = data.offsets()[idx];
-      //     auto end = data.offsets()[idx+1];
-      //     if (end == 0xFFFFFFFF)
-      //       break;
-      //     if (end - begin > max) {
-      //       max = end - begin;
-      //       max_id = idx;
-      //     }
-      //   }
-      //   if (block_idx != max_id)
-      //     return;
-        
-      //   printf("\nSorted %s: %d -> (%d, %d) [%d]\n", flag == true ? "OK" : "FAILED", block_idx, begin, end, end-begin);
-      //   for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-      //     if (sorted_indices[idx] == -1)
-      //       break;
-      //     printf("|%8d", sorted_indices[idx]);
-      //   }
-      //   printf("\n");
-      //   for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-      //     if (shared_pt[idx] == -1.0f)
-      //       break;
-      //     printf("|%8.2f", shared_pt[idx]);
-      //   }
-      //   printf("\n");
-      //   printf("Clusters Associations (%d):\n", clusters_num);
-      //   for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
-      //     if (sorted_indices[idx] == -1)
-      //       break;
-      //     printf("|%8d", mask[sorted_indices[idx]]);
-      //   }
-      //   printf("\n");
-      //   printf("Clusters Sizes:\n");
-      //   int gaccu = 0;
-      //   for (uint32_t idx = 1; idx < clusters_num; idx++) {
-      //     int accu = 0;
-      //     for (uint32_t i = 0; i < SHARED_MEM_BLOCK; i++) {
-      //       if (mask[i] == idx)
-      //         accu += 1;
-      //     }
-      //     gaccu += accu;
-      //     printf("|%8d", accu);
-      //   }
-      //   printf("\n");
-      //   printf("Particles Clusters %d -> %d (%.0f%s)", end-begin, gaccu, 100.*gaccu/(end-begin), "%");
-      //   printf("\n");
-      // }
+        uint32_t max = 0, max_id = 0;
+        for (uint32_t idx = 0; idx < data.bx().size(); idx++) {
+          auto begin = data.offsets()[idx];
+          auto end = data.offsets()[idx+1];
+          if (end == 0xFFFFFFFF)
+            break;
+          if (end - begin > max) {
+            max = end - begin;
+            max_id = idx;
+          }
+        }
+        if (block_idx == max_id) {
+          printf("\nSorted %s: %d -> (%d, %d) [%d]\n", flag == true ? "OK" : "FAILED", block_idx, begin, end, end-begin);
+          printf("indices:\n");
+          for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+            if (sorted_indices[idx] == -1)
+              break;
+            printf("|%8d", sorted_indices[idx]);
+          }
+          printf("\n");
+          printf("pt:\n");
+          for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+            if (shared_pt[idx] == -1.0f)
+              break;
+            printf("|%8.2f", shared_pt[idx]);
+          }
+          printf("\n\n");
+          printf("Mask:\n");
+          for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+            if (sorted_indices[idx] == -1)
+              break;
+            printf("|%2d -> %2d", sorted_indices[idx], mask[sorted_indices[idx]]);
+          }
+          printf("\n\n");
+          printf("Clusters Associations Local Map:\n");
+          for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
+            if (sorted_indices[idx] == -1)
+              break;
+            printf("|%2d -> %2d", sorted_indices[idx], data.cluster_association()[sorted_indices[idx]+begin]);
+          }
+          printf("\n\n");
+          printf("Clusters Sizes (%d):\n", clusters_num);
+          int gaccu = 0;
+          for (uint32_t idx = 1; idx < clusters_num; idx++) {
+            int accu = 0;
+            for (uint32_t i = 0; i < block_dim; i++) {
+              if (data.cluster_association()[i+begin] == idx)
+                accu += 1;
+            }
+            gaccu += accu;
+            printf("|%8d", accu);
+          }
+          printf("\n\n");
+          printf("Block Clustering Density: %d -> %d (%.0f%s)\n", end-begin, gaccu, 100.0f * gaccu / (end-begin), "%");
+        }
+      }
     }
   }
 };
 
 void Clustering::Cluster(Queue& queue, PuppiCollection& data, uint32_t clusters_num) {
-  Vec<alpaka::DimInt<1>> var_extent(1);
+  // Vec<alpaka::DimInt<1>> var_extent(1);
   // Vec<alpaka::DimInt<1>> extent(data.view().metadata().size());
-  auto clustered_particles = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
+  // auto clustered_particles = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
   // auto clusters = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, extent);
-  alpaka::memset(queue, clustered_particles, 0x0);
+  // alpaka::memset(queue, clustered_particles, 0x0);
   // alpaka::memset(queue, clusters, 0x0);
 
   uint32_t threads_per_block = ThreadsPerBlockUpperBound(128);
   uint32_t blocks_per_grid = data.view().bx().size();        
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, ClusteringKernel{}, data.view(), clusters_num, clustered_particles.data());
+  alpaka::exec<Acc1D>(queue, grid, ClusteringKernel{}, data.view(), clusters_num);
+  // printf("Cluster Density: %.2f%%\n", 100.0f * data.view().clusters_density() / data.view().metadata().size());
 
-  uint32_t* host_clustered_particles = new uint32_t[1];
-  alpaka::memcpy(queue, createView(kDeviceHost, host_clustered_particles, Vec<alpaka::DimInt<1>>(1)), clustered_particles);
-  printf("Clustered particles: %d -> %d (%.0f%%)\n", 
-    data.const_view().metadata().size(), host_clustered_particles[0], 100.*host_clustered_particles[0]/data.const_view().metadata().size());
+  // uint32_t* host_clustered_particles = new uint32_t[1];
+  // alpaka::memcpy(queue, createView(kDeviceHost, host_clustered_particles, Vec<alpaka::DimInt<1>>(1)), clustered_particles);
+  // printf("Clustered particles: %d -> %d (%.0f%%)\n", 
+  //   data.const_view().metadata().size(), host_clustered_particles[0], 100.*host_clustered_particles[0]/data.const_view().metadata().size());
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

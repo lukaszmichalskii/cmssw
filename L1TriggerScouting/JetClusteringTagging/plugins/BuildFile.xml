@@ -11,6 +11,7 @@
   <use name="HeterogeneousCore/AlpakaInterface"/>
   <use name="L1TriggerScouting/Utilities"/>
   <use name="L1TriggerScouting/JetClusteringTagging"/>
+  <use name="PhysicsTools/TensorFlow" />
   <flags ALPAKA_BACKENDS="1"/>
   <flags EDM_PLUGIN="1"/>
 </library>
