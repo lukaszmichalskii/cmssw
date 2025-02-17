@@ -4,7 +4,7 @@
 <use name="DataFormats/L1Scouting"/>
 <use name="DataFormats/L1Trigger"/>
 <use name="DataFormats/L1TParticleFlow"/>
-<use name="PhysicsTools/TensorFlow" />
+<use name="PhysicsTools/ONNXRuntime" />
 <flags ALPAKA_BACKENDS="1"/>
 <export>
   <lib name="1"/>

@@ -2,10 +2,20 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-JetClusteringTagging::JetClusteringTagging(edm::ParameterSet const& params)
+JetClusteringTagging::JetClusteringTagging(edm::ParameterSet const& params, const cms::Ort::ONNXRuntime *onnx_runtime)
   : raw_token_{consumes<SDSRawDataCollection>(params.getParameter<edm::InputTag>("src"))},
     fed_ids_(params.getParameter<std::vector<uint32_t>>("fedIDs")),
-    clusters_num_(params.getParameter<uint32_t>("clustersNum")) {}
+    clusters_num_(params.getParameter<uint32_t>("clustersNum")),
+    input_shapes_() {
+  model_data_.emplace_back(10, 0);
+}
+
+std::unique_ptr<cms::Ort::ONNXRuntime> JetClusteringTagging::initializeGlobalCache(const edm::ParameterSet &params) {
+  auto sess_opts = cms::Ort::ONNXRuntime::defaultSessionOptions(cms::Ort::Backend::cuda);
+  return std::make_unique<cms::Ort::ONNXRuntime>("/afs/cern.ch/user/l/lmichals/private/CMSSW_14_0_12/src/model.onnx", &sess_opts);
+}
+
+void JetClusteringTagging::globalEndJob(const cms::Ort::ONNXRuntime *cache) {}
 
 void JetClusteringTagging::unpacking(Queue &queue, const SDSRawDataCollection &raw_data) {
   auto t1 = std::chrono::high_resolution_clock::now();
@@ -63,7 +73,21 @@ void JetClusteringTagging::tagging(Queue &queue) {
   
   //////////////////////////////////////////////////////////////////////////////////////////
 
-  tagging_.Tag(queue, data_);
+  std::vector<float> &group_data = model_data_[0];
+  for (size_t i = 0; i < 10; i++){
+      group_data[i] = float(i);
+  }
+
+  // run prediction and get outputs
+  std::vector<float> outputs = globalCache()->run(input_names_, model_data_, input_shapes_)[0];
+
+  // print the input and output data
+  std::cout << "input data -> ";
+  for (auto &i: group_data) { std::cout << i << " "; }
+  std::cout << std::endl << "output data -> ";
+  for (auto &i: outputs) { std::cout << i << " "; }
+  std::cout << std::endl;
+  // tagging_.Tag(queue, data_);
 
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -74,8 +98,8 @@ void JetClusteringTagging::tagging(Queue &queue) {
 
 void JetClusteringTagging::produce(device::Event& event, device::EventSetup const& event_setup) {
   auto raw_data_collection = event.getHandle(raw_token_);
-  unpacking(event.queue(), *raw_data_collection);
-  clustering(event.queue());
+  // unpacking(event.queue(), *raw_data_collection);
+  // clustering(event.queue());
   tagging(event.queue());
 }  
 
