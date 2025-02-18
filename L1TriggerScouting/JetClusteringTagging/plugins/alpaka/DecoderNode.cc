@@ -4,7 +4,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 
 DecoderNode::DecoderNode(edm::ParameterSet const& params)
-  : host_token_{consumes<DataStream>(params.getParameter<edm::InputTag>("src"))},
+  : host_token_{consumes<DataStream>(params.getParameter<edm::InputTag>("data"))},
     device_token_{produces()},
     front_end_devices_(params.getParameter<std::vector<uint32_t>>("fedIDs")) {}
 
@@ -20,7 +20,7 @@ void DecoderNode::produce(device::Event& event, device::EventSetup const& event_
 
 void DecoderNode::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
-  desc.add<edm::InputTag>("src", edm::InputTag("rawDataCollector"));
+  desc.add<edm::InputTag>("data");
   desc.add<std::vector<uint32_t>>("fedIDs");
   descriptions.addWithDefaultLabel(desc);
 }

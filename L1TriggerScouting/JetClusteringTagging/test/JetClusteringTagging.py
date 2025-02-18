@@ -71,24 +71,34 @@ os.system("touch " + buDirs[0] + "/" + "fu.lock")
 
 process.load("L1TriggerScouting.JetClusteringTagging.decoding")
 process.load("L1TriggerScouting.JetClusteringTagging.clustering")
+process.load("L1TriggerScouting.JetClusteringTagging.tagging")
 
 # Decoder node
 process.DecoderNode = process.DecoderNodeStruct.clone(
-    src = cms.InputTag('rawDataCollector'),
+    data = cms.InputTag('rawDataCollector'),
     fedIDs = [*puppiStreamIDs],
     alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
 )
 
 # Clustering node
 process.ClusteringNode = process.ClusteringNodeStruct.clone(
-    src = cms.InputTag('DecoderNode'),
+    data = cms.InputTag('DecoderNode'),
     clustersNum = cms.uint32(options.clustersNum),
+    alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
+)
+
+# Tagging node
+process.TaggingNode = process.TaggingNodeStruct.clone(
+    data = cms.InputTag('DecoderNode'),
+    clusters = cms.InputTag('ClusteringNode'),
+    model = cms.FileInPath(options.model),
     alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
 )
 
 # Pipeline
 process.jct = cms.Path(
    process.DecoderNode + 
-   process.ClusteringNode
+   process.ClusteringNode + 
+   process.TaggingNode
 )
 process.schedule = cms.Schedule(process.jct)

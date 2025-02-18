@@ -14,6 +14,8 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 // typedefs
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
+// clustering
+#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Clustering.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -32,6 +34,7 @@ private:
   const device::EDGetToken<PuppiCollection> device_in_token_;
   device::EDPutToken<PuppiCollection> device_out_token_;
 
+  SeededConeClustering clustering_;
   uint32_t clusters_num_;
 };
 

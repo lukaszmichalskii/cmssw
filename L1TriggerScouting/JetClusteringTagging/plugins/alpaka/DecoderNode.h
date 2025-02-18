@@ -1,5 +1,5 @@
-#ifndef L1TriggerScouting_JetClusteringTagging_plugins_alpaka_Decoder_h
-#define L1TriggerScouting_JetClusteringTagging_plugins_alpaka_Decoder_h
+#ifndef L1TriggerScouting_JetClusteringTagging_plugins_alpaka_DecoderNode_h
+#define L1TriggerScouting_JetClusteringTagging_plugins_alpaka_DecoderNode_h
 
 // libs
 #include <cstdint>
@@ -69,4 +69,4 @@ private:
 
 } // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-#endif // L1TriggerScouting_JetClusteringTagging_plugins_alpaka_Decoder_h
+#endif // L1TriggerScouting_JetClusteringTagging_plugins_alpaka_DecoderNode_h

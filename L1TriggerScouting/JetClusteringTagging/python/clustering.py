@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 ClusteringNodeStruct = cms.EDProducer('ClusteringNode@alpaka',
-  src = cms.InputTag('DecoderNodeStruct'),
-  clustersNum = cms.uint32(1),
+  data = cms.InputTag('DecoderNodeStruct'),
+  clustersNum = cms.uint32(5),
   alpaka = cms.vstring(),
 )
