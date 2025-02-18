@@ -5,24 +5,14 @@
 
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 #include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Utils.h"
-#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Unpacking.h"
+#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Decoder.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 using namespace cms::alpakatools;
 
-template<typename T>
-auto CopyToDevice(Queue &queue, std::vector<T>& data) {
-  Vec<alpaka::DimInt<1>> extent(data.size());
-  auto device_buffer = alpaka::allocAsyncBuf<T, Idx>(queue, extent);
-  auto host_buffer = createView(kDeviceHost, data, extent); // alpaka::View can be used instead of alpaka::Buf
-  alpaka::memcpy(queue, device_buffer, host_buffer);  
-  alpaka::wait(queue);
-  return device_buffer;
-}
-
-class UnpackHeadersKernel {
+class DecodeHeadersKernel {
 public:
   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
   ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, PuppiCollection::View out, size_t size) const {
@@ -43,19 +33,14 @@ public:
   }
 };
 
-void Unpacking::UnpackHeaders(
-    Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const {
+void Decoder::DecodeHeaders(Queue& queue, WorkDiv<Dim1D>& grid, std::vector<uint64_t>& data, PuppiCollection& collection) const {
   size_t size = data.size();
   auto device_buffer = CopyToDevice<uint64_t>(queue, data);
   std::vector<uint64_t>().swap(data);
-
-  uint32_t threads_per_block = 64;
-  uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
-  auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, UnpackHeadersKernel{}, device_buffer.data(), collection.view(), size);
+  alpaka::exec<Acc1D>(queue, grid, DecodeHeadersKernel{}, device_buffer.data(), collection.view(), size);
 }
 
-class UnpackDataKernel {
+class DecodeDataKernel {
 public:
   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
   ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, PuppiCollection::View out) const {
@@ -97,20 +82,19 @@ public:
   }
 };
 
-void Unpacking::UnpackData(Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const {
-  size_t size = data.size();
+void Decoder::DecodeData(Queue& queue, WorkDiv<Dim1D>& grid, std::vector<uint64_t>& data, PuppiCollection& collection) const {
   auto device_buffer = CopyToDevice<uint64_t>(queue, data);
   std::vector<uint64_t>().swap(data);
-
-  uint32_t threads_per_block = 64;
-  uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
-  auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, UnpackDataKernel{}, device_buffer.data(), collection.view());
+  alpaka::exec<Acc1D>(queue, grid, DecodeDataKernel{}, device_buffer.data(), collection.view());
 }
 
-void Unpacking::Unpack(Queue& queue, std::vector<uint64_t>& headers, std::vector<uint64_t>& data, PuppiCollection& collection) {
-  UnpackHeaders(queue, headers, collection);
-  UnpackData(queue, data, collection);
+void Decoder::Decode(Queue& queue, std::vector<uint64_t>& headers, std::vector<uint64_t>& data, PuppiCollection& collection) {
+  uint32_t threads_per_block = 1024;
+  uint32_t blocks_per_grid = divide_up_by(data.size(), threads_per_block);      
+  auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
+
+  DecodeHeaders(queue, grid, headers, collection);
+  DecodeData(queue, grid, data, collection);
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

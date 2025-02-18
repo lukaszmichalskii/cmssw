@@ -1,6 +1,5 @@
-from __future__ import print_function
-import FWCore.ParameterSet.Config as cms
 import os
+import FWCore.ParameterSet.Config as cms
 from L1TriggerScouting.JetClusteringTagging.options_cff import options
 
 options.parseArguments()
@@ -47,12 +46,6 @@ process.EvFDaqDirector = cms.Service("EvFDaqDirector",
     directorIsBU = cms.untracked.bool(False),
 )
 
-# process.FastMonitoringService = cms.Service("FastMonitoringService")
-# process.load( "HLTrigger.Timer.FastTimerService_cfi" )
-# process.FastTimerService.writeJSONSummary = cms.untracked.bool(True)
-# process.FastTimerService.jsonFileName = cms.untracked.string(f'resources.{os.uname()[1]}.{options.task}.json')
-#process.MessageLogger.cerr.FastReport = cms.untracked.PSet( limit = cms.untracked.int32( 10000000 ) )
-
 fuDir = options.fuBaseDir+("/run%06d" % options.runNumber)
 buDirs = [b+("/run%06d" % options.runNumber) for b in options.buBaseDir]
 for d in [fuDir, options.fuBaseDir] + buDirs + options.buBaseDir:
@@ -76,22 +69,26 @@ process.source = cms.Source("DAQSource",
 )
 os.system("touch " + buDirs[0] + "/" + "fu.lock")
 
-process.JetClusteringTaggingStruct = cms.EDProducer('JetClusteringTagging@alpaka',
-    src = cms.InputTag('rawDataCollector'),
-    fedIDs = cms.vuint32(),
-    alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
-    clustersNum = cms.uint32(options.clustersNum),
-)
+process.load("L1TriggerScouting.JetClusteringTagging.decoding")
+process.load("L1TriggerScouting.JetClusteringTagging.clustering")
 
-process.JetClusteringTaggingStruct.fedIDs = [*puppiStreamIDs]
-
-process.JetClusteringTagging = process.JetClusteringTaggingStruct.clone(
+# Decoder node
+process.DecoderNode = process.DecoderNodeStruct.clone(
     src = cms.InputTag('rawDataCollector'),
     fedIDs = [*puppiStreamIDs],
     alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
-    clustersNum = cms.uint32(options.clustersNum),
 )
 
-process.jct = cms.Path(process.JetClusteringTagging)
+# Clustering node
+process.ClusteringNode = process.ClusteringNodeStruct.clone(
+    src = cms.InputTag('DecoderNode'),
+    clustersNum = cms.uint32(options.clustersNum),
+    alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
+)
 
+# Pipeline
+process.jct = cms.Path(
+   process.DecoderNode + 
+   process.ClusteringNode
+)
 process.schedule = cms.Schedule(process.jct)
