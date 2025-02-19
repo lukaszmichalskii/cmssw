@@ -1,4 +1,4 @@
-#include "TaggingNode.h"
+#include "L1TriggerScouting/JetClusteringTagging/plugins/alpaka/TaggingNode.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -20,6 +20,8 @@ void TaggingNode::globalEndJob(const cms::Ort::ONNXRuntime *cache) {}
 void TaggingNode::produce(device::Event& event, device::EventSetup const& event_setup) {
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  auto const& data = event.get(device_data_token_);
+  auto const& clusters = event.get(device_clusters_token_);
 
   std::vector<float> &group_data = model_data_[0];
   for (size_t i = 0; i < 10; i++){

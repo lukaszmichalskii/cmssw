@@ -20,9 +20,7 @@ GENERATE_SOA_LAYOUT(PuppiSoALayout,
   SOA_COLUMN(float, dxy),
   SOA_COLUMN(float, puppiw),
   SOA_COLUMN(int16_t, pdgId),
-  SOA_COLUMN(uint8_t, quality),
-  SOA_SCALAR(uint32_t, clusters_density),
-  SOA_COLUMN(uint32_t, cluster_association)
+  SOA_COLUMN(uint8_t, quality)
 )
 
 using PuppiSoA = PuppiSoALayout<>;

@@ -17,7 +17,6 @@ public:
   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
   ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* __restrict__ data, PuppiCollection::View out, size_t size) const {
     if (once_per_grid(acc)) { // prefix sum sequential workaround
-      out.clusters_density() = 0;
       out.offsets()[0] = 0;
       for (uint32_t idx = 1; idx < out.offsets().size(); idx++) {
         if (idx <= size)
@@ -51,7 +50,6 @@ public:
       // out[idx].pt() = 0.25f * (bits64 & 0x3FFF);
 
       // readshared
-      out.cluster_association()[idx] = 0;
       uint16_t ptint = bits64 & 0x3FFF;
       out.pt()[idx] = ptint * 0.25f;
       int etaint = ((bits64 >> 25) & 1) ? ((bits64 >> 14) | (-0x800)) : ((bits64 >> 14) & (0xFFF));
@@ -95,6 +93,7 @@ void Decoder::Decode(Queue& queue, std::vector<uint64_t>& headers, std::vector<u
 
   DecodeHeaders(queue, grid, headers, collection);
   DecodeData(queue, grid, data, collection);
+  alpaka::wait(queue);
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

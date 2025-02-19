@@ -13,6 +13,7 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 // typedefs
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/ClustersCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
 // clustering
 #include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Clustering.h"
@@ -31,8 +32,10 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
+  ClustersCollection Cluster(Queue &queue, PuppiCollection const& data);
+
   const device::EDGetToken<PuppiCollection> device_in_token_;
-  device::EDPutToken<PuppiCollection> device_out_token_;
+  device::EDPutToken<ClustersCollection> device_out_token_;
 
   SeededConeClustering clustering_;
   uint32_t clusters_num_;

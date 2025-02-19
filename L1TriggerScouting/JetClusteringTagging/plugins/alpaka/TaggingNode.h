@@ -13,8 +13,7 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 // typedefs
-#include "DataFormats/FEDRawData/interface/FEDRawData.h"
-#include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/ClustersCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
 // inference 
 #include "PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h"
@@ -39,7 +38,7 @@ public:
 
 private:
   const device::EDGetToken<PuppiCollection> device_data_token_;
-  const device::EDGetToken<PuppiCollection> device_clusters_token_;
+  const device::EDGetToken<ClustersCollection> device_clusters_token_;
   std::vector<std::string> input_names_ = {"inputs"};
   std::vector<std::vector<int64_t>> input_shapes_;
   cms::Ort::FloatArrays model_data_;

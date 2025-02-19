@@ -1,4 +1,4 @@
-#include "DecoderNode.h"
+#include "L1TriggerScouting/JetClusteringTagging/plugins/alpaka/DecoderNode.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 

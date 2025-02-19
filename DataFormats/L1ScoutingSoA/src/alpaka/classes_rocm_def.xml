@@ -3,4 +3,9 @@
   <class name="alpaka_rocm_async::PuppiCollection" persistent="false"/>
   <class name="edm::DeviceProduct<alpaka_rocm_async::PuppiCollection>" persistent="false"/>
   <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::PuppiCollection>>" persistent="false"/>
+
+  <class name="alpaka_rocm_async::PortableCollection<ClustersSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::ClustersCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::ClustersCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::ClustersCollection>>" persistent="false"/>
 </lcgdict>
