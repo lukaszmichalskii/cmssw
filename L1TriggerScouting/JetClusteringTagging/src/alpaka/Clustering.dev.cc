@@ -138,7 +138,7 @@ public:
           }
         }
         if (block_idx == max_id) {
-          printf("\nSorted %s: %d -> (%d, %d) [%d]\n", flag == true ? "OK" : "FAILED", block_idx, begin, end, end-begin);
+          printf("Sorted %s: %d -> (%d, %d) [%d]\n", flag == true ? "OK" : "FAILED", block_idx, begin, end, end-begin);
           printf("indices:\n");
           for (uint32_t idx = 0; idx < SHARED_MEM_BLOCK; idx++) {
             if (sorted_indices[idx] == -1)

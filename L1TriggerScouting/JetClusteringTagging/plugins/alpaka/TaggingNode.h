@@ -21,10 +21,10 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-class TaggingNode : public stream::EDProducer<edm::GlobalCache<cms::Ort::ONNXRuntime>> {
+class TaggingNode : public stream::EDProducer<> {
 
 public:
-  TaggingNode(const edm::ParameterSet& params, const cms::Ort::ONNXRuntime *onnx_runtime);
+  TaggingNode(const edm::ParameterSet& params);
   ~TaggingNode() override = default;
 
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
@@ -33,15 +33,23 @@ public:
   void beginStream(edm::StreamID stream) override;
   void endStream() override;
 
-  static std::unique_ptr<cms::Ort::ONNXRuntime> initializeGlobalCache(const edm::ParameterSet &params);
-  static void globalEndJob(const cms::Ort::ONNXRuntime *onnx_runtime);
-
 private:
   const device::EDGetToken<PuppiCollection> device_data_token_;
   const device::EDGetToken<ClustersCollection> device_clusters_token_;
-  std::vector<std::string> input_names_ = {"inputs"};
-  std::vector<std::vector<int64_t>> input_shapes_;
-  cms::Ort::FloatArrays model_data_;
+
+  std::string model_;
+  std::string backend_;
+  std::unique_ptr<Ort::Env> env_ = nullptr;
+  std::unique_ptr<Ort::Session> session_ = nullptr;
+  std::unique_ptr<Ort::RunOptions> options_ = nullptr;
+
+  std::vector<std::string> input_node_strings_;
+  std::vector<const char*> input_node_names_;
+  std::map<std::string, std::vector<int64_t>> input_node_dims_;
+
+  std::vector<std::string> output_node_strings_;
+  std::vector<const char*> output_node_names_;
+  std::map<std::string, std::vector<int64_t>> output_node_dims_;
 
   std::chrono::high_resolution_clock::time_point start_stamp_, end_stamp_;
 };

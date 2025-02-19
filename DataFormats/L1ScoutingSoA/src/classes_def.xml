@@ -13,4 +13,10 @@
   <class name="ClustersSoA::ConstView"/>
   <class name="ClustersHostCollection"/>
   <class name="edm::Wrapper<ClustersHostCollection>" splitLevel="0"/>
+  <!-- Jets Collection -->
+  <class name="JetsSoA"/>
+  <class name="JetsSoA::View"/>
+  <class name="JetsSoA::ConstView"/>
+  <class name="JetsHostCollection"/>
+  <class name="edm::Wrapper<JetsHostCollection>" splitLevel="0"/>
 </lcgdict>

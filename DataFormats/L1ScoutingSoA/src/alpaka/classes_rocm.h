@@ -10,4 +10,7 @@
 #include "DataFormats/L1ScoutingSoA/interface/ClustersSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/ClustersCollection.h"
 
+#include "DataFormats/L1ScoutingSoA/interface/JetsSoA.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/JetsCollection.h"
+
 #endif  // DataFormats_L1ScoutingSoA_src_alpaka_classes_rocm_h

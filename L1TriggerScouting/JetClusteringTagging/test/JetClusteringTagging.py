@@ -92,6 +92,7 @@ process.TaggingNode = process.TaggingNodeStruct.clone(
     data = cms.InputTag('DecoderNode'),
     clusters = cms.InputTag('ClusteringNode'),
     model = cms.FileInPath(options.model),
+    backend = options.backend,
     alpaka = cms.untracked.PSet(backend = cms.untracked.string(options.backend)),
 )
 
