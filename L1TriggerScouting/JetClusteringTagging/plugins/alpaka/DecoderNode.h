@@ -24,49 +24,47 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-using DataStream = SDSRawDataCollection; /**< alias */
+using DataStream = SDSRawDataCollection;  /**< alias */
 
 /**
-* Takes as input raw data collection.
-* Heterogenous decoding of scouting raw data stream.
-* Implicit device memory allocation and transfers with reduced copy operations.
-* The product stays on device memory and can be automatically transferred to host if needed.
-*
-* @brief Raw data stream decoding plugin.
-*/
+ * Takes as input raw data collection.
+ * Heterogenous decoding of scouting raw data stream.
+ * Implicit device memory allocation and transfers with reduced copy operations.
+ * The product stays on device memory and can be automatically transferred to host if needed.
+ *
+ * @brief Raw data stream decoding plugin.
+ */
 class DecoderNode : public stream::EDProducer<> {
 
 public:
   DecoderNode(const edm::ParameterSet& params);
-  ~DecoderNode() override;
+  ~DecoderNode() override = default;
 
   /**
-  * @brief cmssw callback for node
-  */
+   * @brief cmssw callback for node
+   */
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
 
   /**
-  * @brief Declare parameters for node
-  */
+   * @brief Declare parameters for node
+   */
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
   /**
-  * @brief Decode raw data stream @see <<DataStream>>
-  */
+   * @brief Decode raw data stream @see <<DataStream>>
+   */
   PuppiCollection Decode(Queue &queue, const DataStream &data);
 
+  // utils
+  std::unique_ptr<Decoder> decoder_ = nullptr;  /**< bytes stream decoder */
   // tokens
-  edm::EDGetTokenT<DataStream> host_token_; /**< host data */
-  device::EDPutToken<PuppiCollection> device_token_; /**< device data */
-
-  std::vector<uint32_t> front_end_devices_{}; /**< fed identifiers */
-  Decoder decoder_{}; /**< bytes stream decoder */
-
-  // stats
-  std::chrono::high_resolution_clock::time_point start_, end_; /**< timestamps */
+  edm::EDGetTokenT<DataStream> host_token_;  /**< host data */
+  device::EDPutToken<PuppiCollection> device_token_;  /**< device data */
+  // params
+  std::vector<uint32_t> front_end_devices_{};  /**< fed identifiers */
 };
 
-} // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-#endif // L1TriggerScouting_JetClusteringTagging_plugins_alpaka_DecoderNode_h
+#endif  // L1TriggerScouting_JetClusteringTagging_plugins_alpaka_DecoderNode_h

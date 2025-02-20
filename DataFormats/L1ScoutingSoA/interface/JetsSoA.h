@@ -7,7 +7,9 @@
 
 
 GENERATE_SOA_LAYOUT(JetsSoALayout,
-  SOA_COLUMN(float, jet)
+  SOA_COLUMN(float, jet),
+  SOA_COLUMN(float, classification),
+  SOA_COLUMN(float, pt_regression)
 )
 
 using JetsSoA = JetsSoALayout<>;

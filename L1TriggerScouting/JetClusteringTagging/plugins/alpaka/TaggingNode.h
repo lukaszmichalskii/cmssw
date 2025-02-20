@@ -14,43 +14,63 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 // typedefs
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/ClustersCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/JetsCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
 // inference 
-#include "PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h"
+#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Tagging.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
+/**
+ * Consume device side product and invoke jet tagging and pt regression DNN based algorithm.
+ * Implicit device memory allocation and transfers with reduced copy operations.
+ * The product stays on device memory and can be automatically transferred to host if needed.
+ *
+ * @brief Jet tagging and pt regression with ONNX runtime inference.
+ */
 class TaggingNode : public stream::EDProducer<> {
 
 public:
   TaggingNode(const edm::ParameterSet& params);
   ~TaggingNode() override = default;
 
+  /**
+   * @brief cmssw callback for node
+   */
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
+
+  /**
+   * @brief Declare parameters for node
+   */
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
+  /**
+   * @brief collect stats at the beginning of processing stream
+   */
   void beginStream(edm::StreamID stream) override;
+
+  /**
+   * @brief collect stats at the end of processing stream
+   */
   void endStream() override;
 
 private:
-  const device::EDGetToken<PuppiCollection> device_data_token_;
-  const device::EDGetToken<ClustersCollection> device_clusters_token_;
+  /**
+   * @brief Tag multiclass jets and run pt regression. 
+   */
+  JetsCollection Tag(Queue &queue, PuppiCollection const& data, ClustersCollection const& clusters);
 
+  // utils
+  std::unique_ptr<Tagging> tagging_ = nullptr;  /**< inference runtime algorithm */
+  // tokens
+  const device::EDGetToken<PuppiCollection> device_data_token_;  /**< read device data ptr */
+  const device::EDGetToken<ClustersCollection> device_clusters_token_;  /**< read device clusters ptr */
+  device::EDPutToken<JetsCollection> device_out_token_;  /**< device write data */
+  // params
   std::string model_;
   std::string backend_;
-  std::unique_ptr<Ort::Env> env_ = nullptr;
-  std::unique_ptr<Ort::Session> session_ = nullptr;
-  std::unique_ptr<Ort::RunOptions> options_ = nullptr;
-
-  std::vector<std::string> input_node_strings_;
-  std::vector<const char*> input_node_names_;
-  std::map<std::string, std::vector<int64_t>> input_node_dims_;
-
-  std::vector<std::string> output_node_strings_;
-  std::vector<const char*> output_node_names_;
-  std::map<std::string, std::vector<int64_t>> output_node_dims_;
-
+  // stats
   std::chrono::high_resolution_clock::time_point start_stamp_, end_stamp_;
 };
 

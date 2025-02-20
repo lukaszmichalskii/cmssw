@@ -6,9 +6,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 DecoderNode::DecoderNode(edm::ParameterSet const& params)
   : host_token_{consumes<DataStream>(params.getParameter<edm::InputTag>("data"))},
     device_token_{produces()},
-    front_end_devices_(params.getParameter<std::vector<uint32_t>>("fedIDs")) {}
-
-DecoderNode::~DecoderNode() = default;
+    front_end_devices_(params.getParameter<std::vector<uint32_t>>("fedIDs")) {
+  decoder_ = std::make_unique<Decoder>();
+}
 
 
 void DecoderNode::produce(device::Event& event, device::EventSetup const& event_setup) {
@@ -29,8 +29,8 @@ void DecoderNode::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
 PuppiCollection DecoderNode::Decode(Queue &queue, const DataStream &data) {
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  // memory scan / stream readout
   std::vector<uint64_t> headers_buffer, buffer;
-  // memory scan
   for (uint32_t &fdevice : front_end_devices_) {
     const auto &src = data.FEDData(fdevice);
     const auto chunk_begin = reinterpret_cast<const uint64_t*>(src.data());
@@ -50,7 +50,7 @@ PuppiCollection DecoderNode::Decode(Queue &queue, const DataStream &data) {
 
   // decoding
   auto decoded_data = PuppiCollection(buffer.size(), queue);
-  decoder_.Decode(queue, headers_buffer, buffer, decoded_data);
+  decoder_->Decode(queue, headers_buffer, buffer, decoded_data);
 
   auto t2 = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);

@@ -21,24 +21,42 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-
+/**
+ * Consume device side product and invoke clustering algorithm to form jets.
+ * Implicit device memory allocation and transfers with reduced copy operations.
+ * The product stays on device memory and can be automatically transferred to host if needed.
+ *
+ * @brief Jet clustering for puppi dataset node.
+ */
 class ClusteringNode : public stream::EDProducer<> {
 
 public:
   ClusteringNode(const edm::ParameterSet& params);
   ~ClusteringNode() override = default;
 
+  /**
+   * @brief cmssw callback for node
+   */
   void produce(device::Event& event, const device::EventSetup& event_setup) override;
+
+  /**
+   * @brief Declare parameters for node
+   */
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
+  /**
+   * @brief Cluster puppi data to form jets primitives @see <<PuppiCollection>>
+   */
   ClustersCollection Cluster(Queue &queue, PuppiCollection const& data);
 
-  const device::EDGetToken<PuppiCollection> device_in_token_;
-  device::EDPutToken<ClustersCollection> device_out_token_;
-
-  SeededConeClustering clustering_;
-  uint32_t clusters_num_;
+  // utils
+  std::unique_ptr<SeededConeClustering> clustering_ = nullptr;  /**< algorithm used for clustering */
+  // tokens
+  const device::EDGetToken<PuppiCollection> device_in_token_;  /**< device read data */
+  device::EDPutToken<ClustersCollection> device_out_token_;  /**< device write data */
+  // params
+  uint32_t clusters_num_;  /**< number of clusters to init algorithm */
 };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

@@ -1,9 +1,12 @@
 #ifndef L1TriggerScouting_JetClusteringTagging_plugins_alpaka_Unpacking_h
 #define L1TriggerScouting_JetClusteringTagging_plugins_alpaka_Unpacking_h
 
+// libs
 #include <cstdint>
 #include <alpaka/alpaka.hpp>
+// typedefs
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiCollection.h"
+// heterogeneous
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
