@@ -20,14 +20,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 class Tagging {
 public:
   Tagging(const std::string &model, const std::string &backend);
-  ~Tagging();
   void Tag(Queue& queue, PuppiCollection const& data, ClustersCollection const& clusters, JetsCollection& jets);
+  
 private:
   std::string model_;
   std::string backend_;
   std::unique_ptr<Ort::Env> env_ = nullptr;
   std::unique_ptr<Ort::Session> session_ = nullptr;
   std::unique_ptr<Ort::RunOptions> options_ = nullptr;
+
+  std::unique_ptr<Ort::MemoryInfo> device_mem_allocator_info_ = nullptr;
 
   std::vector<std::string> input_node_strings_;
   std::vector<const char*> input_node_names_;

@@ -23,12 +23,11 @@ Tagging::Tagging(const std::string &model, const std::string &backend) : model_(
   Ort::SessionOptions sess_opts;
   sess_opts.SetIntraOpNumThreads(1);
   if (backend_ == "cuda_async") { 
-      OrtCUDAProviderOptions options;
-      // options.device_id = 0;
-      // options.arena_extend_strategy = 0;
-      // options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearchHeuristic;
-      // options.do_copy_in_default_stream = 1;
-      sess_opts.AppendExecutionProvider_CUDA(options);
+    OrtCUDAProviderOptions cuda_options{};
+    cuda_options.gpu_mem_limit = std::numeric_limits<size_t>::max();
+    cuda_options.arena_extend_strategy = 1;
+    cuda_options.do_copy_in_default_stream = 1;
+    sess_opts.AppendExecutionProvider_CUDA(cuda_options);
   }
 
   // initialize onnx runtime
@@ -37,7 +36,12 @@ Tagging::Tagging(const std::string &model, const std::string &backend) : model_(
   session_ = std::make_unique<Ort::Session>(*env_, model_.c_str(), sess_opts);
 
   // allocator handle
-  Ort::AllocatorWithDefaultOptions allocator;
+  Ort::AllocatorWithDefaultOptions cpu_allocator;
+  device_mem_allocator_info_ = std::make_unique<Ort::MemoryInfo>(
+    backend_ == "cuda_async" ? "Cuda" : "Cpu", OrtArenaAllocator, 0, OrtMemTypeDefault);
+  Ort::Allocator device_allocator(*session_, *device_mem_allocator_info_);
+  auto allocator_info = device_allocator.GetInfo();
+  assert(*device_mem_allocator_info_ == allocator_info);
 
   // get input names and shapes
   size_t num_input_nodes = session_->GetInputCount();
@@ -47,17 +51,16 @@ Tagging::Tagging(const std::string &model, const std::string &backend) : model_(
 
   std::cout << "Input Layers:" << std::endl;
   for (size_t i = 0; i < num_input_nodes; i++) {
-      // get input node names
-      std::string input_name(session_->GetInputNameAllocated(i, allocator).get());
-      std::cout << "- " << input_name << std::endl;
-      input_node_strings_[i] = input_name;
-      input_node_names_[i] = input_node_strings_[i].c_str();
+    // get input node names
+    std::string input_name(session_->GetInputNameAllocated(i, cpu_allocator).get());
+    input_node_strings_[i] = input_name;
+    input_node_names_[i] = input_node_strings_[i].c_str();
 
-      // get input shapes
-      auto type_info = session_->GetInputTypeInfo(i);
-      auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
+    // get input shapes
+    auto type_info = session_->GetInputTypeInfo(i);
+    auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
 
-      input_node_dims_[input_name] = tensor_info.GetShape();
+    input_node_dims_[input_name] = tensor_info.GetShape();
   }
 
   // get output names and shapes
@@ -68,27 +71,19 @@ Tagging::Tagging(const std::string &model, const std::string &backend) : model_(
 
   std::cout << "Output Layers:" << std::endl;
   for (size_t i = 0; i < num_output_nodes; i++) {
-      // get output node names
-      std::string output_name(session_->GetOutputNameAllocated(i, allocator).get());
-      std::cout << "- " << output_name << std::endl;
-      output_node_strings_[i] = output_name;
-      output_node_names_[i] = output_node_strings_[i].c_str();
+    // get output node names
+    std::string output_name(session_->GetOutputNameAllocated(i, cpu_allocator).get());
+    output_node_strings_[i] = output_name;
+    output_node_names_[i] = output_node_strings_[i].c_str();
 
-      // get output node types
-      auto type_info = session_->GetOutputTypeInfo(i);
-      auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
-      output_node_dims_[output_name] = tensor_info.GetShape();
+    // get output node types
+    auto type_info = session_->GetOutputTypeInfo(i);
+    auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
+    output_node_dims_[output_name] = tensor_info.GetShape();
 
-      // the 0th dim depends on the batch size
-      output_node_dims_[output_name].at(0) = -1;
+    // the 0th dim depends on the batch size
+    output_node_dims_[output_name].at(0) = -1;
   }
-}
-
-Tagging::~Tagging() {
-  // for (const auto buffer : input_node_names_) 
-  //   delete[] buffer;
-  // for (const auto buffer : output_node_names_)
-  //   delete[] buffer;
 }
 
 
@@ -113,8 +108,22 @@ public:
 };
 
 
+class DummyOutputKernel {
+public:
+  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, JetsCollection::View data, float* classes, float* regression) const {
+    if (once_per_grid(acc)) {
+      printf("Classes probs: ");
+      for (size_t i = 0; i < 8; i++)
+        printf("%.2f ", classes[i]);
+      printf("\n");
+      printf("Regression: %.2f\n", regression[0]);
+    }
+  }
+};
+
+
 void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection const& clusters, JetsCollection& jets) {
-  // uint32_t batch_size = data.const_view().bx().size();
   uint32_t batch_size = 1;
 
   // fill data
@@ -126,10 +135,9 @@ void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection 
 
   // input
   float* input = jets.view().jet();
-  Ort::MemoryInfo device_mem(backend_ == "cuda_async" ? "Cuda" : "Cpu", OrtArenaAllocator, 0, OrtMemTypeDefault);
   std::array<int64_t, 3> input_shape{{batch_size, 16, 20}};
   auto input_tensor = Ort::Value::CreateTensor<float>(
-    device_mem, 
+    *device_mem_allocator_info_, 
     input, 
     batch_size * 16 * 20, 
     input_shape.data(), 
@@ -137,25 +145,23 @@ void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection 
   assert(input_tensor.IsTensor());
 
   // outputs
+  float* d_jet_output_data = jets.view().classification();
+  float* d_pt_output_data = jets.view().pt_regression();
+
   // jet class
   std::array<int64_t, 2> output_shape_jet{{batch_size, 8}};
-  float* d_jet_output_data = jets.view().classification();
-  // cudaMalloc(&d_jet_output_data, batch_size * 8 * sizeof(float));
-  // std::vector<float> jet_output_data(batch_size * 8, 0.0f);
   auto output_tensor_jet = Ort::Value::CreateTensor<float>(
-    device_mem, 
+    *device_mem_allocator_info_, 
     d_jet_output_data, 
     batch_size * 8, 
     output_shape_jet.data(), 
     output_shape_jet.size());
   assert(output_tensor_jet.IsTensor());
+
   // pt regression
   std::array<int64_t, 2> output_shape_pt{{batch_size, 1}};
-  float* d_pt_output_data = jets.view().pt_regression();
-  // cudaMalloc(&d_pt_output_data, batch_size * 1 * sizeof(float));
-  // std::vector<float> pt_output_data(batch_size * 1, 0.0f);
   auto output_tensor_pt = Ort::Value::CreateTensor<float>(
-    device_mem, 
+    *device_mem_allocator_info_, 
     d_pt_output_data, 
     batch_size * 1, 
     output_shape_pt.data(), 
@@ -176,21 +182,8 @@ void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection 
   std::cout << "Session Run: " << d.count() << " us" << std::endl;
 
   // debug
-  std::vector<float> jet_output_data(batch_size * 8, 0.0f);
-  std::vector<float> pt_output_data(batch_size * 1, 0.0f);
-  if (backend_ == "cuda_async") {
-    cudaMemcpy(jet_output_data.data(), d_jet_output_data, batch_size * 8 * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(pt_output_data.data(), d_pt_output_data, batch_size * 1 * sizeof(float), cudaMemcpyDeviceToHost);
-  } else {
-    memcpy(jet_output_data.data(), d_jet_output_data, batch_size * 8 * sizeof(float));
-    memcpy(pt_output_data.data(), d_pt_output_data, batch_size * 1 * sizeof(float));
-  }
-    
-  std::cout << "Class probs: ";
-  for (size_t i = 0; i < 8; i++)
-    printf("%.2f ", jet_output_data[i]);
-  printf("\n");
-  printf("Pt regression: %.2f\n", pt_output_data[0]);
+  alpaka::exec<Acc1D>(queue, grid, DummyOutputKernel{}, jets.view(), d_jet_output_data, d_pt_output_data);
+  alpaka::wait(queue);
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

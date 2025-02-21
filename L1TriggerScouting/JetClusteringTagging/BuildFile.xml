@@ -5,7 +5,7 @@
 <use name="DataFormats/L1Trigger"/>
 <use name="DataFormats/L1TParticleFlow"/>
 <use name="PhysicsTools/ONNXRuntime" />
-<flags ALPAKA_BACKENDS="cuda"/>
+<flags ALPAKA_BACKENDS="1"/>
 <export>
   <lib name="1"/>
 </export>
