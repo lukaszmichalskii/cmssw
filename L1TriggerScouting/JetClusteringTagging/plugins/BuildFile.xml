@@ -12,6 +12,6 @@
   <use name="L1TriggerScouting/Utilities"/>
   <use name="L1TriggerScouting/JetClusteringTagging"/>
   <use name="PhysicsTools/ONNXRuntime" />
-  <flags ALPAKA_BACKENDS="1"/>
+  <flags ALPAKA_BACKENDS="cuda"/>
   <flags EDM_PLUGIN="1"/>
 </library>

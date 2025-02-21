@@ -20,6 +20,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 class Tagging {
 public:
   Tagging(const std::string &model, const std::string &backend);
+  ~Tagging();
   void Tag(Queue& queue, PuppiCollection const& data, ClustersCollection const& clusters, JetsCollection& jets);
 private:
   std::string model_;
