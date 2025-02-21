@@ -134,7 +134,7 @@ options.register ('clustersNum',
                   "Number of clusters for seeded cone clustering. Default 12.")
 
 options.register ('model',
-                  '/afs/cern.ch/user/l/lmichals/private/CMSSW_14_0_12/src/model.onnx',
+                  '/afs/cern.ch/user/l/lmichals/private/CMSSW_14_0_12/src/dummy_model.onnx',
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,          # string, int, or float
                   "Jet tagging model")
