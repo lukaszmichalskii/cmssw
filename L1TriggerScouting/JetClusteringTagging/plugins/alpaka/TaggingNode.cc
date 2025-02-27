@@ -47,7 +47,8 @@ void TaggingNode::endStream() {
 }
 
 JetsCollection TaggingNode::Tag(Queue &queue, PuppiCollection const& data, ClustersCollection const& clusters) {
-  auto jets = JetsCollection(data.const_view().metadata().size(), queue);
+  // auto jets = JetsCollection(data.const_view().metadata().size(), queue);
+  auto jets = JetsCollection(1486848*2, queue);
   tagging_->Tag(queue, data, clusters, jets);
   return jets;
 }

@@ -18,6 +18,7 @@ Tagging::Tagging(const std::string &model, const std::string &backend) : model_(
   for (const auto& provider : providers) {
       std::cout << "- " << provider << std::endl;
   }
+  std::cout << "Model: " << model_ << std::endl;
       
   // set up session options and backend
   Ort::SessionOptions sess_opts;
@@ -54,6 +55,7 @@ Tagging::Tagging(const std::string &model, const std::string &backend) : model_(
   for (size_t i = 0; i < num_input_nodes; i++) {
     // get input node names
     std::string input_name(session_->GetInputNameAllocated(i, cpu_allocator).get());
+    std::cout << "- " << input_name << std::endl;
     input_node_strings_[i] = input_name;
     input_node_names_[i] = input_node_strings_[i].c_str();
 
@@ -74,6 +76,7 @@ Tagging::Tagging(const std::string &model, const std::string &backend) : model_(
   for (size_t i = 0; i < num_output_nodes; i++) {
     // get output node names
     std::string output_name(session_->GetOutputNameAllocated(i, cpu_allocator).get());
+    std::cout << "- " << output_name << std::endl;
     output_node_strings_[i] = output_name;
     output_node_names_[i] = output_node_strings_[i].c_str();
 
@@ -149,20 +152,19 @@ public:
 class DummyOutputKernel {
 public:
   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, JetsCollection::View data, float* classes, float* regression) const {
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, JetsCollection::View data) const {
     if (once_per_grid(acc)) {
-      printf("Classes probs: ");
-      for (size_t i = 0; i < 8; i++)
-        printf("%.2f ", classes[i]);
+      printf("Probs: ");
+      for (size_t i = 0; i < 3; i++)
+        printf("%.2f ", data.classification()[i]);
       printf("\n");
-      printf("Regression: %.2f\n", regression[0]);
     }
   }
 };
 
 
 void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection const& clusters, JetsCollection& jets) {
-  uint32_t batch_size = 100;
+  uint32_t batch_size = 1;
 
   // fill data
   uint32_t threads_per_block = ThreadsPerBlockUpperBound(128);
@@ -173,44 +175,7 @@ void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection 
   alpaka::exec<Acc1D>(queue, grid, DummyInputKernel{}, jets.view());
   alpaka::wait(queue);
 
-  // std::array<int64_t, 3> in_shape{{batch_size, 16, 20}};
-  // void *input_device;
-  // cudaMalloc(&input_device, batch_size * 16 * 20 * sizeof(float));
-  // auto input_tensor = Ort::Value::CreateTensor(
-  //     *device_mem_allocator_info_, input_device, batch_size * 16 * 20 * sizeof(float),
-  //     in_shape.data(), in_shape.size(),
-  //     ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-
-  // std::array<int64_t, 2> out_pt_shape{{batch_size, 1}};
-  // void *pt_device;
-  // cudaMalloc(&pt_device, batch_size * 1 * sizeof(float));
-  // auto pt_tensor = Ort::Value::CreateTensor(
-  //     *device_mem_allocator_info_, pt_device, batch_size * 1 * sizeof(float),
-  //     out_pt_shape.data(), out_pt_shape.size(),
-  //     ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-
-  // std::array<int64_t, 2> out_class_shape{{batch_size, 8}};
-  // void *class_device;
-  // cudaMalloc(&class_device, batch_size * 8 * sizeof(float));
-  // auto class_tensor = Ort::Value::CreateTensor(
-  //     *device_mem_allocator_info_, class_device, batch_size * 8 * sizeof(float),
-  //     out_class_shape.data(), out_class_shape.size(),
-  //     ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-
-  // std::vector<Ort::Value> inputs;
-  // inputs.push_back(std::move(input_tensor));
-  
-  // std::vector<Ort::Value> outputs;
-  // outputs.push_back(std::move(class_tensor));
-  // outputs.push_back(std::move(pt_tensor));
-
-
   std::array<int64_t, 2> in_shape{{batch_size, 10}};
-  // cuda
-  // void *input_device;
-  // cudaMalloc(&input_device, batch_size * 10 * sizeof(float));
-  // cpu 
-  // auto input_device = malloc(batch_size * 10 * sizeof(float));
   auto* input_device = jets.view().jet();
   auto input_tensor = Ort::Value::CreateTensor(
       *device_mem_allocator_info_, input_device, batch_size * 10 * sizeof(float),
@@ -218,24 +183,11 @@ void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection 
       ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
 
   std::array<int64_t, 2> out_shape{{batch_size, 3}};
-  // cuda
-  // void *out_device;
-  // cudaMalloc(&out_device, batch_size * 3 * sizeof(float));
-  // cpu
-  // auto out_device = malloc(batch_size * 3 * sizeof(float));
   auto* out_device = jets.view().classification();
   auto output_tensor = Ort::Value::CreateTensor(
       *device_mem_allocator_info_, out_device, batch_size * 3 * sizeof(float),
       out_shape.data(), out_shape.size(),
       ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-
-  // usual run
-  // std::vector<Ort::Value> inputs;
-  // inputs.push_back(std::move(input_tensor));
-  // std::vector<Ort::Value> outputs;
-  // outputs.push_back(std::move(output_tensor));
-  // session_->Run(
-  //   *options_, input_node_names_.data(), inputs.data(), inputs.size(), output_node_names_.data(), outputs.data(), outputs.size());
 
   // io binding
   Ort::IoBinding io_bindings{*session_};
@@ -243,7 +195,6 @@ void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection 
   io_bindings.BindOutput("outputs", output_tensor);
   session_->Run(*options_, io_bindings);
 
-  
   // // input
   // float* input = jets.view().jet();
   // std::array<int64_t, 3> input_shape{{batch_size, 16, 20}};
@@ -293,8 +244,8 @@ void Tagging::Tag(Queue& queue, PuppiCollection const& data, ClustersCollection 
   // std::cout << "Session Run: " << d.count() << " us" << std::endl;
 
   // debug
-  // alpaka::exec<Acc1D>(queue, grid, DummyOutputKernel{}, jets.view(), d_jet_output_data, d_pt_output_data);
-  // alpaka::wait(queue);
+  alpaka::exec<Acc1D>(queue, grid, DummyOutputKernel{}, jets.view());
+  alpaka::wait(queue);
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
