@@ -1,0 +1,7 @@
+<lcgdict>
+  <class name="SimpleSoA"/>
+  <class name="SimpleSoA::View"/>
+  <class name="SimpleSoA::ConstView"/>
+  <class name="SimpleCollectionHost"/>
+  <class name="edm::Wrapper<SimpleCollectionHost>" splitLevel="0"/>
+</lcgdict>
