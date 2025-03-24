@@ -14,42 +14,59 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EventSetup.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/global/EDProducer.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "PhysicsTools/PyTorch/interface/common.h"
 #include "PhysicsTools/PyTorch/interface/model.h"
+#include "PhysicsTools/PyTorchTest/plugins/alpaka/kernels.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-class Inference : public global::EDProducer<> {
+class Inference : public stream::EDProducer<edm::GlobalCache<cms::torch_alpaka::Model>> {
  public:
- Inference(const edm::ParameterSet &params);
+  Inference(const edm::ParameterSet &params, const cms::torch_alpaka::Model *cache);
 
-  void produce(edm::StreamID sid, device::Event &event, const device::EventSetup &event_setup) const override;
+  static std::unique_ptr<cms::torch_alpaka::Model> initializeGlobalCache(const edm::ParameterSet &params);
+  static void globalEndJob(const cms::torch_alpaka::Model *cache);
+  void produce(device::Event &event, const device::EventSetup &event_setup) override;
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
  private:  
   const device::EDGetToken<SimpleCollection> simple_collection_get_token_;
   const device::EDPutToken<SimpleCollection> simple_collection_put_token_;
-  const std::string model_path_;
-  cms::torch_alpaka::Model model_;
+  std::shared_ptr<Kernels> kernels_ = nullptr;
+  bool bind_stream_ = true;
+  int64_t queue_id_ = -1;
+  std::unique_ptr<cms::torch_alpaka_common::QueueGuard<Queue>> guard_ = nullptr;
 };
 
 //////////////////////////////////////////////////////////////
 
-Inference::Inference(edm::ParameterSet const& params)
-  : EDProducer<>(params),
+Inference::Inference(edm::ParameterSet const& params, const cms::torch_alpaka::Model *cache)
+  : stream::EDProducer<edm::GlobalCache<cms::torch_alpaka::Model>>(params),
     simple_collection_get_token_{consumes(params.getParameter<edm::InputTag>("input"))},
     simple_collection_put_token_{produces()},
-    model_path_(params.getParameter<edm::FileInPath>("modelPath").fullPath()),
-    model_(cms::torch_alpaka::Model(params.getParameter<edm::FileInPath>("modelPath").fullPath())) {}
+    kernels_(std::make_shared<Kernels>()),
+    guard_(std::make_unique<cms::torch_alpaka_common::QueueGuard<Queue>>()) {}
 
-void Inference::produce(edm::StreamID sid, device::Event &event, const device::EventSetup &event_setup) const {  
-  // auto quard = cms::torch_alpaka_common::QueueGuard<Queue>(); 
-  // quard.set(event.queue());
-  const auto dev = cms::torch_alpaka_tools::device(event.queue());
-  const auto dev_model = model_.device();
-  assert(dev == dev_model);
+std::unique_ptr<cms::torch_alpaka::Model> Inference::initializeGlobalCache(const edm::ParameterSet &param) {
+  auto model_path = param.getParameter<edm::FileInPath>("modelPath").fullPath();
+  return std::make_unique<cms::torch_alpaka::Model>(model_path);
+}
+
+void Inference::globalEndJob(const cms::torch_alpaka::Model *cache) {
+}
+
+void Inference::produce(device::Event &event, const device::EventSetup &event_setup) { 
+  if (bind_stream_) {
+    guard_->set(event.queue());
+    bind_stream_ = false;
+    queue_id_ = cms::torch_alpaka_tools::queue_id(event.queue());
+  }
+  auto curr_queue_id = cms::torch_alpaka_tools::queue_id(event.queue());
+  std::cout << "hash=" << curr_queue_id << "; expected=" << queue_id_ << std::endl;
+  assert(curr_queue_id == queue_id_);
 
   const auto &tmp = event.get(simple_collection_get_token_);
   const size_t batch_size = tmp.const_view().metadata().size();
@@ -57,25 +74,60 @@ void Inference::produce(edm::StreamID sid, device::Event &event, const device::E
   SimpleCollection input_collection(batch_size, event.queue());
   SimpleCollection collection(batch_size, event.queue());
 
-  cms::torch_alpaka_tools::InputMetadata input_mask(cms::torch_alpaka_common::Float, 3);
-  cms::torch_alpaka_tools::OutputMetadata output_mask(cms::torch_alpaka_common::Float, 3);
+  kernels_->FillSimpleCollection(event.queue(), input_collection, 1.0f);
+
+  std::cout << "tensors=" << cms::torch_alpaka_tools::device(event.queue()) << std::endl;
+  cms::torch_alpaka_tools::InputMetadata input_mask(cms::torch_alpaka_common::Float, 1);
+  cms::torch_alpaka_tools::OutputMetadata output_mask(cms::torch_alpaka_common::Float, 1);
   cms::torch_alpaka_tools::ModelMetadata model_metadata(batch_size, input_mask, output_mask);
 
-  model_.forward<SimpleSoA, SimpleSoA>(
+  std::cout << "model=" << globalCache()->device() << std::endl;
+  if (cms::torch_alpaka_tools::device(event.queue()) != globalCache()->device()) 
+    globalCache()->to(cms::torch_alpaka_tools::device(event.queue()));
+  std::cout << "model=" << globalCache()->device() << std::endl;
+  assert(cms::torch_alpaka_tools::device(event.queue()) == globalCache()->device());
+  globalCache()->forward<SimpleSoA, SimpleSoA>(
     model_metadata, input_collection.buffer().data(), collection.buffer().data());
+
+  /////////////////////////////////////////////////////////////////////////////////
+  // DEBUG  
+  /////////////////////////////////////////////////////////////////////////////////
+
+  SimpleCollectionHost input_collection_host(batch_size, cms::alpakatools::host());
+  alpaka::memcpy(event.queue(), input_collection_host.buffer(), input_collection.buffer());
+  alpaka::wait(event.queue());
+  std::cout << "Inputs:" << std::endl;
+  std::cout << "|  x  |" << std::endl;
+  for (size_t idx = 0; idx < batch_size; idx++) {
+    printf("| %1.1f |\n", 
+      input_collection_host.view().x()[idx]);
+  }
+  // std::cout << "|  x  |  y  |  z  |" << std::endl;
+  // for (size_t idx = 0; idx < batch_size; idx++) {
+  //   printf("| %1.1f | %1.1f | %1.1f |\n", 
+  //     input_collection_host.view().x()[idx], input_collection_host.view().y()[idx], input_collection_host.view().z()[idx]);
+  // }
     
   SimpleCollectionHost collection_host(batch_size, cms::alpakatools::host());
   alpaka::memcpy(event.queue(), collection_host.buffer(), collection.buffer());
   alpaka::wait(event.queue());
-
-  std::cout << "|  x  |  y  |  z  |" << std::endl;
+  std::cout << "Outputs:" << std::endl;
+  std::cout << "|  x  |" << std::endl;
   for (size_t idx = 0; idx < batch_size; idx++) {
-    printf("| %1.1f | %1.1f | %1.1f |\n", 
-      collection_host.view().x()[idx], collection_host.view().y()[idx], collection_host.view().z()[idx]);
+    printf("| %1.1f |\n", 
+      collection_host.view().x()[idx]);
   }
+  // std::cout << "|  x  |  y  |  z  |" << std::endl;
+  // for (size_t idx = 0; idx < batch_size; idx++) {
+  //   printf("| %1.1f | %1.1f | %1.1f |\n", 
+  //     collection_host.view().x()[idx], collection_host.view().y()[idx], collection_host.view().z()[idx]);
+  // }
   
+  /////////////////////////////////////////////////////////////////////////////////
+  // END DEBUG 
+  /////////////////////////////////////////////////////////////////////////////////
+
   event.emplace(simple_collection_put_token_, std::move(collection));
-  // quard.reset();
 }
 
 void Inference::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

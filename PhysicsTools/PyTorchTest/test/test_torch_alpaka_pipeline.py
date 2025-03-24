@@ -5,15 +5,15 @@ arguments.parseArguments()
 process = cms.Process("TestTorchAlpakaPipeline")
 
 # enable multithreading
-process.options.numberOfThreads = arguments.nThreads if arguments.nThreads > 0 else 1 
-process.options.numberOfStreams = arguments.nStreams if arguments.nStreams > 0 else 1 
+process.options.numberOfThreads = arguments.nThreads if arguments.nThreads > 1 else 1 
+process.options.numberOfStreams = arguments.nStreams if arguments.nStreams > 1 else 1 
 
 # enable alpaka and GPU support
 process.load("Configuration.StandardSequences.Accelerators_cff")
 process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
 
 # process a limited number of events
-process.maxEvents.input = arguments.nEvents if arguments.nEvents > 0 else 1 
+process.maxEvents.input = arguments.nEvents if arguments.nEvents > 1 else 1 
 
 # empty source 
 process.source = cms.Source("EmptySource")

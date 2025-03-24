@@ -6,9 +6,10 @@
 #include "DataFormats/SoATemplate/interface/SoAView.h"
 
 GENERATE_SOA_LAYOUT(SimpleSoALayout,
-  SOA_COLUMN(float, x),
-  SOA_COLUMN(float, y),
-  SOA_COLUMN(float, z)
+  SOA_COLUMN(float, x)
+  // SOA_COLUMN(float, x),
+  // SOA_COLUMN(float, y),
+  // SOA_COLUMN(float, z)
 )
 
 using SimpleSoA = SimpleSoALayout<>;

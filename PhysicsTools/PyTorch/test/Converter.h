@@ -180,7 +180,11 @@ torch::Tensor Converter<SOA_Layout>::array_to_tensor(torch::Device device,
                                                      std::byte* arr,
                                                      const std::vector<long int>& size,
                                                      const std::vector<long int>& stride) {
-  auto options = torch::TensorOptions().dtype(type).device(device).pinned_memory(true);
+  auto options = torch::TensorOptions().dtype(type)
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+  .device(device)
+#endif
+  .pinned_memory(true);
   return torch::from_blob(arr, size, stride, options);
 }
 

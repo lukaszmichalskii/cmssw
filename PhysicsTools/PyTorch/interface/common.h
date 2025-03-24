@@ -5,6 +5,7 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 #include <thread>
+#include <functional>
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 #include <c10/cuda/CUDAStream.h>
@@ -66,7 +67,7 @@ class MultithreadingGuard {
   ~MultithreadingGuard() { reset();}
 
   void set(const TQueue &queue) { static DisableMultithreading disabler; }
-  void reset() { static EnableMultithreading enabler; }
+  void reset() {}
 
  private:
   class DisableMultithreading {
@@ -77,16 +78,6 @@ class MultithreadingGuard {
       at::set_num_interop_threads(1);
     }
   };
-  
-  class EnableMultithreading {
-   friend MultithreadingGuard;
-   private:
-    EnableMultithreading() {
-      const auto num_threads = std::thread::hardware_concurrency();
-      at::set_num_threads(num_threads);
-      at::set_num_interop_threads(num_threads);
-    }
-  }; 
 };
 
 
@@ -164,8 +155,19 @@ inline torch::Device device() {
 
 inline torch::jit::script::Module load_model(const std::string &model_path) {
   auto model = cms::torch_tools::load_model(model_path);
+  #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
   model.to(device());
+  #endif
   return model;
+}
+
+inline int64_t queue_id(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+  auto stream = c10::cuda::getStreamFromExternal(
+    queue.getNativeHandle(), device(queue).index());
+  return stream.id();
+#endif
+  return std::hash<std::thread::id>{}(std::this_thread::get_id());
 }
 
 struct Columns {
@@ -392,7 +394,11 @@ torch::Tensor Converter<SOA_Layout>::array_to_tensor(torch::Device device,
                                                      std::byte* arr,
                                                      const std::vector<long int>& size,
                                                      const std::vector<long int>& stride) {
-  auto options = torch::TensorOptions().dtype(type).device(device).pinned_memory(true);
+  auto options = torch::TensorOptions().dtype(type)
+  #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+    .device(device)
+  #endif
+    .pinned_memory(true);
   return torch::from_blob(arr, size, stride, options);
 }
 
@@ -400,6 +406,7 @@ template <typename SOA_Layout>
 std::vector<torch::IValue> Converter<SOA_Layout>::convert_input(const ModelMetadata& metadata,
                                                                 torch::Device device,
                                                                 std::byte* arr) {
+  std::cout << "inputs: CONVERT" << std::endl;                                                                
   assert(reinterpret_cast<intptr_t>(arr) % SOA_Layout::alignment == 0);
   std::vector<torch::IValue> tensors(metadata.input.nTensors);
 
@@ -432,6 +439,7 @@ std::vector<torch::IValue> Converter<SOA_Layout>::convert_input(const ModelMetad
     // Add block size in bytes to skip over it in next round
     skip += metadata.input[i].columns[0] * stride[1] * metadata.input[i].bytes;
   }
+  std::cout << "inputs: OK" << std::endl;
   return tensors;
 }
 
@@ -439,12 +447,15 @@ template <typename SOA_Layout>
 torch::Tensor Converter<SOA_Layout>::convert_output(const ModelMetadata& metadata,
                                                     torch::Device device,
                                                     std::byte* arr) {
+  std::cout << "outputs: CONVERT" << std::endl;  
   assert(reinterpret_cast<intptr_t>(arr) % SOA_Layout::alignment == 0);
   std::vector<long int> stride = Converter<SOA_Layout>::soa_get_stride(
       metadata.output.isScalar, metadata.nElements, metadata.output.bytes, metadata.output.columns);
   std::vector<long int> size = Converter<SOA_Layout>::soa_get_size(metadata.nElements, metadata.output.columns);
-
-  return Converter<SOA_Layout>::array_to_tensor(device, metadata.output.type, arr, size, stride);
+  auto out = Converter<SOA_Layout>::array_to_tensor(device, metadata.output.type, arr, size, stride); 
+  std::cout << "outputs: OK" << std::endl;
+  return out; 
+  // return Converter<SOA_Layout>::array_to_tensor(device, metadata.output.type, arr, size, stride);
 }
 
 }  // namespace cms::torch_alpaka_tools

@@ -10,7 +10,7 @@ class Model {
  public:
   Model() = default;
   Model(const std::string &model_path);
-  void to(const torch::Device &device);
+  void to(const torch::Device &device) const;
   const torch::Device device() const;
 
   template <typename TSoALayoutIn, typename TSoALayoutOut>
@@ -20,16 +20,16 @@ class Model {
 
  private:
   mutable torch::jit::script::Module model_;
-  torch::Device device_ = cms::torch_alpaka_tools::device();
+  mutable torch::Device device_ = torch::Device(torch::kCPU);
 };
 
 //////////////////////////////////////////////////////////////
 
 Model::Model(const std::string &model_path) {
-  model_ = cms::torch_alpaka_tools::load_model(model_path);
+  model_ = cms::torch_tools::load_model(model_path);
 }
 
-void Model::to(const torch::Device &device) {
+void Model::to(const torch::Device &device) const {
   device_ = device;
   model_.to(device_);
 }
@@ -44,7 +44,7 @@ void Model::forward(torch_alpaka_tools::ModelMetadata metadata,
                     std::byte *outputs) const {
   std::vector<torch::jit::IValue> input_tensor = 
       torch_alpaka_tools::Converter<TSoALayoutIn>::convert_input(metadata, device_, inputs);
-  torch_alpaka_tools::Converter<TSoALayoutOut>::convert_output(metadata, device_, outputs) =
+  torch_alpaka_tools::Converter<TSoALayoutOut>::convert_output(metadata, device_, outputs) = 
       model_.forward(input_tensor).toTensor();
 }
 

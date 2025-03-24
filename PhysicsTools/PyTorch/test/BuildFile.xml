@@ -192,9 +192,27 @@
   <flags ALPAKA_BACKENDS="1"/>
 </bin> -->
 
-<bin file="alpaka/testTorchDevice.cc" name="testTorchDevice">
+<!-- <bin file="alpaka/testTorchDevice.cc" name="testTorchDevice">
   <use name="alpaka"/>
   <use name="pytorch"/>
   <use name="pytorch-cuda"/>
   <flags ALPAKA_BACKENDS="1"/>
+</bin> -->
+
+<bin file="alpaka/testModelInfer.cc testRunner.cc" name="testModelInfer">
+  <use name="boost_filesystem"/>
+  <use name="alpaka"/>
+  <use name="cppunit"/>
+  <use name="pytorch"/>
+  <use name="pytorch-cuda"/>
+  <flags ALPAKA_BACKENDS="1"/>
 </bin>
+
+<!-- <bin file="alpaka/testX2.cc testRunner.cc" name="testX2">
+  <use name="boost_filesystem"/>
+  <use name="alpaka"/>
+  <use name="cppunit"/>
+  <use name="pytorch"/>
+  <use name="pytorch-cuda"/>
+  <flags ALPAKA_BACKENDS="1"/>
+</bin> -->

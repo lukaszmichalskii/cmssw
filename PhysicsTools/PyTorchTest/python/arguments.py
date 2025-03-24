@@ -12,7 +12,7 @@ arguments.register(
 
 arguments.register(
     "nStreams",
-    0,
+    1,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of CMSSW streams"
@@ -20,7 +20,7 @@ arguments.register(
 
 arguments.register(
     "nEvents",
-    1,
+    2,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of events to process"
@@ -36,7 +36,8 @@ arguments.register(
 
 arguments.register(
     "modelPath",
-    "PhysicsTools/PyTorchTest/models/model_x2.pt",
+    "PhysicsTools/PyTorchTest/models/model.pt",
+    # "PhysicsTools/PyTorch/test/alpaka/model_x2.pt",
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.string,         
     "PyTorch model"
