@@ -45,16 +45,37 @@ Inference::Inference(edm::ParameterSet const& params)
     model_(cms::torch_alpaka::Model(params.getParameter<edm::FileInPath>("modelPath").fullPath())) {}
 
 void Inference::produce(edm::StreamID sid, device::Event &event, const device::EventSetup &event_setup) const {  
-  auto quard = cms::torch_alpaka_common::QueueGuard<Queue>(); 
-  quard.set(event.queue());
+  // auto quard = cms::torch_alpaka_common::QueueGuard<Queue>(); 
+  // quard.set(event.queue());
   const auto dev = cms::torch_alpaka_tools::device(event.queue());
   const auto dev_model = model_.device();
   assert(dev == dev_model);
 
-  const auto &input_collection = event.get(simple_collection_get_token_);
-  SimpleCollection collection(10, event.queue());
+  const auto &tmp = event.get(simple_collection_get_token_);
+  const size_t batch_size = tmp.const_view().metadata().size();
+
+  SimpleCollection input_collection(batch_size, event.queue());
+  SimpleCollection collection(batch_size, event.queue());
+
+  cms::torch_alpaka_tools::InputMetadata input_mask(cms::torch_alpaka_common::Float, 3);
+  cms::torch_alpaka_tools::OutputMetadata output_mask(cms::torch_alpaka_common::Float, 3);
+  cms::torch_alpaka_tools::ModelMetadata model_metadata(batch_size, input_mask, output_mask);
+
+  model_.forward<SimpleSoA, SimpleSoA>(
+    model_metadata, input_collection.buffer().data(), collection.buffer().data());
+    
+  SimpleCollectionHost collection_host(batch_size, cms::alpakatools::host());
+  alpaka::memcpy(event.queue(), collection_host.buffer(), collection.buffer());
+  alpaka::wait(event.queue());
+
+  std::cout << "|  x  |  y  |  z  |" << std::endl;
+  for (size_t idx = 0; idx < batch_size; idx++) {
+    printf("| %1.1f | %1.1f | %1.1f |\n", 
+      collection_host.view().x()[idx], collection_host.view().y()[idx], collection_host.view().z()[idx]);
+  }
+  
   event.emplace(simple_collection_put_token_, std::move(collection));
-  quard.reset();
+  // quard.reset();
 }
 
 void Inference::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

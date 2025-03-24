@@ -13,7 +13,7 @@ void assert_device(const torch::Device &m_dev, const torch::Device &dev) {
 int main() {
   auto devices = cms::alpakatools::devices<Platform>();
   for (auto dev : devices) {
-    auto model = cms::torch_alpaka::Model("/afs/cern.ch/user/l/lmichals/public/CMSSW_15_0_0/src/PhysicsTools/PyTorch/test/alpaka/model_x2.pt");
+    auto model = cms::torch_alpaka::Model("src/PhysicsTools/PyTorch/test/alpaka/model_x2.pt");
     assert_device(model.device(), cms::torch_alpaka_tools::device(dev));
   }
   return 0;

@@ -36,7 +36,7 @@ DataLoader::DataLoader(edm::ParameterSet const& params)
     simple_collection_put_token_{produces()} {}
 
 void DataLoader::produce(edm::StreamID sid, device::Event &event, const device::EventSetup &event_setup) const {
-  SimpleCollection collection(100, event.queue());
+  SimpleCollection collection(10, event.queue());
   collection.zeroInitialise(event.queue());
   event.emplace(simple_collection_put_token_, std::move(collection));
 }

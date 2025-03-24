@@ -13,8 +13,13 @@ class Model {
   void to(const torch::Device &device);
   const torch::Device device() const;
 
+  template <typename TSoALayoutIn, typename TSoALayoutOut>
+  void forward(torch_alpaka_tools::ModelMetadata metadata,
+               std::byte *inputs,
+               std::byte *outputs) const;
+
  private:
-  torch::jit::script::Module model_;
+  mutable torch::jit::script::Module model_;
   torch::Device device_ = cms::torch_alpaka_tools::device();
 };
 
@@ -25,12 +30,22 @@ Model::Model(const std::string &model_path) {
 }
 
 void Model::to(const torch::Device &device) {
-  model_.to(device);
   device_ = device;
+  model_.to(device_);
 }
 
 const torch::Device Model::device() const {
   return device_;
+}
+
+template <typename TSoALayoutIn, typename TSoALayoutOut>
+void Model::forward(torch_alpaka_tools::ModelMetadata metadata,
+                    std::byte *inputs,
+                    std::byte *outputs) const {
+  std::vector<torch::jit::IValue> input_tensor = 
+      torch_alpaka_tools::Converter<TSoALayoutIn>::convert_input(metadata, device_, inputs);
+  torch_alpaka_tools::Converter<TSoALayoutOut>::convert_output(metadata, device_, outputs) =
+      model_.forward(input_tensor).toTensor();
 }
 
 }  // namespace cms::torch_alpaka
