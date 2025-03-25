@@ -4,7 +4,7 @@ arguments = VarParsing.VarParsing("analysis")
 
 arguments.register(
     "nThreads",
-    1,
+    8,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of CMSSW threads"
@@ -37,7 +37,6 @@ arguments.register(
 arguments.register(
     "modelPath",
     "PhysicsTools/PyTorchTest/models/model.pt",
-    # "PhysicsTools/PyTorch/test/alpaka/model_x2.pt",
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.string,         
     "PyTorch model"

@@ -406,7 +406,6 @@ template <typename SOA_Layout>
 std::vector<torch::IValue> Converter<SOA_Layout>::convert_input(const ModelMetadata& metadata,
                                                                 torch::Device device,
                                                                 std::byte* arr) {
-  std::cout << "inputs: CONVERT" << std::endl;                                                                
   assert(reinterpret_cast<intptr_t>(arr) % SOA_Layout::alignment == 0);
   std::vector<torch::IValue> tensors(metadata.input.nTensors);
 
@@ -439,7 +438,6 @@ std::vector<torch::IValue> Converter<SOA_Layout>::convert_input(const ModelMetad
     // Add block size in bytes to skip over it in next round
     skip += metadata.input[i].columns[0] * stride[1] * metadata.input[i].bytes;
   }
-  std::cout << "inputs: OK" << std::endl;
   return tensors;
 }
 
@@ -447,15 +445,11 @@ template <typename SOA_Layout>
 torch::Tensor Converter<SOA_Layout>::convert_output(const ModelMetadata& metadata,
                                                     torch::Device device,
                                                     std::byte* arr) {
-  std::cout << "outputs: CONVERT" << std::endl;  
   assert(reinterpret_cast<intptr_t>(arr) % SOA_Layout::alignment == 0);
   std::vector<long int> stride = Converter<SOA_Layout>::soa_get_stride(
       metadata.output.isScalar, metadata.nElements, metadata.output.bytes, metadata.output.columns);
   std::vector<long int> size = Converter<SOA_Layout>::soa_get_size(metadata.nElements, metadata.output.columns);
-  auto out = Converter<SOA_Layout>::array_to_tensor(device, metadata.output.type, arr, size, stride); 
-  std::cout << "outputs: OK" << std::endl;
-  return out; 
-  // return Converter<SOA_Layout>::array_to_tensor(device, metadata.output.type, arr, size, stride);
+  return Converter<SOA_Layout>::array_to_tensor(device, metadata.output.type, arr, size, stride);
 }
 
 }  // namespace cms::torch_alpaka_tools

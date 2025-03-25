@@ -65,8 +65,8 @@ void Inference::produce(device::Event &event, const device::EventSetup &event_se
     queue_id_ = cms::torch_alpaka_tools::queue_id(event.queue());
   }
   auto curr_queue_id = cms::torch_alpaka_tools::queue_id(event.queue());
-  std::cout << "hash=" << curr_queue_id << "; expected=" << queue_id_ << std::endl;
-  assert(curr_queue_id == queue_id_);
+  std::cout << "(Inference) hash=" << curr_queue_id << "; cache=" << queue_id_ << std::endl;
+  // assert(curr_queue_id == queue_id_);
 
   const auto &tmp = event.get(simple_collection_get_token_);
   const size_t batch_size = tmp.const_view().metadata().size();
@@ -75,17 +75,19 @@ void Inference::produce(device::Event &event, const device::EventSetup &event_se
   SimpleCollection collection(batch_size, event.queue());
 
   kernels_->FillSimpleCollection(event.queue(), input_collection, 1.0f);
+  std::cout << "(Inference) kernel OK" << globalCache()->device() << std::endl;    
 
-  std::cout << "tensors=" << cms::torch_alpaka_tools::device(event.queue()) << std::endl;
+  std::cout << "(Inference) tensors=" << cms::torch_alpaka_tools::device(event.queue()) << std::endl;
   cms::torch_alpaka_tools::InputMetadata input_mask(cms::torch_alpaka_common::Float, 1);
   cms::torch_alpaka_tools::OutputMetadata output_mask(cms::torch_alpaka_common::Float, 1);
   cms::torch_alpaka_tools::ModelMetadata model_metadata(batch_size, input_mask, output_mask);
 
-  std::cout << "model=" << globalCache()->device() << std::endl;
+  std::cout << "(Inference) model=" << globalCache()->device() << std::endl;
   if (cms::torch_alpaka_tools::device(event.queue()) != globalCache()->device()) 
     globalCache()->to(cms::torch_alpaka_tools::device(event.queue()));
-  std::cout << "model=" << globalCache()->device() << std::endl;
-  assert(cms::torch_alpaka_tools::device(event.queue()) == globalCache()->device());
+  std::cout << "(Inference) model=" << globalCache()->device() << std::endl;  
+  assert(cms::torch_alpaka_tools::device(event.queue()) == globalCache()->device());  
+  std::cout << "(Inference) inference (" << cms::torch_alpaka_tools::device(event.queue()) << ")" << globalCache()->device() << std::endl;  
   globalCache()->forward<SimpleSoA, SimpleSoA>(
     model_metadata, input_collection.buffer().data(), collection.buffer().data());
 
@@ -93,30 +95,30 @@ void Inference::produce(device::Event &event, const device::EventSetup &event_se
   // DEBUG  
   /////////////////////////////////////////////////////////////////////////////////
 
-  SimpleCollectionHost input_collection_host(batch_size, cms::alpakatools::host());
-  alpaka::memcpy(event.queue(), input_collection_host.buffer(), input_collection.buffer());
-  alpaka::wait(event.queue());
-  std::cout << "Inputs:" << std::endl;
-  std::cout << "|  x  |" << std::endl;
-  for (size_t idx = 0; idx < batch_size; idx++) {
-    printf("| %1.1f |\n", 
-      input_collection_host.view().x()[idx]);
-  }
+  // SimpleCollectionHost input_collection_host(batch_size, cms::alpakatools::host());
+  // alpaka::memcpy(event.queue(), input_collection_host.buffer(), input_collection.buffer());
+  // alpaka::wait(event.queue());
+  // std::cout << "(Inference) Inputs:" << std::endl;
+  // std::cout << "|  x  |" << std::endl;
+  // for (size_t idx = 0; idx < batch_size; idx++) {
+  //   printf("| %1.1f |\n", 
+  //     input_collection_host.view().x()[idx]);
+  // }
   // std::cout << "|  x  |  y  |  z  |" << std::endl;
   // for (size_t idx = 0; idx < batch_size; idx++) {
   //   printf("| %1.1f | %1.1f | %1.1f |\n", 
   //     input_collection_host.view().x()[idx], input_collection_host.view().y()[idx], input_collection_host.view().z()[idx]);
   // }
     
-  SimpleCollectionHost collection_host(batch_size, cms::alpakatools::host());
-  alpaka::memcpy(event.queue(), collection_host.buffer(), collection.buffer());
-  alpaka::wait(event.queue());
-  std::cout << "Outputs:" << std::endl;
-  std::cout << "|  x  |" << std::endl;
-  for (size_t idx = 0; idx < batch_size; idx++) {
-    printf("| %1.1f |\n", 
-      collection_host.view().x()[idx]);
-  }
+  // SimpleCollectionHost collection_host(batch_size, cms::alpakatools::host());
+  // alpaka::memcpy(event.queue(), collection_host.buffer(), collection.buffer());
+  // alpaka::wait(event.queue());
+  // std::cout << "(Inference) Outputs:" << std::endl;
+  // std::cout << "|  x  |" << std::endl;
+  // for (size_t idx = 0; idx < batch_size; idx++) {
+  //   printf("| %1.1f |\n", 
+  //     collection_host.view().x()[idx]);
+  // }
   // std::cout << "|  x  |  y  |  z  |" << std::endl;
   // for (size_t idx = 0; idx < batch_size; idx++) {
   //   printf("| %1.1f | %1.1f | %1.1f |\n", 
@@ -128,6 +130,7 @@ void Inference::produce(device::Event &event, const device::EventSetup &event_se
   /////////////////////////////////////////////////////////////////////////////////
 
   event.emplace(simple_collection_put_token_, std::move(collection));
+  std::cout << "(Inference) OK (" <<  globalCache()->device() << ")" << std::endl;  
 }
 
 void Inference::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

@@ -27,6 +27,7 @@ process.options.wantSummary = False
 # load pipeline chain
 process.load("PhysicsTools.PyTorchTest.data_loader")
 process.load("PhysicsTools.PyTorchTest.inference")
+process.load("PhysicsTools.PyTorchTest.inference2")
 
 # setup chain configs
 process.DataLoader = process.DataLoaderStruct.clone(
@@ -41,13 +42,20 @@ process.Inference = process.InferenceStruct.clone(
         backend = cms.untracked.string(arguments.backend)
     ),
 )
+process.Inference2 = process.Inference2Struct.clone(
+    input = cms.InputTag('DataLoader'),
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(arguments.backend)
+    ),
+)
 # process.MessageLogger.cerr.DataLoader = cms.untracked.PSet()
 # process.MessageLogger.cerr.Inference = cms.untracked.PSet()
 
 # schedule the modules
 process.path = cms.Path(
     process.DataLoader + 
-    process.Inference
+    process.Inference + 
+    process.Inference2
 )
 
 process.schedule = cms.Schedule(
