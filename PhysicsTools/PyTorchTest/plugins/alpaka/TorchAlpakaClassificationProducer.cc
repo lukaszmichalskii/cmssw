@@ -17,6 +17,7 @@
 #include "PhysicsTools/PyTorch/interface/Model.h"
 #include "PhysicsTools/PyTorch/interface/SoAMetadata.h"
 #include "PhysicsTools/PyTorchTest/plugins/alpaka/Kernels.h"
+#include "PhysicsTools/PyTorchTest/interface/nvtx.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -55,6 +56,7 @@ std::unique_ptr<torch_alpaka::Model> TorchAlpakaClassificationProducer::initiali
 void TorchAlpakaClassificationProducer::globalEndJob(const torch_alpaka::Model *cache) {}
 
 void TorchAlpakaClassificationProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
+  torch_alpaka::NVTXScopedRange produceRange("Classifier::produce");
   // guard torch internal operations to not conflict with fw execution scheme
   std::cout << "(Classification) qhash=" << torch_alpaka::tools::queue_hash(event.queue()) << std::endl;
   std::cout << "(Classification) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
@@ -73,25 +75,34 @@ void TorchAlpakaClassificationProducer::produce(device::Event &event, const devi
   auto outputs = torchportable::ClassificationCollection(batch_size, event.queue());
 
   // metadata for automatic tensor conversion
+  torch_alpaka::NVTXScopedRange metadataRange("Classifier::metadata");
   std::cout << "(Classification::metadata) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   torch_alpaka::SoAMetadata<torchportable::ParticleSoA> input_metadata(
     batch_size, inputs.buffer().data(), torch_alpaka::Float, 3);
   torch_alpaka::SoAMetadata<torchportable::ClassificationSoA> output_metadata(
     batch_size, outputs.buffer().data(), torch_alpaka::Float, 2);
   torch_alpaka::ModelMetadata model_metadata(input_metadata, output_metadata);
+  metadataRange.end();
 
   // inference
+  torch_alpaka::NVTXScopedRange moveToDeviceRange("Classifier::move_to_device");
   std::cout << "(Classification::forward) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   if (torch_alpaka::tools::device(event.queue()) != globalCache()->device()) 
     globalCache()->to(event.queue());
   assert(torch_alpaka::tools::device(event.queue()) == globalCache()->device());  
+  moveToDeviceRange.end();
+  torch_alpaka::NVTXScopedRange inferenceRange("Classifier::inference");
   globalCache()->forward(model_metadata);
+  inferenceRange.end();
 
   // assert output match expected 
+  torch_alpaka::NVTXScopedRange assertRange("Classifier::assert");
   std::cout << "(Classification::assert) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   kernels_->AssertClassification(event.queue(), outputs);
+  assertRange.end();
   event.emplace(outputs_token_, std::move(outputs));
   std::cout << "(Classification) OK" << std::endl; 
+  produceRange.end();
 }
 
 void TorchAlpakaClassificationProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

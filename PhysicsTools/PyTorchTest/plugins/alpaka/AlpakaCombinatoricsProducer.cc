@@ -16,6 +16,7 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "PhysicsTools/PyTorch/interface/AlpakaConfig.h"
 #include "PhysicsTools/PyTorchTest/plugins/alpaka/Kernels.h"
+#include "PhysicsTools/PyTorchTest/interface/nvtx.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -45,6 +46,7 @@ AlpakaCombinatoricsProducer::AlpakaCombinatoricsProducer(edm::ParameterSet const
 
 void AlpakaCombinatoricsProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
   // debug stream usage in concurrently scheduled modules
+  torch_alpaka::NVTXScopedRange produceRange("Combinatorics::produce");
   std::cout << "(Combinatorics) hash=" << torch_alpaka::tools::queue_hash(event.queue()) << std::endl;
 
   // get data
@@ -53,12 +55,17 @@ void AlpakaCombinatoricsProducer::produce(device::Event &event, const device::Ev
   auto outputs = torchportable::ParticleCollection(batch_size, event.queue());
 
   // dummy kernel emulation
+  torch_alpaka::NVTXScopedRange kernelRange("Combinatorics::kernel");
   kernels_->FillParticleCollection(event.queue(), outputs, 0.32f);
+  kernelRange.end();
 
   // assert output match expected  
+  torch_alpaka::NVTXScopedRange assertRange("Combinatorics::assert");
   kernels_->AssertCombinatorics(event.queue(), outputs, 0.32f);
+  assertRange.end();
   event.emplace(outputs_token_, std::move(outputs));
   std::cout << "(Combinatorics) OK" << std::endl; 
+  produceRange.end();
 }
 
 void AlpakaCombinatoricsProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

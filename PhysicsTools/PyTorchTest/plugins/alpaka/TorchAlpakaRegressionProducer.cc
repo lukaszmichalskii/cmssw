@@ -17,6 +17,7 @@
 #include "PhysicsTools/PyTorch/interface/Model.h"
 #include "PhysicsTools/PyTorch/interface/SoAMetadata.h"
 #include "PhysicsTools/PyTorchTest/plugins/alpaka/Kernels.h"
+#include "PhysicsTools/PyTorchTest/interface/nvtx.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -56,6 +57,7 @@ void TorchAlpakaRegressionProducer::globalEndJob(const torch_alpaka::Model *cach
 
 void TorchAlpakaRegressionProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
   // guard torch internal operations to not conflict with cmssw fw scheme
+  torch_alpaka::NVTXScopedRange produceRange("Regression::produce");
   std::cout << "(Regression) qhash=" << torch_alpaka::tools::queue_hash(event.queue()) << std::endl;
   std::cout << "(Regression) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   torch_alpaka::set_guard(event.queue());
@@ -70,25 +72,34 @@ void TorchAlpakaRegressionProducer::produce(device::Event &event, const device::
   auto outputs = torchportable::RegressionCollection(batch_size, event.queue());
 
   // metadata for automatic tensor conversion
+  torch_alpaka::NVTXScopedRange metadataRange("Regression::metadata");
   std::cout << "(Regression::metadata) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   torch_alpaka::SoAMetadata<torchportable::ParticleSoA> input_metadata(batch_size);
   input_metadata.append_block("particle_props", 3, inputs.view().pt()); // manually specify props block
   torch_alpaka::SoAMetadata<torchportable::RegressionSoA> output_metadata(batch_size);
   output_metadata.append_block("reco_props", 1, outputs.view().reco_pt()); // manually specify reco block
   torch_alpaka::ModelMetadata model_metadata(input_metadata, output_metadata);
+  metadataRange.end();
 
   // inference
+  torch_alpaka::NVTXScopedRange moveToDeviceRange("Regression::move_to_device");
   std::cout << "(Regression::forward) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   if (torch_alpaka::tools::device(event.queue()) != globalCache()->device()) 
     globalCache()->to(event.queue());
   assert(torch_alpaka::tools::device(event.queue()) == globalCache()->device());  
+  moveToDeviceRange.end();
+  torch_alpaka::NVTXScopedRange inferenceRange("Regression::inference");
   globalCache()->forward(model_metadata);
+  inferenceRange.end();
   
   // assert output match expected  
+  torch_alpaka::NVTXScopedRange assertRange("Regression::assert");
   std::cout << "(Regression::assert) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   kernels_->AssertRegression(event.queue(), outputs);
+  assertRange.end();
   event.emplace(outputs_token_, std::move(outputs));
   std::cout << "(Regression) OK" << std::endl; 
+  produceRange.end();
 }
 
 void TorchAlpakaRegressionProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
