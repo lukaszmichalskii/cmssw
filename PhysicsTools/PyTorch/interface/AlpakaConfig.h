@@ -94,28 +94,6 @@ constexpr auto Double = torch::kDouble;
 template <typename TQueue>
 inline void set_guard(const TQueue &queue);
 
-
-// template <typename TDev, typename TQueue>
-// class TorchAllocatorWrapper{
-//  public:
-//   TorchAllocatorWrapper(TQueue queue) {
-//     queue_ = queue;
-//     allocator_ = cms::alpakatools::getDeviceCachingAllocator<TDev, TQueue>(alpaka::getDev(queue));
-//   }
-
-//   void* allocate(size_t size, int device_id, cudaStream_t) {
-//     return allocator_->allocate(size, queue_);
-//   }
-
-//   void deallocate(void *ptr, size_t size, int device_id, cudaStream_t) {
-//     allocator_->free(ptr);
-//   }
-  
-//  private:
-//   cms::alpakatools::CachingAllocator<TDev, TQueue> &allocator_;
-//   TQueue queue_;
-// };
-
   
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
@@ -129,6 +107,12 @@ inline void set_guard(const alpaka_cuda_async::Queue &queue) {
   if (err != cudaSuccess) {
     std::cerr << "CUDA set device failed: " << cudaGetErrorString(err) << std::endl;
   }
+
+  [[maybe_unused]] static bool initialized = [] {
+    at::set_num_threads(1);
+    at::set_num_interop_threads(1);
+    return true;
+  }();
 }
 
 class TorchAllocatorWrapper{
