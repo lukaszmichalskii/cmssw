@@ -13,7 +13,7 @@
 #include <string>
 
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
-
+#include "HeterogeneousCore/AlpakaInterface/interface/CachingAllocator.h"
 
 namespace torch_alpaka {
 
@@ -92,6 +92,26 @@ constexpr auto Double = torch::kDouble;
 template <typename TQueue>
 inline void set_guard(const TQueue &queue);
 
+
+template <typename TQueue>
+class TorchAllocatorWrapper{
+  TorchAllocatorWrapper(CachingAllocator *allocator, const TQueue& queue) : allocator_(allocator), queue_(queue) {}
+
+  void* allocate(size_t size, int device_id, cudaStream_t) {
+    return allocator_->allocate(size, queue);
+  }
+
+  void deallocate(void *ptr, size_t size, int device_id, cudaStream_t) {
+    allocator_->free(ptr);
+  }
+  
+  private:
+  CachingAllocator *allocator_;
+  const TQueue& queue_;
+};
+
+  
+
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 
 template <>
@@ -104,6 +124,8 @@ inline void set_guard(const alpaka_cuda_async::Queue &queue) {
     std::cerr << "CUDA set device failed: " << cudaGetErrorString(err) << std::endl;
   }
 }
+
+
 
 #elif ALPAKA_ACC_GPU_HIP_ENABLED
 
