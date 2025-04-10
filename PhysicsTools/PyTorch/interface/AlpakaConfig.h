@@ -14,6 +14,8 @@
 
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/CachingAllocator.h"
+#include "HeterogeneousCore/AlpakaInterface/interface/getDeviceCachingAllocator.h"
+
 
 namespace torch_alpaka {
 
@@ -93,22 +95,26 @@ template <typename TQueue>
 inline void set_guard(const TQueue &queue);
 
 
-template <typename TQueue>
-class TorchAllocatorWrapper{
-  TorchAllocatorWrapper(CachingAllocator *allocator, const TQueue& queue) : allocator_(allocator), queue_(queue) {}
+// template <typename TDev, typename TQueue>
+// class TorchAllocatorWrapper{
+//  public:
+//   TorchAllocatorWrapper(TQueue queue) {
+//     queue_ = queue;
+//     allocator_ = cms::alpakatools::getDeviceCachingAllocator<TDev, TQueue>(alpaka::getDev(queue));
+//   }
 
-  void* allocate(size_t size, int device_id, cudaStream_t) {
-    return allocator_->allocate(size, queue);
-  }
+//   void* allocate(size_t size, int device_id, cudaStream_t) {
+//     return allocator_->allocate(size, queue_);
+//   }
 
-  void deallocate(void *ptr, size_t size, int device_id, cudaStream_t) {
-    allocator_->free(ptr);
-  }
+//   void deallocate(void *ptr, size_t size, int device_id, cudaStream_t) {
+//     allocator_->free(ptr);
+//   }
   
-  private:
-  CachingAllocator *allocator_;
-  const TQueue& queue_;
-};
+//  private:
+//   cms::alpakatools::CachingAllocator<TDev, TQueue> &allocator_;
+//   TQueue queue_;
+// };
 
   
 
@@ -125,7 +131,25 @@ inline void set_guard(const alpaka_cuda_async::Queue &queue) {
   }
 }
 
+class TorchAllocatorWrapper{
+ public:
+  TorchAllocatorWrapper(alpaka_cuda_async::Queue queue) 
+      : queue_(queue), 
+        allocator_(cms::alpakatools::getDeviceCachingAllocator<
+          alpaka_cuda_async::Device, alpaka_cuda_async::Queue>(alpaka::getDev(queue))) {}
 
+  void* allocate(size_t size, int device_id, cudaStream_t) {
+    return allocator_.allocate(size, queue_);
+  }
+
+  void deallocate(void *ptr, size_t size, int device_id, cudaStream_t) {
+    allocator_.free(ptr);
+  }
+  
+ private:
+  alpaka_cuda_async::Queue queue_;
+  cms::alpakatools::CachingAllocator<alpaka_cuda_async::Device, alpaka_cuda_async::Queue> &allocator_;
+};
 
 #elif ALPAKA_ACC_GPU_HIP_ENABLED
 

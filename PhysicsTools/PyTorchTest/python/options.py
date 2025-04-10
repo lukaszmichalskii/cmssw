@@ -7,7 +7,7 @@ args = VarParsing.VarParsing("analysis")
 
 args.register(
     "numberOfThreads",
-    os.cpu_count(),
+    4,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of CMSSW threads"
@@ -15,7 +15,7 @@ args.register(
 
 args.register(
     "numberOfStreams",
-    1,
+    4,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of CMSSW streams"
@@ -23,7 +23,7 @@ args.register(
 
 args.register(
     "numberOfEvents",
-    100,
+    10,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of events to process"

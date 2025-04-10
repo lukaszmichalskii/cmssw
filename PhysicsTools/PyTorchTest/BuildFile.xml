@@ -10,7 +10,7 @@
 <use name="FWCore/Utilities"/>
 <use name="FWCore/ServiceRegistry"/>
 <use name="PhysicsTools/PyTorch"/>
-<flags ALPAKA_BACKENDS="1"/>
+<flags ALPAKA_BACKENDS="cuda"/>
 <export>
   <lib name="1"/>
 </export>

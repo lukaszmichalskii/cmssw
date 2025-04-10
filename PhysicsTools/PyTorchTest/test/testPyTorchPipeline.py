@@ -58,9 +58,9 @@ process.AlpakaCombinatoricsProducer = process.AlpakaCombinatoricsProducerStruct.
 # schedule the modules
 process.path = cms.Path(
     process.TorchAlpakaDataProducer + 
-    process.TorchAlpakaClassificationProducer + 
-    process.TorchAlpakaRegressionProducer +
-    process.AlpakaCombinatoricsProducer
+    process.TorchAlpakaClassificationProducer
+    # process.TorchAlpakaRegressionProducer +
+    # process.AlpakaCombinatoricsProducer
 )
 
 process.schedule = cms.Schedule(

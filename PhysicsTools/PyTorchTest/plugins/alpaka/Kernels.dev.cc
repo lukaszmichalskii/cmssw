@@ -28,7 +28,6 @@ void Kernels::FillParticleCollection(Queue &queue, torchportable::ParticleCollec
   uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);      
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
   alpaka::exec<Acc1D>(queue, grid, FillParticleCollectionKernel{}, data.view(), value);
-  alpaka::wait(queue);
 }
 
 class AssertCombinatoricsKernel {
@@ -48,7 +47,6 @@ class AssertCombinatoricsKernel {
    uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);      
    auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
    alpaka::exec<Acc1D>(queue, grid, AssertCombinatoricsKernel{}, data.view(), value);
-   alpaka::wait(queue);
  }
 
 class AssertClassificationKernel {
@@ -67,7 +65,6 @@ void Kernels::AssertClassification(Queue &queue, torchportable::ClassificationCo
   uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);      
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
   alpaka::exec<Acc1D>(queue, grid, AssertClassificationKernel{}, data.view());
-  alpaka::wait(queue);
 }
 
 class AssertRegressionKernel {
@@ -85,7 +82,6 @@ void Kernels::AssertRegression(Queue &queue, torchportable::RegressionCollection
   uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);      
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
   alpaka::exec<Acc1D>(queue, grid, AssertRegressionKernel{}, data.view());
-  alpaka::wait(queue);
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

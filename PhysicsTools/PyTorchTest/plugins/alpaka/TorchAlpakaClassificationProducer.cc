@@ -1,5 +1,6 @@
 #include <alpaka/alpaka.hpp>
 #include <torch/torch.h>
+#include <torch/csrc/cuda/CUDAPluggableAllocator.h>
 #include <torch/script.h>
 
 #include "DataFormats/PyTorchTest/interface/alpaka/Collections.h"
@@ -36,6 +37,7 @@ class TorchAlpakaClassificationProducer : public stream::EDProducer<edm::GlobalC
   const device::EDGetToken<torchportable::ParticleCollection> inputs_token_;
   const device::EDPutToken<torchportable::ClassificationCollection> outputs_token_;
   std::unique_ptr<Kernels> kernels_ = nullptr;
+  bool is_cache_allocator_initialized_ = false;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -61,6 +63,18 @@ void TorchAlpakaClassificationProducer::produce(device::Event &event, const devi
   std::cout << "(Classification) qhash=" << torch_alpaka::tools::queue_hash(event.queue()) << std::endl;
   std::cout << "(Classification) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   torch_alpaka::set_guard(event.queue());
+  if (!is_cache_allocator_initialized_) {
+    auto wrapper = std::make_shared<torch_alpaka::TorchAllocatorWrapper>(event.queue());
+    auto alloc_fn = [wrapper](size_t size, int device, cudaStream_t stream) -> void* {
+      return wrapper->allocate(size, device, stream);
+    };
+    auto free_fn = [wrapper](void* ptr, size_t size, int device, cudaStream_t stream) {
+      wrapper->deallocate(ptr, size, device, stream);
+    };
+    auto custom_allocator = torch::cuda::CUDAPluggableAllocator::createCustomAllocator(alloc_fn, free_fn);
+    torch::cuda::CUDAPluggableAllocator::changeCurrentAllocator(custom_allocator);
+    is_cache_allocator_initialized_ = true;
+  }
   std::cout << "(Classification::set_guard) chash=" << torch_alpaka::tools::current_stream_hash(event.queue()) << std::endl;
   // sanity check 
   assert(torch_alpaka::tools::queue_hash(event.queue()) == torch_alpaka::tools::current_stream_hash(event.queue()));
