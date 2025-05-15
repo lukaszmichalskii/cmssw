@@ -43,7 +43,7 @@ ScPhase2TkEmRawToDigi::ScPhase2TkEmRawToDigi(const edm::ParameterSet &iConfig)
   produces<unsigned int>("nbx");
 }
 
-ScPhase2TkEmRawToDigi::~ScPhase2TkEmRawToDigi(){};
+ScPhase2TkEmRawToDigi::~ScPhase2TkEmRawToDigi() {};
 
 void ScPhase2TkEmRawToDigi::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   edm::Handle<SDSRawDataCollection> feds;

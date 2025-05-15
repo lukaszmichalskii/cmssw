@@ -103,7 +103,7 @@ ScPhase2PuppiW3PiDemo::ScPhase2PuppiW3PiDemo(const edm::ParameterSet &iConfig)
   }
 }
 
-ScPhase2PuppiW3PiDemo::~ScPhase2PuppiW3PiDemo(){};
+ScPhase2PuppiW3PiDemo::~ScPhase2PuppiW3PiDemo() {};
 
 void ScPhase2PuppiW3PiDemo::beginStream(edm::StreamID) {
   countCandidate_ = 0;
@@ -222,12 +222,12 @@ void ScPhase2PuppiW3PiDemo::runObj(const OrbitCollection<T> &src,
                     bestTripletMass = mass;
                   }
                 }  // iso
-              }    // delta R
-            }      // mass
-          }        //charge
-        }          //low pt cut
-      }            //intermediate pt cut
-    }              //high pt cut
+              }  // delta R
+            }  // mass
+          }  //charge
+        }  //low pt cut
+      }  //intermediate pt cut
+    }  //high pt cut
 
     if (bestTripletScore > 0) {
       ret->emplace_back(bx);
@@ -330,12 +330,12 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
                     bestTripletScore = ptsum;
                   }
                 }  // iso
-              }    // delta R
-            }      // mass
-          }        //charge
-        }          //low pt cut
-      }            //intermediate pt cut
-    }              //high pt cut
+              }  // delta R
+            }  // mass
+          }  //charge
+        }  //low pt cut
+      }  //intermediate pt cut
+    }  //high pt cut
 
     if (bestTripletScore > 0) {
       offsets.push_back(offsets.back() + size);

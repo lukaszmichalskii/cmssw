@@ -21,7 +21,7 @@
 class GoodOrbitNBxSelector : public edm::global::EDFilter<> {
 public:
   explicit GoodOrbitNBxSelector(const edm::ParameterSet&);
-  ~GoodOrbitNBxSelector() {}
+  ~GoodOrbitNBxSelector() override {}
   static void fillDescriptions(edm::ConfigurationDescriptions&);
 
 private:

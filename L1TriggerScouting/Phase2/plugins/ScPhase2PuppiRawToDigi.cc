@@ -65,7 +65,7 @@ ScPhase2PuppiRawToDigi::ScPhase2PuppiRawToDigi(const edm::ParameterSet &iConfig)
   }
 }
 
-ScPhase2PuppiRawToDigi::~ScPhase2PuppiRawToDigi(){};
+ScPhase2PuppiRawToDigi::~ScPhase2PuppiRawToDigi() {};
 
 void ScPhase2PuppiRawToDigi::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   edm::Handle<SDSRawDataCollection> scoutingRawDataCollection;

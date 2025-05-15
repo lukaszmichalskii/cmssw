@@ -24,7 +24,7 @@ class ScTrackerMuonToOrbitFlatTable : public edm::global::EDProducer<> {
 public:
   // constructor and destructor
   explicit ScTrackerMuonToOrbitFlatTable(const edm::ParameterSet&);
-  ~ScTrackerMuonToOrbitFlatTable() override{};
+  ~ScTrackerMuonToOrbitFlatTable() override {};
 
   void produce(edm::StreamID, edm::Event&, edm::EventSetup const&) const override;
 

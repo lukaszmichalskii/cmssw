@@ -79,7 +79,7 @@ ScPhase2PuppiHPhiJPsiDemo::ScPhase2PuppiHPhiJPsiDemo(const edm::ParameterSet &iC
   }
 }
 
-ScPhase2PuppiHPhiJPsiDemo::~ScPhase2PuppiHPhiJPsiDemo(){};
+ScPhase2PuppiHPhiJPsiDemo::~ScPhase2PuppiHPhiJPsiDemo() {};
 
 void ScPhase2PuppiHPhiJPsiDemo::beginStream(edm::StreamID) {
   countStruct_ = 0;

@@ -92,7 +92,7 @@ DAQSource::DAQSource(edm::ParameterSet const& pset, edm::InputSourceDescription 
   } else if (dataModeConfig_ == "ScoutingRun3") {
     dataMode_ = std::make_shared<DataModeScoutingRun3>(this);
   } else if (dataModeConfig_ == "ScoutingPhase2") {
-    dataMode_.reset(new DataModeScoutingPhase2(this));
+    dataMode_ = std::make_shared<DataModeScoutingPhase2>(this);
   } else if (dataModeConfig_ == "DTH") {
     dataMode_ = std::make_shared<DataModeDTH>(this, verifyChecksum_);
   } else

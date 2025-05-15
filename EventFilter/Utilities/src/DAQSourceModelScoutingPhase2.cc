@@ -4,6 +4,8 @@ using namespace edm::streamer;
 
 void DataModeScoutingPhase2::makeDirectoryEntries(std::vector<std::string> const& baseDirs,
                                                   std::vector<int> const& numSources,
+                                                  std::vector<int> const& sourceIDs,
+                                                  std::string const& sourceIdentifier,
                                                   std::string const& runDir) {
   std::cout << "makeDirectoryEntries called with runDir " << runDir << ",\n baseDirs = {\n";
   for (auto& b : baseDirs)
@@ -63,7 +65,7 @@ void DataModeScoutingPhase2::readEvent(edm::EventPrincipal& eventPrincipal) {
   edm::Timestamp tstamp(time);
 
   // set provenance helpers
-  uint32_t hdrEventID = events_.front()->event();
+  uint32_t hdrEventID = currOrbit_;
   edm::EventID eventID = edm::EventID(daqSource_->eventRunNumber(), daqSource_->currentLumiSection(), hdrEventID);
   edm::EventAuxiliary aux(
       eventID, daqSource_->processGUID(), tstamp, events_[0]->isRealData(), edm::EventAuxiliary::PhysicsTrigger);
@@ -82,9 +84,10 @@ void DataModeScoutingPhase2::readEvent(edm::EventPrincipal& eventPrincipal) {
     fedData.resize(size);
     memcpy(fedData.data(), e.payload(), size);
   }
+
   std::unique_ptr<edm::WrapperBase> edp(new edm::Wrapper<SDSRawDataCollection>(std::move(rawData)));
   eventPrincipal.put(
-      daqProvenanceHelpers_[0]->branchDescription(), std::move(edp), daqProvenanceHelpers_[0]->dummyProvenance());
+      daqProvenanceHelpers_[0]->productDescription(), std::move(edp), daqProvenanceHelpers_[0]->dummyProvenance());
 
   eventCached_ = false;
 }
@@ -97,21 +100,29 @@ std::vector<std::shared_ptr<const edm::DaqProvenanceHelper>>& DataModeScoutingPh
   return daqProvenanceHelpers_;
 }
 
-bool DataModeScoutingPhase2::nextEventView() {
+bool DataModeScoutingPhase2::nextEventView(RawInputFile*) {
   blockCompleted_ = false;
   if (eventCached_)
     return true;
-  for (unsigned int i = 0; i < events_.size(); i++) {
-    //add last event length to each stripe
-    dataBlockAddrs_[i] += events_[i]->size();
+
+  // move the data block address only for the sources processed
+  // un the previous event by adding the last event size
+  for (const auto& pair : sourceValidOrbitPair_) {
+    dataBlockAddrs_[pair.first] += events_[pair.second]->size();
   }
+
   return makeEvents();
 }
 
 bool DataModeScoutingPhase2::makeEvents() {
+  // clear events and reset current orbit
   events_.clear();
+  sourceValidOrbitPair_.clear();
+  currOrbit_ = 0xFFFFFFFF;  // max uint
   assert(!blockCompleted_);
-  //std::cout << "In makeEvents(), numFiles_ = " << numFiles_ << std::endl;
+
+  // create current "events" (= orbits) list from each data source,
+  // check if one dataBlock terminated earlier than others.
   for (int i = 0; i < numFiles_; i++) {
     /*
     std::cout << " i = " << i << ", dataBlockAddrs_[i] = " << (void*)(dataBlockAddrs_[i])
@@ -119,29 +130,56 @@ bool DataModeScoutingPhase2::makeEvents() {
               << ", blockCompleted_ = " << blockCompleted_ << std::endl;
     */
     if (dataBlockAddrs_[i] >= dataBlockMaxAddrs_[i]) {
-      //must be exact
-      assert(dataBlockAddrs_[i] == dataBlockMaxAddrs_[i]);
-      blockCompleted_ = true;
-      return false;
-    } else {
-      if (blockCompleted_)
-        throw cms::Exception("DataModeFRDStriped::makeEvents")
-            << "not all striped blocks were completed at the same time";
-    }
-    if (blockCompleted_)
+      completedBlocks_[i] = true;
       continue;
+    }
+
+    // event contains data, add it to the events list
     events_.emplace_back(std::make_unique<FRDEventMsgView>(dataBlockAddrs_[i]));
     /*
     std::cout << "Emplaced event " << i << " (check: " << (events_.size() - 1) << ") of size " << events_[i]->size()
               << " eventSize " << events_[i]->eventSize() << ", payload at " << (void*)(events_[i]->payload())
               << ", event id:" << events_[i]->event() << std::endl;
     */
-    if (dataBlockAddrs_[i] + events_[i]->size() > dataBlockMaxAddrs_[i])
+    if (dataBlockAddrs_[i] + events_.back()->size() > dataBlockMaxAddrs_[i])
       throw cms::Exception("DAQSource::getNextEvent")
-          << " event id:" << events_[i]->event() << " lumi:" << events_[i]->lumi() << " run:" << events_[i]->run()
-          << " of size:" << events_[i]->size() << " bytes does not fit into the buffer or has corrupted header";
+          << " event id:" << events_.back()->event() << " lumi:" << events_.back()->lumi()
+          << " run:" << events_.back()->run() << " of size:" << events_.back()->size()
+          << " bytes does not fit into the buffer or has corrupted header";
+
+    // find the minimum orbit for the current event between all files
+    if ((events_.back()->event() < currOrbit_) && (!completedBlocks_[i])) {
+      currOrbit_ = events_.back()->event();
+    }
   }
-  return !blockCompleted_;
+
+  // mark valid orbits from each data source
+  // e.g. find when orbit is missing from one source
+  bool allBlocksCompleted = true;
+  int evt_idx = 0;
+  for (int i = 0; i < numFiles_; i++) {
+    if (completedBlocks_[i]) {
+      continue;
+    }
+
+    if (events_[evt_idx]->event() != currOrbit_) {
+      // current source (=i-th source) doesn't contain the expected orbit.
+      // skip it, and move to the next orbit
+    } else {
+      // add a pair <current surce index, event index>
+      // evt_idx can be different from variable i, as some data blocks can be
+      // completed before others
+      sourceValidOrbitPair_.emplace_back(std::make_pair(i, evt_idx));
+      allBlocksCompleted = false;
+    }
+
+    evt_idx++;
+  }
+
+  if (allBlocksCompleted) {
+    blockCompleted_ = true;
+  }
+  return !allBlocksCompleted;
 }
 
 bool DataModeScoutingPhase2::checksumValid() { return true; }

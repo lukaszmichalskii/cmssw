@@ -77,7 +77,7 @@ ScPhase2PuppiH2PhiDemo::ScPhase2PuppiH2PhiDemo(const edm::ParameterSet &iConfig)
   }
 }
 
-ScPhase2PuppiH2PhiDemo::~ScPhase2PuppiH2PhiDemo(){};
+ScPhase2PuppiH2PhiDemo::~ScPhase2PuppiH2PhiDemo() {};
 
 void ScPhase2PuppiH2PhiDemo::beginStream(edm::StreamID) {
   countStruct_ = 0;

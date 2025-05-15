@@ -111,7 +111,7 @@ ScPhase2PuppiWDsGammaDemo::ScPhase2PuppiWDsGammaDemo(const edm::ParameterSet &iC
   }
 }
 
-ScPhase2PuppiWDsGammaDemo::~ScPhase2PuppiWDsGammaDemo(){};
+ScPhase2PuppiWDsGammaDemo::~ScPhase2PuppiWDsGammaDemo() {};
 
 void ScPhase2PuppiWDsGammaDemo::beginStream(edm::StreamID) {
   countStruct_ = 0;
@@ -252,13 +252,13 @@ void ScPhase2PuppiWDsGammaDemo::runObj(const OrbitCollection<T> &srcPuppi,
                       bestQuadrupletMass = mass;
                     }
                   }  // iso
-                }    // delta R
-              }      // mass
-            }        //charge
-          }          // photon pt cut
-        }            //low pt cut
-      }              //intermediate pt cut
-    }                //high pt cut
+                }  // delta R
+              }  // mass
+            }  //charge
+          }  // photon pt cut
+        }  //low pt cut
+      }  //intermediate pt cut
+    }  //high pt cut
 
     if (bestQuadrupletScore > 0) {
       ret->emplace_back(bx);

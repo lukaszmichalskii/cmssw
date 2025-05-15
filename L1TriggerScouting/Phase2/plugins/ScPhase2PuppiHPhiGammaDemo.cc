@@ -91,7 +91,7 @@ ScPhase2PuppiHPhiGammaDemo::ScPhase2PuppiHPhiGammaDemo(const edm::ParameterSet &
   }
 }
 
-ScPhase2PuppiHPhiGammaDemo::~ScPhase2PuppiHPhiGammaDemo(){};
+ScPhase2PuppiHPhiGammaDemo::~ScPhase2PuppiHPhiGammaDemo() {};
 
 void ScPhase2PuppiHPhiGammaDemo::beginStream(edm::StreamID) {
   countStruct_ = 0;

@@ -63,7 +63,7 @@ ScPhase2TrackerMuonDiMuDemo::ScPhase2TrackerMuonDiMuDemo(const edm::ParameterSet
   }
 }
 
-ScPhase2TrackerMuonDiMuDemo::~ScPhase2TrackerMuonDiMuDemo(){};
+ScPhase2TrackerMuonDiMuDemo::~ScPhase2TrackerMuonDiMuDemo() {};
 
 void ScPhase2TrackerMuonDiMuDemo::beginStream(edm::StreamID) {
   countStruct_ = 0;

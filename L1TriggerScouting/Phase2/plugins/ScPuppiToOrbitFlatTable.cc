@@ -24,7 +24,7 @@ class ScPuppiToOrbitFlatTable : public edm::global::EDProducer<> {
 public:
   // constructor and destructor
   explicit ScPuppiToOrbitFlatTable(const edm::ParameterSet&);
-  ~ScPuppiToOrbitFlatTable() override{};
+  ~ScPuppiToOrbitFlatTable() override {};
 
   void produce(edm::StreamID, edm::Event&, edm::EventSetup const&) const override;
 

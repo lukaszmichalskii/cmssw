@@ -95,7 +95,7 @@ ScPhase2PuppiWPiGammaDemo::ScPhase2PuppiWPiGammaDemo(const edm::ParameterSet &iC
   }
 }
 
-ScPhase2PuppiWPiGammaDemo::~ScPhase2PuppiWPiGammaDemo(){};
+ScPhase2PuppiWPiGammaDemo::~ScPhase2PuppiWPiGammaDemo() {};
 
 void ScPhase2PuppiWPiGammaDemo::beginStream(edm::StreamID) {
   countStruct_ = 0;
@@ -200,9 +200,9 @@ void ScPhase2PuppiWPiGammaDemo::runObj(const OrbitCollection<T> &srcPuppi,
               bestDoubletMass = mass;
             }
           }  //iso and dr tests
-        }    //mass test
-      }      //photon loop
-    }        //pion loop
+        }  //mass test
+      }  //photon loop
+    }  //pion loop
 
     if (bestDoubletScore > 0) {
       ret->emplace_back(bx);

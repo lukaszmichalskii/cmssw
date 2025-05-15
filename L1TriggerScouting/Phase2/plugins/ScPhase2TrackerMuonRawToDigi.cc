@@ -42,7 +42,7 @@ ScPhase2TrackerMuonRawToDigi::ScPhase2TrackerMuonRawToDigi(const edm::ParameterS
   produces<unsigned int>("nbx");
 }
 
-ScPhase2TrackerMuonRawToDigi::~ScPhase2TrackerMuonRawToDigi(){};
+ScPhase2TrackerMuonRawToDigi::~ScPhase2TrackerMuonRawToDigi() {};
 
 void ScPhase2TrackerMuonRawToDigi::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   edm::Handle<SDSRawDataCollection> feds;

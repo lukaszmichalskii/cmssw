@@ -24,7 +24,7 @@ class ScTkEmToOrbitFlatTable : public edm::global::EDProducer<> {
 public:
   // constructor and destructor
   explicit ScTkEmToOrbitFlatTable(const edm::ParameterSet&);
-  ~ScTkEmToOrbitFlatTable() override{};
+  ~ScTkEmToOrbitFlatTable() override {};
 
   void produce(edm::StreamID, edm::Event&, edm::EventSetup const&) const override;
 
