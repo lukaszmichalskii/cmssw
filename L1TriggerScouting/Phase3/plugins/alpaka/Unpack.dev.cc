@@ -94,6 +94,7 @@ public:
         out.puppiw()[idx] = wpuppiint * (1 / 256.f);
         out.quality()[idx] = (bits64 >> 50) & 0x3F;
       }
+      out.selection()[idx] = 0;
     }
   }
 };

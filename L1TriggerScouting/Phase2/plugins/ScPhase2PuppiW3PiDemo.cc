@@ -50,8 +50,8 @@ private:
     float minpt2 = 12;  // 15
     float minpt3 = 15;  // 20
     float mindeltar2 = 0.5 * 0.5;
-    float minmass = 40;   // 60
-    float maxmass = 150;  // 100
+    float minmass = 60;   // 60
+    float maxmass = 100;  // 100
     float mindr2 = 0.01 * 0.01;
     float maxdr2 = 0.25 * 0.25;
     float maxiso = 2.0;  //0.4
@@ -114,8 +114,8 @@ void ScPhase2PuppiW3PiDemo::beginStream(edm::StreamID) {
   passCandidate_ = 0;
   passStruct_ = 0;
   passSOA_ = 0;
-  start_ = std::chrono::high_resolution_clock::now();
-  std::cout << "=====================================" << std::endl;
+  // start_ = std::chrono::high_resolution_clock::now();
+  // std::cout << "=====================================" << std::endl;
 }
 
 void ScPhase2PuppiW3PiDemo::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
@@ -125,16 +125,18 @@ void ScPhase2PuppiW3PiDemo::produce(edm::Event &iEvent, const edm::EventSetup &i
     runObj(*src, iEvent, countCandidate_, passCandidate_, "Candidate");
   }
   if (doStruct_) {
+    // auto t = std::chrono::high_resolution_clock::now();
     edm::Handle<OrbitCollection<l1Scouting::Puppi>> src;
     iEvent.getByToken(structToken_, src);
     runObj(*src, iEvent, countStruct_, passStruct_, "");
+    // std::cout << "Analysis: OK [" << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t).count() << " us]" << std::endl;
   }
   if (doSOA_) {
-    auto t = std::chrono::high_resolution_clock::now();
+    // auto t = std::chrono::high_resolution_clock::now();
     edm::Handle<l1Scouting::PuppiSOA> src;
     iEvent.getByToken(soaToken_, src);
     runSOA(*src, iEvent);
-    std::cout << "Analysis: OK [" << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t).count() << " us]" << std::endl;
+    // std::cout << "Analysis: OK [" << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t).count() << " us]" << std::endl;
   }
 }
 
@@ -143,8 +145,12 @@ void ScPhase2PuppiW3PiDemo::endStream() {
   if (doCandidate_)
     edm::LogImportant("ScPhase2AnalysisSummary")
         << "W3Pi Candidate analysis: " << countCandidate_ << " -> " << passCandidate_;
-  if (doStruct_)
+  if (doStruct_) {
+    auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
+    std::cout << "-------------------------------------" << std::endl;
     edm::LogImportant("ScPhase2AnalysisSummary") << "W3Pi Struct analysis: " << countStruct_ << " -> " << passStruct_;
+    std::cout << "=====================================" << std::endl;
+  }
   if (doSOA_) {
     auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
     std::cout << "-------------------------------------" << std::endl;
@@ -159,6 +165,7 @@ void ScPhase2PuppiW3PiDemo::runObj(const OrbitCollection<T> &src,
                                    unsigned long &nTry,
                                    unsigned long &nPass,
                                    const std::string &label) {
+  auto s = std::chrono::high_resolution_clock::now();
   l1ScoutingRun3::BxOffsetsFillter bxOffsetsFiller;
   bxOffsetsFiller.start();
   auto ret = std::make_unique<std::vector<unsigned>>();
@@ -227,6 +234,7 @@ void ScPhase2PuppiW3PiDemo::runObj(const OrbitCollection<T> &src,
                 bool isop = isolation(ix[i2], cands, size, iso[i2]) && isolation(ix[i3], cands, size, iso[i3]);
                 if (isop == true) {
                   float ptsum = cands[ix[i1]].pt() + cands[ix[i2]].pt() + cands[ix[i3]].pt();
+                  nPass++;
                   if (ptsum > bestTripletScore) {
                     std::copy_n(tr.begin(), 3, bestTriplet.begin());
                     bestTripletScore = ptsum;
@@ -242,7 +250,7 @@ void ScPhase2PuppiW3PiDemo::runObj(const OrbitCollection<T> &src,
 
     if (bestTripletScore > 0) {
       ret->emplace_back(bx);
-      nPass++;
+      // nPass++;
       masses.push_back(bestTripletMass);
       i0s.push_back(bestTriplet[0]);
       i1s.push_back(bestTriplet[1]);
@@ -250,7 +258,11 @@ void ScPhase2PuppiW3PiDemo::runObj(const OrbitCollection<T> &src,
       bxOffsetsFiller.addBx(bx, 1);
     }
   }  // loop on BXs
+  auto e = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
+  std::cout << "Analysis: OK [" << duration.count() << " us]" << std::endl;
 
+  auto s2 = std::chrono::high_resolution_clock::now();
   iEvent.put(std::move(ret), "selectedBx" + label);
   // now we make the table
   auto bxOffsets = bxOffsetsFiller.done();
@@ -260,9 +272,13 @@ void ScPhase2PuppiW3PiDemo::runObj(const OrbitCollection<T> &src,
   tab->addColumn<uint8_t>("i1", i1s, "subleading pion");
   tab->addColumn<uint8_t>("i2", i2s, "trailing pion");
   iEvent.put(std::move(tab), "w3pi" + label);
+  auto e2 = std::chrono::high_resolution_clock::now();
+  auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(e2 - s2);
+  std::cout << "I/O (D2H): OK [" << duration2.count() << " us]" << std::endl;
 }
 
 void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &iEvent) {
+  auto s = std::chrono::high_resolution_clock::now();
   auto ret = std::make_unique<l1Scouting::PuppiSOA>();
   std::vector<uint32_t> &offsets = ret->offsets;
   offsets.push_back(0);
@@ -498,11 +514,11 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
                   // printf("6");
                   float ptsum = pts[ix[i1]] + pts[ix[i2]] + pts[ix[i3]];
                   // printf("%d: %f; %f; %f; %f;\n", ix[i1], pts[ix[i1]], pts[ix[i2]], pts[ix[i3]], ptsum); 
+                  passSOA_++;
                   if (ptsum > bestTripletScore) {
                     // printf("7");
                     std::copy_n(tr.begin(), 3, bestTriplet.begin());
                     bestTripletScore = ptsum;
-                    
                     // printf("\nid: %d; ", ix[i1]);
                     // printf("pt: %f; ",pts[ix[i1]]);
                     // printf("eta: %f; ", etas[ix[i1]]);
@@ -559,8 +575,7 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
       ret->dxy.insert(ret->dxy.end(), &src.dxy[offs], &src.dxy[offs + size]);
       ret->puppiw.insert(ret->puppiw.end(), &src.puppiw[offs], &src.puppiw[offs + size]);
       ret->quality.insert(ret->quality.end(), &src.quality[offs], &src.quality[offs + size]);
-      passSOA_++;
-      passed++;
+      // passSOA_++;
       // printf("%d: (%d, %d) -> Score: %.2f\n", ibx, src.offsets[ibx], src.offsets[ibx + 1], bestTripletScore); 
 
       // printf("Increment");
@@ -590,8 +605,15 @@ void ScPhase2PuppiW3PiDemo::runSOA(const l1Scouting::PuppiSOA &src, edm::Event &
   // std::cout << "W3Pi Num: " << passed << std::endl;
   // std::cout << std::endl;
 
+  auto e = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
+  std::cout << "Analysis: OK [" << duration.count() << " us]" << std::endl;
 
+  auto s2 = std::chrono::high_resolution_clock::now();
   iEvent.put(std::move(ret));
+  auto e2 = std::chrono::high_resolution_clock::now();
+  auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(e2 - s2);
+  std::cout << "I/O (D2H): OK [" << duration2.count() << " us]" << std::endl;
   // auto mean = std::accumulate(times.begin(), times.end(), 0.0f) / times.size();
   // std::cout << "Kernel: OK [" << mean << " ns]" << std::endl;
   // std::cout << "Filtered Size: " << ct << std::endl; 

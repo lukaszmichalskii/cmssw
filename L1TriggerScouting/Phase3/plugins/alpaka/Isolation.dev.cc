@@ -4,6 +4,7 @@
 #endif
 
 #include "alpaka/alpaka.hpp"
+#include "HeterogeneousCore/AlpakaInterface/interface/host.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 #include "Isolation.h"
 
@@ -108,14 +109,14 @@ ALPAKA_FN_ACC bool ConeIsolation(TAcc const& acc, PuppiCollection::ConstView dat
 
 class FilterKernel {
 public:
-  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>, typename T>
-  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::ConstView data, T* __restrict__ counter) const {
+  template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
+  ALPAKA_FN_ACC void operator()(TAcc const& acc, PuppiCollection::View data) const {
     const uint8_t SHARED_MEM_BLOCK = 128;
     const uint8_t min_threshold = 7; 
     const uint8_t int_threshold = 12;
     const uint8_t high_threshold = 15;
-    const float invariant_mass_upper_bound = 150.0;
-    const float invariant_mass_lower_bound = 40.0;
+    const float invariant_mass_upper_bound = 100.0;
+    const float invariant_mass_lower_bound = 60.0;
 
     // auto& high_cut_ct = alpaka::declareSharedVar<int, __COUNTER__>(acc);
     // auto& int_cut_ct = alpaka::declareSharedVar<int, __COUNTER__>(acc);
@@ -192,50 +193,52 @@ public:
             if (alpaka::math::abs(acc, static_cast<int>(Charge(acc, data.pdgId()[thread_idx]) + Charge(acc, data.pdgId()[global_i_idx]) + Charge(acc, data.pdgId()[global_j_idx]))) != 1)
               continue;
             auto mass = MassInvariant(acc, data, thread_idx, global_i_idx, global_j_idx);
-            // printf("%d, %d, %d -> (%d, %d) ? %f\n", tid, i, j, begin, end, mass);
             if (mass < invariant_mass_lower_bound || mass > invariant_mass_upper_bound) 
               continue;
             if (AngularSeparation(acc, data, thread_idx, global_j_idx) && AngularSeparation(acc, data, global_i_idx, global_j_idx)) {
               if (ConeIsolation(acc, data, global_i_idx, begin, end) && ConeIsolation(acc, data, global_j_idx, begin, end)) {
-                float accumulated_pt = data.pt()[thread_idx] + data.pt()[global_i_idx] + data.pt()[global_j_idx]; 
-                if (accumulated_pt > best_score)
-                  alpaka::atomicExch(acc, &best_score, accumulated_pt);
+                // float accumulated_pt = data.pt()[thread_idx] + data.pt()[global_i_idx] + data.pt()[global_j_idx]; 
+                alpaka::atomicAdd(acc, &data.selection()[thread_idx], static_cast<uint32_t>(1));
+                alpaka::atomicAdd(acc, &data.selection()[global_i_idx], static_cast<uint32_t>(1));
+                alpaka::atomicAdd(acc, &data.selection()[global_j_idx], static_cast<uint32_t>(1));
+                // if (accumulated_pt > best_score) {
+                //   alpaka::atomicExch(acc, &best_score, accumulated_pt);
+                // }
               }
             }          
           }
         }
       }
 
-      alpaka::syncBlockThreads(acc);
-      if (once_per_block(acc)) {
-        if (best_score > 0) {
-          alpaka::atomicAdd(acc, &counter[0], static_cast<uint32_t>(1));
-          // printf("%d: (%d, %d) -> Score: %.2f\n", block_idx, begin, end, best_score);
-        }
-      }
+      // alpaka::syncBlockThreads(acc);
+      // if (once_per_block(acc)) {
+      //   if (best_score > 0) {
+      //     alpaka::atomicAdd(acc, &counter[0], static_cast<uint32_t>(1));
+      //     // printf("%d: (%d, %d) -> Score: %.2f\n", block_idx, begin, end, best_score);
+      //   }
+      // }
     }
   }
 };
 
-uint32_t Isolation::Isolate(Queue& queue, PuppiCollection const& raw_data) const {
+void Isolation::Isolate(Queue& queue, PuppiCollection& raw_data) const {
   // Accelerator setup
   uint32_t threads_per_block = ThreadsPerBlockUpperBound(128); // conservative constraint of particles per single processing block on hardware.
   uint32_t blocks_per_grid = raw_data.view().bx().size();
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
-  Vec<alpaka::DimInt<1>> var_extent(1);
-  auto dev_counter = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, var_extent);
-  alpaka::memset(queue, dev_counter, 0x0);
+  Vec<alpaka::DimInt<1>> extent(raw_data.view().metadata().size());
+  auto dev_selected_events = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, extent);
+  alpaka::memset(queue, dev_selected_events, 0x0);
 
   // Enqueue kernel
-  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.const_view(), dev_counter.data());
-  // return 0;
+  alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.view());
 
   // Return analysis stats to the caller
-  alpaka::wait(queue);
-  uint32_t* counter = new uint32_t[1];
-  alpaka::memcpy(queue, createView(DEVICE_HOST, counter, Vec<alpaka::DimInt<1>>(1)), dev_counter);
-  return counter[0];
+  // alpaka::wait(queue);
+  // auto selected_events = alpaka::allocBuf<uint32_t, Idx>(cms::alpakatools::host(), extent);
+  // alpaka::memcpy(queue, selected_events, dev_selected_events);
+  // return selected_events;
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

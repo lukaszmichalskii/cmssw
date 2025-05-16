@@ -20,8 +20,10 @@ std::tuple<std::vector<T>, std::vector<T>> UnpackModule::MemoryScan(const SDSRaw
     const auto chunk_end = reinterpret_cast<const T*>(src.data() + src.size());
 
     for (auto ptr = chunk_begin; ptr != chunk_end;) {
-      if (*ptr == 0) 
+      if (*ptr == 0) {
+        ptr++;
         continue;
+      }
 
       headers_buffer.insert(headers_buffer.end(), ptr, ptr + 1);
       // Header readout
@@ -31,7 +33,7 @@ std::tuple<std::vector<T>, std::vector<T>> UnpackModule::MemoryScan(const SDSRaw
       ptr += chunk_size; // shift ptr to process next header
     }
   }
-  return std::make_tuple(std::move(buffer), std::move(headers_buffer));
+  return {std::move(buffer), std::move(headers_buffer)};
 }
 
 PuppiCollection UnpackModule::UnpackCollection(Queue &queue, const SDSRawDataCollection &raw_data) {  
@@ -51,7 +53,7 @@ void UnpackModule::produce(device::Event& event, device::EventSetup const& event
   auto e = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(e - s);
   std::cout << "-------------------------------------" << std::endl;
-  std::cout << "Unpack: OK [" << duration.count() << " us]" << std::endl;
+  std::cout << "I/O (H2D): OK [" << duration.count() << " us]" << std::endl;
 }
 
 void UnpackModule::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

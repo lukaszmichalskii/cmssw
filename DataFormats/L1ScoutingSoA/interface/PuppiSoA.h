@@ -23,7 +23,8 @@ GENERATE_SOA_LAYOUT(PuppiSoALayout,
   SOA_COLUMN(float, dxy),
   SOA_COLUMN(float, puppiw),
   SOA_COLUMN(int16_t, pdgId),
-  SOA_COLUMN(uint8_t, quality)
+  SOA_COLUMN(uint8_t, quality),
+  SOA_COLUMN(uint32_t, selection)
 )
 
 using PuppiSoA = PuppiSoALayout<>;

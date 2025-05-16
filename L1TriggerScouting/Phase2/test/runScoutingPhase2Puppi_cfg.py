@@ -122,20 +122,32 @@ process.scPhase2PuppiRawToDigiCandidate = process.scPhase2PuppiRawToDigiStruct.c
     runStructUnpacker = cms.bool(False),
     runCandidateUnpacker = cms.bool(True),
 )
-process.scPhase2PuppiRawToDigiSOA = process.scPhase2PuppiRawToDigiStruct.clone(
-    runStructUnpacker = cms.bool(False),
-    runSOAUnpacker = cms.bool(True),
-)
+
 
 process.w3piCandidate = process.w3piStruct.clone(
     runStruct = cms.bool(False),
     runCandidate = cms.bool(True),
 )
 
+# SOA 
+process.scPhase2PuppiRawToDigiSOA = process.scPhase2PuppiRawToDigiStruct.clone(
+    runStructUnpacker = cms.bool(False),
+    runSOAUnpacker = cms.bool(True),
+)
 process.w3piSOA = process.w3piStruct.clone(
     runStruct = cms.bool(False),
     runSOA = cms.bool(True),
     src = cms.InputTag("scPhase2PuppiRawToDigiSOA"),
+)
+# AOS
+process.scPhase2PuppiRawToDigiNative = process.scPhase2PuppiRawToDigiStruct.clone(
+    runStructUnpacker = cms.bool(True),
+    runSOAUnpacker = cms.bool(False),
+)
+process.w3piNative = process.w3piStruct.clone(
+    runStruct = cms.bool(True),
+    runSOA = cms.bool(False),
+    src = cms.InputTag("scPhase2PuppiRawToDigiNative"),
 )
 
 process.p_candidate = cms.Path(
@@ -146,6 +158,11 @@ process.p_candidate = cms.Path(
 process.p_soa = cms.Path(
   process.scPhase2PuppiRawToDigiSOA +
   process.w3piSOA
+)
+
+process.p_native = cms.Path(
+  process.scPhase2PuppiRawToDigiNative +
+  process.w3piNative
 )
 
 process.p_all = cms.Path(
@@ -185,3 +202,4 @@ if options.run != "both":  [ getattr(process, "p_" + options.run)]
 if options.outMode != "none":
   sched.append(getattr(process, "o_"+options.outMode))
 process.schedule = cms.Schedule(process.p_soa)
+# process.schedule = cms.Schedule(process.p_native)

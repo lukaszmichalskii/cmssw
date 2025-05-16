@@ -4,7 +4,7 @@
 
 # 27K	run000037
 # 128M	run000034
-# 486M	run000036
+# 486M	n
 # 1.6G	run000035
 # 2.9G	run000030
 # 5.0G	total
@@ -13,7 +13,7 @@ function die { echo Failed $1: status $2 ; exit $2 ; }
 
 TEST_DIR=L1TriggerScouting/Phase3/test
 EXECUTABLE=test.py
-DATA=~/private/data/raw/Data/raw/
+DATA=/eos/home-l/lmichals/W3Pi/data/raw/
 
 if [ "$#" != "3" ]; then
     die "Need exactly 3 arguments: 1st ('cpu', 'cuda', or 'rocm'), 2nd ('num_events'), 3rd ('run_number'), got $#" 1
