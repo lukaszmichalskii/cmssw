@@ -227,18 +227,8 @@ void Isolation::Isolate(Queue& queue, PuppiCollection& raw_data) const {
   uint32_t blocks_per_grid = raw_data.view().bx().size();
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
-  Vec<alpaka::DimInt<1>> extent(raw_data.view().metadata().size());
-  auto dev_selected_events = alpaka::allocAsyncBuf<uint32_t, Idx>(queue, extent);
-  alpaka::memset(queue, dev_selected_events, 0x0);
-
   // Enqueue kernel
   alpaka::exec<Acc1D>(queue, grid, FilterKernel{}, raw_data.view());
-
-  // Return analysis stats to the caller
-  // alpaka::wait(queue);
-  // auto selected_events = alpaka::allocBuf<uint32_t, Idx>(cms::alpakatools::host(), extent);
-  // alpaka::memcpy(queue, selected_events, dev_selected_events);
-  // return selected_events;
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

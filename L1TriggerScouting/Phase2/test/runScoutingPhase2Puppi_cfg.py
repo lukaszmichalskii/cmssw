@@ -201,5 +201,5 @@ if options.run != "both":  [ getattr(process, "p_" + options.run)]
 
 if options.outMode != "none":
   sched.append(getattr(process, "o_"+options.outMode))
-process.schedule = cms.Schedule(process.p_soa)
-# process.schedule = cms.Schedule(process.p_native)
+# process.schedule = cms.Schedule(process.p_soa)
+process.schedule = cms.Schedule(process.p_native)
