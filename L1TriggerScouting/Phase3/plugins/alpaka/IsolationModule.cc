@@ -12,6 +12,7 @@ void IsolationModule::produce(device::Event& event, device::EventSetup const& ev
 
   auto& raw_data_collection = const_cast<PuppiCollection&>(event.get(raw_token_));
   w3pi_candidates += raw_data_collection.view().bx().size();
+  // std::cout << "Size of pariticles: " << raw_data_collection.view().metadata().size() << std::endl;
 
   ///////////////////////////////////////////////////////////////////////////////////////////// 
   // Analysis

@@ -62,17 +62,13 @@ public:
 };
 
 void Unpack::UnpackHeaders(
-    Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const {
-  size_t size = data.size();
-  auto device_buffer = CopyToDevice<uint64_t>(queue, data);
-  std::vector<uint64_t>().swap(data);
-
-  uint32_t threads_per_block = 1024;
+    Queue& queue, uint64_t* data, size_t size, PuppiCollection& collection) const {
+  uint32_t threads_per_block = 512;
   uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
   // unpack
-  alpaka::exec<Acc1D>(queue, grid, UnpackHeadersKernel{}, device_buffer.data(), collection.view(), size);
+  alpaka::exec<Acc1D>(queue, grid, UnpackHeadersKernel{}, data, collection.view(), size);
 
   // prefix sum -> one to many associator for batching
   auto pc = alpaka::allocAsyncBuf<int32_t, Idx>(queue, Vec<alpaka::DimInt<1>>{1});
@@ -123,31 +119,33 @@ public:
   }
 };
 
-void Unpack::UnpackData(Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const {
-  size_t size = data.size();
-  auto device_buffer = CopyToDevice<uint64_t>(queue, data);
-  std::vector<uint64_t>().swap(data);
-
+void Unpack::UnpackData(Queue& queue, uint64_t* data, size_t size, PuppiCollection& collection) const {
   uint32_t threads_per_block = 1024;
   uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, UnpackDataKernel{}, device_buffer.data(), collection.view());
+  alpaka::exec<Acc1D>(queue, grid, UnpackDataKernel{}, data, collection.view());
 }
 
 void Unpack::Unpacking(Queue& queue, std::vector<uint64_t>& headers, std::vector<uint64_t>& data, PuppiCollection& collection) {
+  // auto s0 = std::chrono::high_resolution_clock::now();
+  size_t headers_size = headers.size();
+  size_t data_size = data.size();
+  auto device_headers_buffer = CopyToDevice<uint64_t>(queue, headers);
+  std::vector<uint64_t>().swap(headers);
+  auto device_data_buffer = CopyToDevice<uint64_t>(queue, data);
+  std::vector<uint64_t>().swap(data);
+  // alpaka::wait(queue);
+  // auto e0 = std::chrono::high_resolution_clock::now();
+  // auto duration0 = std::chrono::duration_cast<std::chrono::microseconds>(e0 - s0);
+  // std::cout << "I/O (memcpy): OK [" << duration0.count() << " us]" << std::endl;
+  
   // auto s1 = std::chrono::high_resolution_clock::now();
-  UnpackHeaders(queue, headers, collection);
+  UnpackHeaders(queue, device_headers_buffer.data(), headers_size, collection);
+  UnpackData(queue, device_data_buffer.data(), data_size, collection);
   // alpaka::wait(queue);
   // auto e1 = std::chrono::high_resolution_clock::now();
   // auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(e1 - s1);
-  // std::cout << "I/O (headers): OK [" << duration1.count() << " us]" << std::endl;
-
-  // auto s2 = std::chrono::high_resolution_clock::now();
-  UnpackData(queue, data, collection);
-  // alpaka::wait(queue);
-  // auto e2 = std::chrono::high_resolution_clock::now();
-  // auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(e2 - s2);
-  // std::cout << "I/O (data): OK [" << duration2.count() << " us]" << std::endl;
+  // std::cout << "I/O (transform): OK [" << duration1.count() << " us]" << std::endl;
 }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

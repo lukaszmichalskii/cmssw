@@ -13,8 +13,8 @@ class Unpack {
     void Unpacking(Queue& queue, std::vector<uint64_t>& headers, std::vector<uint64_t>& data, PuppiCollection& collection);
 
   private:
-    void UnpackHeaders(Queue& queue, std::vector<uint64_t>& headers, PuppiCollection& collection) const;
-    void UnpackData(Queue& queue, std::vector<uint64_t>& data, PuppiCollection& collection) const;
+    void UnpackHeaders(Queue& queue, uint64_t* headers, size_t size, PuppiCollection& collection) const;
+    void UnpackData(Queue& queue, uint64_t* data, size_t size, PuppiCollection& collection) const;
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

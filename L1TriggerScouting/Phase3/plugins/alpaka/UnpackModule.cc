@@ -66,7 +66,7 @@ PuppiCollection UnpackModule::UnpackCollection(Queue &queue, const SDSRawDataCol
   // alpaka::wait(queue);
   // auto e3 = std::chrono::high_resolution_clock::now();
   // auto duration3 = std::chrono::duration_cast<std::chrono::microseconds>(e3 - s3);
-  // std::cout << "I/O (kernel): OK [" << duration3.count() << " us]" << std::endl;
+  // std::cout << "I/O (kernels): OK [" << duration3.count() << " us]" << std::endl;
   return collection;
 }
 
