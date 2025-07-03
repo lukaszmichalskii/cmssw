@@ -1,0 +1,8 @@
+<lcgdict>
+  <!-- PFCandidateCollection -->
+  <class name="l1sc::PFCandidateSoA"/>
+  <class name="l1sc::PFCandidateSoA::View"/>
+  <class name="l1sc::PFCandidateSoA::ConstView"/>
+  <class name="l1sc::PFCandidateHostCollection"/>
+  <class name="edm::Wrapper<l1sc::PFCandidateHostCollection>" splitLevel="0"/>
+</lcgdict>
