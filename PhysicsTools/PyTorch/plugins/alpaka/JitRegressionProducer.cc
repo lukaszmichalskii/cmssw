@@ -2,7 +2,7 @@
 #include <torch/torch.h>
 #include <torch/script.h>
 
-#include "DataFormats/PyTorchTest/interface/alpaka/PyTorchTestCollections.h"
+#include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"

@@ -3,7 +3,7 @@
 
 #include <alpaka/alpaka.hpp>
 
-#include "DataFormats/PyTorchTest/interface/alpaka/PyTorchTestCollections.h"
+#include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceCollection.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
