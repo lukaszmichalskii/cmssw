@@ -1,8 +1,8 @@
-#ifndef DATA_FORMATS__PYTORCH_TEST__SRC__CLASSES_H_
-#define DATA_FORMATS__PYTORCH_TEST__SRC__CLASSES_H_
+#ifndef DataFormats_PyTorchTest_src_classes_h
+#define DataFormats_PyTorchTest_src_classes_h
 
 #include "DataFormats/Common/interface/Wrapper.h"
-#include "DataFormats/PyTorchTest/interface/Host.h"
-#include "DataFormats/PyTorchTest/interface/Layout.h"
+#include "DataFormats/PyTorchTest/interface/PyTorchTestHostCollections.h"
+#include "DataFormats/PyTorchTest/interface/PyTorchTestSoA.h"
 
-#endif  // DATA_FORMATS__PYTORCH_TEST__SRC__CLASSES_H_
+#endif  // DataFormats_PyTorchTest_src_classes_h

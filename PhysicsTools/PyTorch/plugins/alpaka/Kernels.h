@@ -1,9 +1,9 @@
-#ifndef PHYSICS_TOOLS__PYTORCH__PLUGINS__ALPAKA__KERNELS_H_
-#define PHYSICS_TOOLS__PYTORCH__PLUGINS__ALPAKA__KERNELS_H_
+#ifndef PhysicsTools_PyTorch_plugins_alpaka_Kernels_h
+#define PhysicsTools_PyTorch_plugins_alpaka_Kernels_h
 
 #include <alpaka/alpaka.hpp>
 
-#include "DataFormats/PyTorchTest/interface/alpaka/Collections.h"
+#include "DataFormats/PyTorchTest/interface/alpaka/PyTorchTestCollections.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -17,12 +17,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
    */
   class Kernels {
   public:
-    void FillParticleCollection(Queue &queue, torchportable::ParticleCollection &data, float value);
-    void AssertCombinatorics(Queue &queue, torchportable::ParticleCollection &data, float value);
-    void AssertClassification(Queue &queue, torchportable::ClassificationCollection &data);
-    void AssertRegression(Queue &queue, torchportable::RegressionCollection &data);
+    void FillParticleCollection(Queue &queue, torchportabletest::ParticleCollection &data, float value);
+    void AssertCombinatorics(Queue &queue, torchportabletest::ParticleCollection &data, float value);
+    void AssertClassification(Queue &queue, torchportabletest::ClassificationCollection &data);
+    void AssertRegression(Queue &queue, torchportabletest::RegressionCollection &data);
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-#endif  // PHYSICS_TOOLS__PYTORCH__PLUGINS__ALPAKA__KERNELS_H_
+#endif  // PhysicsTools_PyTorch_plugins_alpaka_Kernels_h

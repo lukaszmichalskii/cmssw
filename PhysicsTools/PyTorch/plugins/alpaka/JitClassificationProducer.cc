@@ -2,7 +2,7 @@
 #include <torch/torch.h>
 #include <torch/script.h>
 
-#include "DataFormats/PyTorchTest/interface/alpaka/Collections.h"
+#include "DataFormats/PyTorchTest/interface/alpaka/PyTorchTestCollections.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
@@ -40,8 +40,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
-    const device::EDGetToken<torchportable::ParticleCollection> inputs_token_;        /**< Token to get input data. */
-    const device::EDPutToken<torchportable::ClassificationCollection> outputs_token_; /**< Token to store output data. */
+    const device::EDGetToken<torchportabletest::ParticleCollection> inputs_token_;        /**< Token to get input data. */
+    const device::EDPutToken<torchportabletest::ClassificationCollection> outputs_token_; /**< Token to store output data. */
     std::unique_ptr<Kernels> kernels_ = nullptr; /**< Kernel utilities for post-inference validation. */
     std::unique_ptr<JitModel> model_;            /**< Cache for the JIT model. */
   };
@@ -78,18 +78,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     // TODO: const_cast should not be done by user
     // in principle should not be done by anyone
     // @see: torch::from_blob(void*)
-    auto &inputs = const_cast<torchportable::ParticleCollection &>(event.get(inputs_token_));
+    auto &inputs = const_cast<torchportabletest::ParticleCollection &>(event.get(inputs_token_));
     const size_t batch_size = inputs.const_view().metadata().size();
-    auto outputs = torchportable::ClassificationCollection(batch_size, event.queue());
+    auto outputs = torchportabletest::ClassificationCollection(batch_size, event.queue());
 
     // metadata for automatic tensor conversion
     auto input_records = inputs.view().records();
     auto output_records = outputs.view().records();
-    cms::torch::alpaka::SoAMetadata<torchportable::ParticleSoA> inputs_metadata(batch_size);
+    cms::torch::alpaka::SoAMetadata<torchportabletest::ParticleSoA> inputs_metadata(batch_size);
     inputs_metadata.append_block("features", input_records.pt(), input_records.eta(), input_records.phi());
-    cms::torch::alpaka::SoAMetadata<torchportable::ClassificationSoA> outputs_metadata(batch_size);
+    cms::torch::alpaka::SoAMetadata<torchportabletest::ClassificationSoA> outputs_metadata(batch_size);
     outputs_metadata.append_block("preds", output_records.c1(), output_records.c2());
-    cms::torch::alpaka::ModelMetadata<torchportable::ParticleSoA, torchportable::ClassificationSoA> metadata(
+    cms::torch::alpaka::ModelMetadata<torchportabletest::ParticleSoA, torchportabletest::ClassificationSoA> metadata(
         inputs_metadata, outputs_metadata);
 
     // inference

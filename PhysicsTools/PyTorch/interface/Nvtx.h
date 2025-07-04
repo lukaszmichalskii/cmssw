@@ -1,5 +1,5 @@
-#ifndef PHYSICS_TOOLS__PYTORCH__INTERFACE__NVTX_H_
-#define PHYSICS_TOOLS__PYTORCH__INTERFACE__NVTX_H_
+#ifndef PhysicsTools_PyTorch_interface_Nvtx_h
+#define PhysicsTools_PyTorch_interface_Nvtx_h
 
 #if defined(ALPAKA_ACC_GPU_CUDA_ENABLED) || defined(ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED) || \
     defined(ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLED)
@@ -42,4 +42,4 @@ private:
 #endif
 };
 
-#endif  // PHYSICS_TOOLS__PYTORCH__INTERFACE__NVTX_H_
+#endif  // PhysicsTools_PyTorch_interface_Nvtx_h

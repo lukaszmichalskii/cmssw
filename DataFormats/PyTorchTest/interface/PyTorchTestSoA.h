@@ -1,11 +1,11 @@
-#ifndef DATA_FORMATS__PYTORCH_TEST__INTERFACE__LAYOUT_H_
-#define DATA_FORMATS__PYTORCH_TEST__INTERFACE__LAYOUT_H_
+#ifndef DataFormats_PyTorchTest_interface_PyTorchTestSoA_h
+#define DataFormats_PyTorchTest_interface_PyTorchTestSoA_h
 
 #include "DataFormats/SoATemplate/interface/SoACommon.h"
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 #include "DataFormats/SoATemplate/interface/SoAView.h"
 
-namespace torchportable {
+namespace torchportabletest {
 
   GENERATE_SOA_LAYOUT(ParticleLayout, SOA_COLUMN(float, pt), SOA_COLUMN(float, eta), SOA_COLUMN(float, phi))
   using ParticleSoA = ParticleLayout<>;
@@ -16,6 +16,6 @@ namespace torchportable {
   GENERATE_SOA_LAYOUT(RegressionLayout, SOA_COLUMN(float, reco_pt))
   using RegressionSoA = RegressionLayout<>;
 
-}  // namespace torchportable
+}  // namespace torchportabletest
 
-#endif  // DATA_FORMATS__PYTORCH_TEST__INTERFACE__LAYOUT_H_
+#endif  // DataFormats_PyTorchTest_interface_PyTorchTestSoA_h

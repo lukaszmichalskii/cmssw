@@ -1,4 +1,4 @@
-#include "DataFormats/PyTorchTest/interface/alpaka/Collections.h"
+#include "DataFormats/PyTorchTest/interface/alpaka/PyTorchTestCollections.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
@@ -27,7 +27,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
-    const device::EDPutToken<torchportable::ParticleCollection> sic_put_token_; /**< Token to store output data. */
+    const device::EDPutToken<torchportabletest::ParticleCollection> sic_put_token_; /**< Token to store output data. */
     const uint32_t batch_size_; /**< Size of the batch to be produced. */
   };
 
@@ -49,7 +49,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     NvtxScopedRange produce_range(msg.c_str());
 
     // create dummy data
-    auto collection = torchportable::ParticleCollection(batch_size_, event.queue());
+    auto collection = torchportabletest::ParticleCollection(batch_size_, event.queue());
     collection.zeroInitialise(event.queue());
     event.emplace(sic_put_token_, std::move(collection));
     alpaka::wait(event.queue());

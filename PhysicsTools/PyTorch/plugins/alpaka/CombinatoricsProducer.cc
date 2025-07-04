@@ -2,7 +2,7 @@
 #include <torch/torch.h>
 #include <torch/script.h>
 
-#include "DataFormats/PyTorchTest/interface/alpaka/Collections.h"
+#include "DataFormats/PyTorchTest/interface/alpaka/PyTorchTestCollections.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
@@ -34,8 +34,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
-    const device::EDGetToken<torchportable::ParticleCollection> inputs_token_;  /**< Token to get input data. */
-    const device::EDPutToken<torchportable::ParticleCollection> outputs_token_; /**< Token to store output data. */
+    const device::EDGetToken<torchportabletest::ParticleCollection> inputs_token_;  /**< Token to get input data. */
+    const device::EDPutToken<torchportabletest::ParticleCollection> outputs_token_; /**< Token to store output data. */
     std::unique_ptr<Kernels> kernels_ = nullptr;                                /**< Kernel helper object. */
   };
 
@@ -62,7 +62,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     // get data
     const auto &inputs = event.get(inputs_token_);
     const size_t batch_size = inputs.const_view().metadata().size();
-    auto outputs = torchportable::ParticleCollection(batch_size, event.queue());
+    auto outputs = torchportabletest::ParticleCollection(batch_size, event.queue());
 
     // dummy kernel emulation
     NvtxScopedRange kernel_range("Combinatorics::kernel");

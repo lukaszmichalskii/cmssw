@@ -1,5 +1,5 @@
-#ifndef PHYSICS_TOOLS__PYTORCH__INTERFACE__MODEL_H_
-#define PHYSICS_TOOLS__PYTORCH__INTERFACE__MODEL_H_
+#ifndef PhysicsTools_PyTorch_interface_Model_h
+#define PhysicsTools_PyTorch_interface_Model_h
 
 #include <torch/csrc/inductor/aoti_package/model_package_loader.h>
 #include "PhysicsTools/PyTorch/interface/AlpakaConfig.h"
@@ -181,4 +181,4 @@ namespace cms::torch::alpaka {
 
 }  // namespace cms::torch::alpaka
 
-#endif  // PHYSICS_TOOLS__PYTORCH__INTERFACE__MODEL_H_
+#endif  // PhysicsTools_PyTorch_interface_Model_h

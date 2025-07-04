@@ -1,9 +1,9 @@
-#ifndef DATA_FORMATS__PYTORCH_TEST__SRC__ALPAKA__CLASSES_ROCM_H_
-#define DATA_FORMATS__PYTORCH_TEST__SRC__ALPAKA__CLASSES_ROCM_H_
+#ifndef DataFormats_PyTorchTest_src_alpaka_classes_rocm_h
+#define DataFormats_PyTorchTest_src_alpaka_classes_rocm_h
 
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/Common/interface/DeviceProduct.h"
-#include "DataFormats/PyTorchTest/interface/Layout.h"
-#include "DataFormats/PyTorchTest/interface/alpaka/Collections.h"
+#include "DataFormats/PyTorchTest/interface/PyTorchTestSoA.h"
+#include "DataFormats/PyTorchTest/interface/alpaka/PyTorchTestCollections.h"
 
-#endif  // DATA_FORMATS__PYTORCH_TEST__SRC__ALPAKA__CLASSES_ROCM_H_
+#endif  // DataFormats_PyTorchTest_src_alpaka_classes_rocm_h

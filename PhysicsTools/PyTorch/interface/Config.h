@@ -1,5 +1,5 @@
-#ifndef PHYSICS_TOOLS__PYTORCH__INTERFACE__CONFIG_H_
-#define PHYSICS_TOOLS__PYTORCH__INTERFACE__CONFIG_H_
+#ifndef PhysicsTools_PyTorch_interface_Config_h
+#define PhysicsTools_PyTorch_interface_Config_h
 
 #include <torch/script.h>
 #include <torch/torch.h>
@@ -53,4 +53,4 @@ namespace cms::torch {
 
 }  // namespace cms::torch
 
-#endif  // PHYSICS_TOOLS__PYTORCH__INTERFACE__CONFIG_H_
+#endif  // PhysicsTools_PyTorch_interface_Config_h

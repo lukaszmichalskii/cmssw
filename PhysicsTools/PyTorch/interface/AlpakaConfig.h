@@ -1,7 +1,6 @@
 // ROCm/HIP backend not yet supported, see: https://github.com/pytorch/pytorch/blob/main/aten/CMakeLists.txt#L75
-
-#ifndef PHYSICS_TOOLS__PYTORCH__INTERFACE__ALPAKA_CONFIG_H_
-#define PHYSICS_TOOLS__PYTORCH__INTERFACE__ALPAKA_CONFIG_H_
+#ifndef PhysicsTools_PyTorch_interface_AlpakaConfig_h
+#define PhysicsTools_PyTorch_interface_AlpakaConfig_h
 
 #include <alpaka/alpaka.hpp>
 #include "PhysicsTools/PyTorch/interface/Config.h"
@@ -233,4 +232,4 @@ namespace cms::torch::alpaka {
 
 }  // namespace cms::torch::alpaka
 
-#endif  // PHYSICS_TOOLS__PYTORCH__INTERFACE__ALPAKA_CONFIG_H_
+#endif  // PhysicsTools_PyTorch_interface_AlpakaConfig_h

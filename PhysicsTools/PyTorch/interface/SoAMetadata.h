@@ -1,5 +1,5 @@
-#ifndef PHYSICS_TOOLS__PYTORCH__INTERFACE__SOAMETADATA_H_
-#define PHYSICS_TOOLS__PYTORCH__INTERFACE__SOAMETADATA_H_
+#ifndef PhysicsTools_PyTorch_interface_SoAMetadata_h
+#define PhysicsTools_PyTorch_interface_SoAMetadata_h
 
 #include <iostream>
 
@@ -205,4 +205,4 @@ namespace cms::torch::alpaka {
 
 }  // namespace cms::torch::alpaka
 
-#endif  // PHYSICS_TOOLS__PYTORCH__INTERFACE__SOAMETADATA_H_
+#endif  // PhysicsTools_PyTorch_interface_SoAMetadata_h
