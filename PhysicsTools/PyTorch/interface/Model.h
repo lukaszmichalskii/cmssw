@@ -79,15 +79,7 @@ namespace cms::torch::alpaka {
      */
     template <typename T>
     void to(const T &obj) const {
-      auto device = ::torch::Device(::torch::kCPU, 0);
-      if constexpr (::alpaka::isDevice<T> || ::alpaka::isQueue<T>) {
-        device = cms::torch::alpaka::device(obj);
-      } else if constexpr (std::is_same_v<T, ::torch::Device>) {
-        device = obj;
-      } else {
-        static_assert(false_value<T>, "Unsupported type passed -> to(const T&)");
-      }
-
+      auto device = cms::torch::alpaka::device(obj);
       if (device == device_)
         return;
       device_ = device;
@@ -134,15 +126,7 @@ namespace cms::torch::alpaka {
      */
     template <typename T>
     void to(const T &obj) const {
-      auto device = ::torch::Device(::torch::kCPU, 0);
-      if constexpr (::alpaka::isDevice<T> || ::alpaka::isQueue<T>) {
-        device = cms::torch::alpaka::device(obj);
-      } else if constexpr (std::is_same_v<T, ::torch::Device>) {
-        device = obj;
-      } else {
-        static_assert(false_value<T>, "Unsupported type passed -> to(const T&)");
-      }
-
+      auto device = cms::torch::alpaka::device(obj);
       if (device == device_)
         return;
 

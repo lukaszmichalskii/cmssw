@@ -36,14 +36,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     const device::EDGetToken<torchportabletest::ParticleCollection> inputs_token_;  /**< Token to get input data. */
     const device::EDPutToken<torchportabletest::ParticleCollection> outputs_token_; /**< Token to store output data. */
-    std::unique_ptr<Kernels> kernels_ = nullptr;                                /**< Kernel helper object. */
   };
 
   CombinatoricsProducer::CombinatoricsProducer(edm::ParameterSet const &params)
       : EDProducer<>(params),
         inputs_token_{consumes(params.getParameter<edm::InputTag>("inputs"))},
-        outputs_token_{produces()},
-        kernels_(std::make_unique<Kernels>()) {}
+        outputs_token_{produces()} {}
 
   /**
    * @brief Processes the event and fills output with mock data using a kernel.
@@ -51,7 +49,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
    * @param event_setup Setup information for the event.
    */
   void CombinatoricsProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
-    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::steady_clock::now();
 
     // debug stream usage in concurrently scheduled modules
     std::stringstream msg_stream;
@@ -66,14 +64,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     // dummy kernel emulation
     NvtxScopedRange kernel_range("Combinatorics::kernel");
-    kernels_->FillParticleCollection(event.queue(), outputs, 0.32f);
+    fillParticleCollection(event.queue(), outputs, 0.32f);
     kernel_range.end();
 
     // assert output match expected
-    kernels_->AssertCombinatorics(event.queue(), outputs, 0.32f);
+    assertCombinatorics(event.queue(), outputs, 0.32f);
     event.emplace(outputs_token_, std::move(outputs));
     alpaka::wait(event.queue());
-    auto t2 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::steady_clock::now();
     std::cout << "(Combinatorics) E: " << event.id().event() << " OK - "
               << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
     produce_range.end();

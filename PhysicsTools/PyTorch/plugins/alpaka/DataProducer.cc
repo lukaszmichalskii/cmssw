@@ -40,7 +40,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
    * @param event_setup Event setup context (not used).
    */
   void DataProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
-    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::steady_clock::now();
 
     // debug stream usage in concurrently scheduled modules
     std::stringstream msg_stream;
@@ -53,7 +53,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     collection.zeroInitialise(event.queue());
     event.emplace(sic_put_token_, std::move(collection));
     alpaka::wait(event.queue());
-    auto t2 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::steady_clock::now();
     std::cout << "(Data) E: " << event.id().event() << " OK - "
               << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
     produce_range.end();

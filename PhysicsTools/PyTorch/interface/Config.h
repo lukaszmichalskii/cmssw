@@ -4,7 +4,6 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
-#include "FWCore/Utilities/interface/Exception.h"
 
 namespace cms::torch {
 
@@ -40,16 +39,7 @@ namespace cms::torch {
    * @note This function is intended for model loading in CMSSW environments, providing
    *       integration with the framework's exception handling and logging facilities.
    */
-  inline ::torch::jit::script::Module load(const std::string &model_path) {
-    try {
-      return ::torch::jit::load(model_path);
-    } catch (const c10::Error &e) {
-      cms::Exception ex("ModelLoadingError");
-      ex.addContext("Calling cms::torch::load(const std::string&)");
-      ex.addAdditionalInfo("Error loading the model: " + std::string(e.what()));
-      throw ex;
-    }
-  }
+  ::torch::jit::script::Module load(const std::string &model_path);
 
 }  // namespace cms::torch
 

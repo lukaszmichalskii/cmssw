@@ -1,5 +1,14 @@
 import FWCore.ParameterSet.Config as cms
 from PhysicsTools.PyTorch.options import args
+from PhysicsTools.PyTorch.modules import (
+    DataProducer_alpaka,
+    JitClassificationProducer_alpaka,
+    JitRegressionProducer_alpaka,
+    AotClassificationProducer_alpaka,
+    AotRegressionProducer_alpaka,
+    CombinatoricsProducer_alpaka,
+)
+
   
 args.parseArguments()
 process = cms.Process("TestPipeline")
@@ -10,7 +19,6 @@ process.options.numberOfStreams = args.numberOfStreams if args.numberOfStreams >
 
 # enable alpaka and GPU support
 process.load("Configuration.StandardSequences.Accelerators_cff")
-process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
 
 # process a limited number of events
 process.maxEvents.input = args.numberOfEvents if args.numberOfEvents > 1 else 1 
@@ -24,11 +32,8 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 100
 # do not print the time and trigger reports at the end of the job
 process.options.wantSummary = False
 
-# load pipeline chain
-process.load("PhysicsTools.PyTorch.modules")
-
 # setup chain configs
-process.DataProducer = process.DataProducerStruct.clone(
+process.DataProducer = DataProducer_alpaka(
     batchSize = cms.uint32(args.batchSize if args.batchSize > 1 else 1),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
@@ -36,28 +41,28 @@ process.DataProducer = process.DataProducerStruct.clone(
 )
 
 # JIT models
-process.JitClassificationProducer = process.JitClassificationProducerStruct.clone(
+process.JitClassificationProducer = JitClassificationProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.classificationModelPath),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
     ),
 )
-process.JitClassificationProducerCpu = process.JitClassificationProducerStruct.clone(
+process.JitClassificationProducerCpu = JitClassificationProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.classificationModelPath),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string("serial_sync")  # force serial backend to emulate heterogeneous execution
     ),
 )
-process.JitRegressionProducer = process.JitRegressionProducerStruct.clone(
+process.JitRegressionProducer = JitRegressionProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.regressionModelPath),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
     ),
 )
-process.JitRegressionProducerCpu = process.JitRegressionProducerStruct.clone(
+process.JitRegressionProducerCpu = JitRegressionProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.regressionModelPath),
     alpaka = cms.untracked.PSet(
@@ -69,7 +74,7 @@ process.JitRegressionProducerCpu = process.JitRegressionProducerStruct.clone(
 regressionModelPath = args.regressionModelPathCpu
 if args.backend == "cuda_async":
     regressionModelPath = args.regressionModelPathCuda
-process.AotRegressionProducer = process.AotRegressionProducerStruct.clone(
+process.AotRegressionProducer = AotRegressionProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(regressionModelPath),
     alpaka = cms.untracked.PSet(
@@ -79,7 +84,7 @@ process.AotRegressionProducer = process.AotRegressionProducerStruct.clone(
 classificationModelPath = args.classificationModelPathCpu
 if args.backend == "cuda_async":
     classificationModelPath = args.classificationModelPathCuda
-process.AotClassificationProducer = process.AotClassificationProducerStruct.clone(
+process.AotClassificationProducer = AotClassificationProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(classificationModelPath),
     alpaka = cms.untracked.PSet(
@@ -87,7 +92,7 @@ process.AotClassificationProducer = process.AotClassificationProducerStruct.clon
     ),
 )
 
-process.CombinatoricsProducer = process.CombinatoricsProducerStruct.clone(
+process.CombinatoricsProducer = CombinatoricsProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
@@ -107,8 +112,4 @@ process.path = cms.Path(
     # process.AotClassificationProducer +
 
     process.CombinatoricsProducer
-)
-
-process.schedule = cms.Schedule(
-    process.path
 )
