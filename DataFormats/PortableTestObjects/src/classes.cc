@@ -11,4 +11,3 @@ SET_PORTABLEHOSTOBJECT_READ_RULES(portabletest::TestHostObject);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportabletest::ParticleCollectionHost);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportabletest::ClassificationCollectionHost);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportabletest::RegressionCollectionHost);
-

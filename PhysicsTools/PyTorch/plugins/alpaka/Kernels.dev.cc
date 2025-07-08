@@ -7,8 +7,7 @@
 
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 
-
-namespace ALPAKA_ACCELERATOR_NAMESPACE {
+namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   using namespace cms::alpakatools;
 
@@ -25,13 +24,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     uint32_t threads_per_block = 512;
     uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-    alpaka::exec<Acc1D>(queue, grid, [] ALPAKA_FN_ACC(Acc1D const& acc, torchportabletest::ParticleCollection::View data, float value) {
-      for (auto tid : uniform_elements(acc, data.metadata().size())) {
-        data.pt()[tid] = value;
-        data.phi()[tid] = value;
-        data.eta()[tid] = value;
-      }
-    }, data.view(), value);
+    alpaka::exec<Acc1D>(
+        queue,
+        grid,
+        [] ALPAKA_FN_ACC(Acc1D const &acc, torchportabletest::ParticleCollection::View data, float value) {
+          for (auto tid : uniform_elements(acc, data.metadata().size())) {
+            data.pt()[tid] = value;
+            data.phi()[tid] = value;
+            data.eta()[tid] = value;
+          }
+        },
+        data.view(),
+        value);
   }
 
   /**
@@ -47,13 +51,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     uint32_t threads_per_block = 512;
     uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-    alpaka::exec<Acc1D>(queue, grid, [] ALPAKA_FN_ACC(Acc1D const& acc, torchportabletest::ParticleCollection::View data, float value) {
-      for (auto tid : uniform_elements(acc, data.metadata().size())) {
-        ALPAKA_ASSERT_ACC(data.pt()[tid] == value);
-        ALPAKA_ASSERT_ACC(data.phi()[tid] == value);
-        ALPAKA_ASSERT_ACC(data.eta()[tid] == value);
-      }
-    }, data.view(), value);
+    alpaka::exec<Acc1D>(
+        queue,
+        grid,
+        [] ALPAKA_FN_ACC(Acc1D const &acc, torchportabletest::ParticleCollection::View data, float value) {
+          for (auto tid : uniform_elements(acc, data.metadata().size())) {
+            ALPAKA_ASSERT_ACC(data.pt()[tid] == value);
+            ALPAKA_ASSERT_ACC(data.phi()[tid] == value);
+            ALPAKA_ASSERT_ACC(data.eta()[tid] == value);
+          }
+        },
+        data.view(),
+        value);
   }
 
   /**
@@ -69,12 +78,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     uint32_t threads_per_block = 512;
     uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-    alpaka::exec<Acc1D>(queue, grid, [] ALPAKA_FN_ACC(Acc1D const& acc, torchportabletest::ClassificationCollection::View data) {
-      for (auto tid : uniform_elements(acc, data.metadata().size())) {
-        ALPAKA_ASSERT_ACC(data.c1()[tid] == 0.5f);
-        ALPAKA_ASSERT_ACC(data.c2()[tid] == 0.5f);
-      }
-    }, data.view());
+    alpaka::exec<Acc1D>(
+        queue,
+        grid,
+        [] ALPAKA_FN_ACC(Acc1D const &acc, torchportabletest::ClassificationCollection::View data) {
+          for (auto tid : uniform_elements(acc, data.metadata().size())) {
+            ALPAKA_ASSERT_ACC(data.c1()[tid] == 0.5f);
+            ALPAKA_ASSERT_ACC(data.c2()[tid] == 0.5f);
+          }
+        },
+        data.view());
   }
 
   /**
@@ -89,11 +102,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     uint32_t threads_per_block = 512;
     uint32_t blocks_per_grid = divide_up_by(data.view().metadata().size(), threads_per_block);
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-    alpaka::exec<Acc1D>(queue, grid, [] ALPAKA_FN_ACC(Acc1D const& acc, torchportabletest::RegressionCollection::View data) {
-      for (auto tid : uniform_elements(acc, data.metadata().size())) {
-        ALPAKA_ASSERT_ACC(data.reco_pt()[tid] == 0.5f);
-      }
-    }, data.view());
+    alpaka::exec<Acc1D>(
+        queue,
+        grid,
+        [] ALPAKA_FN_ACC(Acc1D const &acc, torchportabletest::RegressionCollection::View data) {
+          for (auto tid : uniform_elements(acc, data.metadata().size())) {
+            ALPAKA_ASSERT_ACC(data.reco_pt()[tid] == 0.5f);
+          }
+        },
+        data.view());
   }
 
-}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest

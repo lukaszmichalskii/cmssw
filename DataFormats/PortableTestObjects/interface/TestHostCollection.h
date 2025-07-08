@@ -15,7 +15,6 @@ namespace portabletest {
 
 }  // namespace portabletest
 
-
 namespace torchportabletest {
 
   using ParticleCollectionHost = PortableHostCollection<ParticleSoA>;

@@ -5,7 +5,7 @@
   <use name="eigen"/>
   <use name="pytorch"/>
   <use name="pytorch-cuda"/>
-  <use name="DataFormats/PyTorchTest"/>
+  <use name="DataFormats/PortableTestObjects"/>
   <use name="FWCore/Framework"/>
   <use name="FWCore/ParameterSet"/>
   <use name="FWCore/PluginManager"/>

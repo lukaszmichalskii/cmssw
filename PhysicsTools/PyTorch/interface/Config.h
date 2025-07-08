@@ -4,7 +4,6 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
-
 namespace cms::torch {
 
   /** 

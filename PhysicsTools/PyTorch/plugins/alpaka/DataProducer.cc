@@ -10,7 +10,7 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "PhysicsTools/PyTorch/interface/Nvtx.h"
 
-namespace ALPAKA_ACCELERATOR_NAMESPACE {
+namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   /**
    * @class DataProducer
@@ -43,9 +43,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto t1 = std::chrono::steady_clock::now();
 
     // debug stream usage in concurrently scheduled modules
-    std::stringstream msg_stream;
-    msg_stream << "Data::produce [E: " << event.id().event() << "]";
-    auto msg = msg_stream.str();
+    auto msg = fmt::format("Data::produce [E: {}]", event.id().event());
     NvtxScopedRange produce_range(msg.c_str());
 
     // create dummy data
@@ -69,6 +67,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     descriptions.addWithDefaultLabel(desc);
   }
 
-}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
 
-DEFINE_FWK_ALPAKA_MODULE(DataProducer);
+DEFINE_FWK_ALPAKA_MODULE(torchtest::DataProducer);

@@ -1,17 +1,16 @@
 import FWCore.ParameterSet.Config as cms
 from PhysicsTools.PyTorch.options import args
 from PhysicsTools.PyTorch.modules import (
-    DataProducer_alpaka,
-    JitClassificationProducer_alpaka,
-    JitRegressionProducer_alpaka,
-    AotClassificationProducer_alpaka,
-    AotRegressionProducer_alpaka,
-    CombinatoricsProducer_alpaka,
+    torchtest_DataProducer_alpaka,
+    torchtest_JitClassificationProducer_alpaka,
+    torchtest_JitRegressionProducer_alpaka,
+    torchtest_AotClassificationProducer_alpaka,
+    torchtest_AotRegressionProducer_alpaka,
+    torchtest_CombinatoricsProducer_alpaka,
 )
-
   
 args.parseArguments()
-process = cms.Process("TestPipeline")
+process = cms.Process("TestPyTorchHeterogeneousPipeline")
 
 # enable multithreading
 process.options.numberOfThreads = args.numberOfThreads if args.numberOfThreads > 1 else 1 
@@ -33,7 +32,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 100
 process.options.wantSummary = False
 
 # setup chain configs
-process.DataProducer = DataProducer_alpaka(
+process.DataProducer = torchtest_DataProducer_alpaka(
     batchSize = cms.uint32(args.batchSize if args.batchSize > 1 else 1),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
@@ -41,28 +40,28 @@ process.DataProducer = DataProducer_alpaka(
 )
 
 # JIT models
-process.JitClassificationProducer = JitClassificationProducer_alpaka(
+process.JitClassificationProducer = torchtest_JitClassificationProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.classificationModelPath),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
     ),
 )
-process.JitClassificationProducerCpu = JitClassificationProducer_alpaka(
+process.JitClassificationProducerCpu = torchtest_JitClassificationProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.classificationModelPath),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string("serial_sync")  # force serial backend to emulate heterogeneous execution
     ),
 )
-process.JitRegressionProducer = JitRegressionProducer_alpaka(
+process.JitRegressionProducer = torchtest_JitRegressionProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.regressionModelPath),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
     ),
 )
-process.JitRegressionProducerCpu = JitRegressionProducer_alpaka(
+process.JitRegressionProducerCpu = torchtest_JitRegressionProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(args.regressionModelPath),
     alpaka = cms.untracked.PSet(
@@ -74,7 +73,7 @@ process.JitRegressionProducerCpu = JitRegressionProducer_alpaka(
 regressionModelPath = args.regressionModelPathCpu
 if args.backend == "cuda_async":
     regressionModelPath = args.regressionModelPathCuda
-process.AotRegressionProducer = AotRegressionProducer_alpaka(
+process.AotRegressionProducer = torchtest_AotRegressionProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(regressionModelPath),
     alpaka = cms.untracked.PSet(
@@ -84,7 +83,7 @@ process.AotRegressionProducer = AotRegressionProducer_alpaka(
 classificationModelPath = args.classificationModelPathCpu
 if args.backend == "cuda_async":
     classificationModelPath = args.classificationModelPathCuda
-process.AotClassificationProducer = AotClassificationProducer_alpaka(
+process.AotClassificationProducer = torchtest_AotClassificationProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     modelPath = cms.FileInPath(classificationModelPath),
     alpaka = cms.untracked.PSet(
@@ -92,7 +91,7 @@ process.AotClassificationProducer = AotClassificationProducer_alpaka(
     ),
 )
 
-process.CombinatoricsProducer = CombinatoricsProducer_alpaka(
+process.CombinatoricsProducer = torchtest_CombinatoricsProducer_alpaka(
     inputs = cms.InputTag('DataProducer'),
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)

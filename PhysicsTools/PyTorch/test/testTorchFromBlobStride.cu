@@ -13,8 +13,8 @@
 
 using std::chrono::duration;
 using std::chrono::duration_cast;
-using std::chrono::steady_clock;
 using std::chrono::milliseconds;
+using std::chrono::steady_clock;
 
 /*
  * Demonstration of using stride in torch::from_blob to load SOA input 

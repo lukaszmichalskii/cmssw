@@ -6,7 +6,7 @@
 #include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceCollection.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 
-namespace ALPAKA_ACCELERATOR_NAMESPACE {
+namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   /**
    * @brief Utility functions to run simple Alpaka kernels for testing or validation.
@@ -19,6 +19,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   void assertClassification(Queue &queue, torchportabletest::ClassificationCollection &data);
   void assertRegression(Queue &queue, torchportabletest::RegressionCollection &data);
 
-}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
 
 #endif  // PhysicsTools_PyTorch_plugins_alpaka_Kernels_h

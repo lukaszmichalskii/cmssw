@@ -51,12 +51,10 @@ namespace cms::torch::alpaka {
   template <typename T>
     requires ::alpaka::isQueue<T>
   inline ::torch::Device device(const T &obj) {
-      return ::torch::Device(kTorchDeviceType, ::alpaka::getDev(obj).getNativeHandle());
+    return ::torch::Device(kTorchDeviceType, ::alpaka::getDev(obj).getNativeHandle());
   }
 
-  inline const ::torch::Device& device(const ::torch::Device& dev) {
-    return dev;
-  }
+  inline const ::torch::Device &device(const ::torch::Device &dev) { return dev; }
 
   /**
    * @brief Computes a unique hash representation for the given Alpaka queue.
@@ -94,7 +92,7 @@ namespace cms::torch::alpaka {
     const auto dev = device(queue);
     auto stream = c10::cuda::getCurrentCUDAStream(dev.index());
     return fmt::format("{:#x}", reinterpret_cast<std::uintptr_t>(stream.stream()));
-#else 
+#else
     return fmt::format("{:#x}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
 #endif
   }

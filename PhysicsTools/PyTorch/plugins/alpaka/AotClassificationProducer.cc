@@ -19,7 +19,7 @@
 #include "PhysicsTools/PyTorch/interface/Nvtx.h"
 #include "PhysicsTools/PyTorch/plugins/alpaka/Kernels.h"
 
-namespace ALPAKA_ACCELERATOR_NAMESPACE {
+namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   using AotModel = cms::torch::alpaka::Model<cms::torch::alpaka::CompilationType::kAheadOfTime>;
 
@@ -40,9 +40,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
-    const device::EDGetToken<torchportabletest::ParticleCollection> inputs_token_;        /**< Token to get input data. */
-    const device::EDPutToken<torchportabletest::ClassificationCollection> outputs_token_; /**< Token to store output data. */
-    std::unique_ptr<AotModel> model_;            /**< Cache for the JIT model. */
+    const device::EDGetToken<torchportabletest::ParticleCollection> inputs_token_; /**< Token to get input data. */
+    const device::EDPutToken<torchportabletest::ClassificationCollection>
+        outputs_token_;               /**< Token to store output data. */
+    std::unique_ptr<AotModel> model_; /**< Cache for the JIT model. */
   };
 
   AotClassificationProducer::AotClassificationProducer(edm::ParameterSet const &params)
@@ -62,9 +63,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto t1 = std::chrono::steady_clock::now();
 
     // debug stream usage in concurrently scheduled modules
-    std::stringstream msg_stream;
-    msg_stream << "ClassifierAot::produce [E: " << event.id().event() << "]";
-    auto msg = msg_stream.str();
+    auto msg = fmt::format("ClassifierAot::produce [E: {}]", event.id().event());
     NvtxScopedRange produce_range(msg.c_str());
 
     // guard torch internal operations to not conflict with fw execution scheme
@@ -124,6 +123,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     descriptions.addWithDefaultLabel(desc);
   }
 
-}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
 
-DEFINE_FWK_ALPAKA_MODULE(AotClassificationProducer);
+DEFINE_FWK_ALPAKA_MODULE(torchtest::AotClassificationProducer);

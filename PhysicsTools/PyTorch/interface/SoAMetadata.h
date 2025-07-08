@@ -2,10 +2,12 @@
 #define PhysicsTools_PyTorch_interface_SoAMetadata_h
 
 #include <iostream>
+#include <map>
 
 #include <type_traits>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <ATen/core/ScalarType.h>
 
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 
