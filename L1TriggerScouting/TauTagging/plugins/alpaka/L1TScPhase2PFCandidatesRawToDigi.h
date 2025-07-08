@@ -15,11 +15,11 @@
 #include "L1TriggerScouting/TauTagging/interface/alpaka/L1TScPhase2PFCandidatesRawToDigiKernels.h"
 
 
-namespace ALPAKA_ACCELERATOR_NAMESPACE {
+namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
   /**
    * @class L1TScPhase2PFCandidatesRawToDigi
-   * @brief Produces l1sc::PFCandidateCollection (PortableCollection)
+   * @brief Produces PFCandidateCollection (PortableCollection)
    */
   class L1TScPhase2PFCandidatesRawToDigi : public stream::EDProducer<> {
     public:
@@ -30,17 +30,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     private:
       const edm::EDGetTokenT<SDSRawDataCollection> raw_data_token_;  // raw data
-      const device::EDPutToken<l1sc::PFCandidateCollection> pf_candidates_token_;  // PF candidates
+      const device::EDPutToken<PFCandidateCollection> pf_candidates_token_;  // PF candidates
       const std::vector<uint32_t> links_ids_;  // front-end devices stream links
       std::chrono::high_resolution_clock::time_point t_start_, t_end_;  // timestamps
-      std::array<l1sc::data_t, l1sc::kOrbitSize> h_data_{};  // headers 64-bit words
-      std::vector<l1sc::data_t> pf_data_{};  // payload 64-bit words
-
-      std::unique_ptr<l1sc::L1TScPhase2PFCandidatesRawToDigiKernels> raw_to_digi_kernels_ = nullptr;
+      std::array<data_t, kOrbitSize> h_data_{};  // headers 64-bit words
+      std::vector<data_t> pf_data_{};  // payload 64-bit words
 
       void collectBuffers(const SDSRawDataCollection &raw_data);
   };
 
-}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc
 
 #endif  // L1_TRIGGER_SCOUTING__TAU_TAGGING__PLUGINS__ALPAKA__L1TSC_PHASE2_PF_CANDIDATES_RAW_TO_DIGI_H

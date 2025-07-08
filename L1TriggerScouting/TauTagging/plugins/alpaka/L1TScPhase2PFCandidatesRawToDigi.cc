@@ -2,15 +2,13 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 
 
-namespace ALPAKA_ACCELERATOR_NAMESPACE {
+namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
   L1TScPhase2PFCandidatesRawToDigi::L1TScPhase2PFCandidatesRawToDigi(const edm::ParameterSet &params)
       : EDProducer<>(params),
         raw_data_token_{consumes<SDSRawDataCollection>(params.getParameter<edm::InputTag>("src"))},
         pf_candidates_token_{produces()},
-        links_ids_(params.getParameter<std::vector<uint32_t>>("linksIds")) {
-    raw_to_digi_kernels_ = std::make_unique<l1sc::L1TScPhase2PFCandidatesRawToDigiKernels>();
-  }
+        links_ids_(params.getParameter<std::vector<uint32_t>>("linksIds")) {}
 
   void L1TScPhase2PFCandidatesRawToDigi::produce(
       device::Event &event, 
@@ -20,9 +18,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     
     collectBuffers(*raw_data);
 
-    auto pf_candidates = l1sc::PFCandidateCollection(pf_data_.size(), event.queue());  
+    auto pf_candidates = PFCandidateCollection(pf_data_.size(), event.queue());  
     // pf_candidates.zeroInitialise(event.queue());
-    raw_to_digi_kernels_->RawToDigi(event.queue(), pf_candidates);    
+    kernels::RawToDigi(event.queue(), pf_data_.data(), pf_candidates);
+    kernels::PrintPFCandidateCollection(event.queue(), pf_candidates);  
     event.emplace(pf_candidates_token_, std::move(pf_candidates));
     alpaka::wait(event.queue());
 
@@ -46,8 +45,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     size_t h_idx = 0;
     for (auto &link_id : links_ids_) {
       const auto &link = raw_data.FEDData(link_id);
-      const auto chunk_begin = reinterpret_cast<const l1sc::data_t*>(link.data());
-      const auto chunk_end = reinterpret_cast<const l1sc::data_t*>(link.data() + link.size());
+      const auto chunk_begin = reinterpret_cast<const data_t*>(link.data());
+      const auto chunk_end = reinterpret_cast<const data_t*>(link.data() + link.size());
 
       for (auto ptr = chunk_begin; ptr < chunk_end;) {
         // skip empty words
@@ -73,6 +72,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     }
   }
 
-}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc
 
-DEFINE_FWK_ALPAKA_MODULE(L1TScPhase2PFCandidatesRawToDigi);
+DEFINE_FWK_ALPAKA_MODULE(l1sc::L1TScPhase2PFCandidatesRawToDigi);

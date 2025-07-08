@@ -2,6 +2,9 @@ import os
 
 import FWCore.ParameterSet.Config as cms
 from L1TriggerScouting.TauTagging.options_cff import args
+from L1TriggerScouting.TauTagging.modules import (
+    l1sc_L1TScPhase2PFCandidatesRawToDigi_alpaka
+)
   
 
 args.parseArguments()
@@ -13,7 +16,6 @@ process.options.numberOfStreams = args.numberOfStreams if args.numberOfStreams >
 
 # enable alpaka and GPU support
 process.load("Configuration.StandardSequences.Accelerators_cff")
-process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
 
 # process a limited number of events
 process.maxEvents.input = args.numberOfEvents if args.numberOfEvents > 1 else 1 
@@ -57,11 +59,8 @@ process.source = cms.Source("DAQSource",
 )
 os.system("touch " + buDirs[0] + "/" + "fu.lock")
 
-# load pipeline chain
-process.load("L1TriggerScouting.TauTagging.plugins")
-
 # setup chain configs
-process.L1TScPhase2PFCandidatesRawToDigi = process.L1TScPhase2PFCandidatesRawToDigiPlugin.clone(
+process.L1TScPhase2PFCandidatesRawToDigi = l1sc_L1TScPhase2PFCandidatesRawToDigi_alpaka(
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
     ),
@@ -72,8 +71,4 @@ process.L1TScPhase2PFCandidatesRawToDigi = process.L1TScPhase2PFCandidatesRawToD
 # schedule the modules
 process.path = cms.Path(
     process.L1TScPhase2PFCandidatesRawToDigi
-)
-
-process.schedule = cms.Schedule(
-    process.path
 )
