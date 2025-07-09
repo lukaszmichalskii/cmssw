@@ -5,6 +5,17 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
 
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+  // CUDA always has a warp size of 32
+  inline constexpr int warpSize = 32;
+#elif ALPAKA_ACC_GPU_HIP_ENABLED
+  // HIP/ROCm defines warpSize as a constant expression in device code, with value 32 or 64 depending on the target device
+  inline constexpr int warpSize = ::warpSize;
+#else
+  // CPU back-ends always have a warp size of 1
+  inline constexpr int warpSize = 1;
+#endif
+
   template <typename T>
   ALPAKA_FN_ACC T decodeBits(uint64_t word, unsigned int start, unsigned int width) {
     static_assert(std::is_integral<T>::value, "extract_unsigned_bits expects integral types");
@@ -22,41 +33,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
     return static_cast<T>(raw);
   }
 
-    // for (int32_t idx : uniform_elements(acc, out.metadata().size())) {
-    //   uint64_t b = data[idx];
-
-    //   uint16_t ptint = b & 0x3FFF;
-    //   int etaint = ((b >> 25) & 1) ? ((b >> 14) | (-0x800)) : ((b >> 14) & 0xFFF);
-    //   int phiint = ((b >> 36) & 1) ? ((b >> 26) | (-0x400)) : ((b >> 26) & 0x7FF);
-    //   int16_t pid = (b >> 37) & 0x7;
-
-    //   out.pt()[idx] = ptint * 0.25f;
-    //   out.eta()[idx] = etaint * PI_C;
-    //   out.phi()[idx] = phiint * PI_C;
-    //   out.pdgId()[idx] = PARTICLE_DGROUP_MAP[pid];
-
-    //   bool isCharged = pid > 1;
-    //   int z0int = ((b >> 49) & 1) ? ((b >> 40) | (-0x200)) : ((b >> 40) & 0x3FF);
-    //   int dxyint = ((b >> 57) & 1) ? ((b >> 50) | (-0x100)) : ((b >> 50) & 0xFF);
-    //   int wpuppiint = (b >> 40) & 0x3FF;
-
-    //   out.z0()[idx] = isCharged ? z0int * 0.05f : 0.0f;
-    //   out.dxy()[idx] = isCharged ? dxyint * 0.05f : 0.0f;
-    //   out.puppiw()[idx] = isCharged ? 1.0f : wpuppiint * (1 / 256.f);
-    //   out.quality()[idx] = isCharged ? ((b >> 58) & 0x7) : ((b >> 50) & 0x3F);
-    //   out.selection()[idx] = 0;
-    // }
-
   class RawToDigiKernel {
     public:
       ALPAKA_FN_ACC void operator()(Acc1D const& acc, data_t* pf_data, PFCandidateCollection::View pf_candidates) const {
         constexpr int16_t PARTICLE_DGROUP_MAP[8] = {
             130, 22, -211, 211, 11, -11, 13, -13};
         constexpr float PI_720 = alpaka::math::constants::pi / 720.0f;
-        
-        if (cms::alpakatools::once_per_grid(acc)) {
-          printf("RawToDigiKernel OK\n");
-        }
 
         for (int32_t idx : cms::alpakatools::uniform_elements(acc, pf_candidates.metadata().size())) {
           uint64_t data = pf_data[idx];
@@ -108,6 +90,60 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
     alpaka::exec<Acc1D>(queue, grid, RawToDigiKernel{}, pf_data_device.data(), pf_candidates.view());    
   }
 
+  void AssociateOrbitEventIndex(
+      Queue& queue, data_t *h_data, OrbitEventIndexMapCollection& orbit_association_map) {
+    auto extent = Vec1D(orbit_association_map.const_view().metadata().size());    
+    auto h_data_device = alpaka::allocAsyncBuf<data_t, Idx>(queue, extent);
+    alpaka::memcpy(queue, h_data_device, createView(cms::alpakatools::host(), h_data, extent));  
+
+    uint32_t threads_per_block = 1024;
+    uint32_t blocks_per_grid = cms::alpakatools::divide_up_by(
+        orbit_association_map.const_view().metadata().size(), threads_per_block);      
+    auto grid = cms::alpakatools::make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
+    alpaka::exec<Acc1D>(
+        queue, 
+        grid, 
+        [] ALPAKA_FN_ACC(Acc1D const &acc, data_t* data, OrbitEventIndexMapCollection::View orbit_association_map) {
+          if (cms::alpakatools::once_per_grid(acc))
+            orbit_association_map.offsets()[0] = 0;
+          
+          for (int32_t idx : cms::alpakatools::uniform_elements(
+              acc, orbit_association_map.metadata().size() - 1)) {
+            auto range = decodeBits<uint32_t>(data[idx], 0, 12);
+            orbit_association_map.offsets()[idx + 1] = range;
+          }
+        },
+        h_data_device.data(), 
+        orbit_association_map.view());
+
+    auto pc = alpaka::allocAsyncBuf<int32_t, Idx>(queue, Vec1D{1});
+    alpaka::memset(queue, pc, 0x0);
+    alpaka::exec<Acc1D>(
+        queue, 
+        grid, 
+        cms::alpakatools::multiBlockPrefixScan<uint32_t>{}, 
+        orbit_association_map.view().offsets() + 1, 
+        orbit_association_map.view().offsets() + 1,
+        orbit_association_map.view().metadata().size(),
+        blocks_per_grid,
+        pc.data(),
+        warpSize);
+
+    alpaka::exec<Acc1D>(
+        queue, 
+        grid, 
+        [] ALPAKA_FN_ACC(Acc1D const &acc, OrbitEventIndexMapCollection::ConstView orbit_association_map) {
+          if (cms::alpakatools::once_per_grid(acc)) {
+            for (int32_t idx : cms::alpakatools::uniform_elements(acc, orbit_association_map.metadata().size() - 1)) {
+              printf("%d -> [%d, %d]\n", idx, 
+                  orbit_association_map.offsets()[idx], 
+                  orbit_association_map.offsets()[idx + 1]);
+            }
+          }
+        },
+        orbit_association_map.const_view());
+  }
+
   void PrintPFCandidateCollection(
       Queue& queue, PFCandidateCollection& pf_candidates) {
     uint32_t threads_per_block = 1024;
@@ -122,7 +158,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
             int32_t head = 10;
             int32_t span = (pf_candidates.metadata().size() > head) ? head : pf_candidates.metadata().size();
             for (int32_t idx = 0; idx < span; ++idx) {
-              printf("[%d] | %3.2f | %3.2f | %3.2f |\n", idx, 
+              printf("[%3d] | %6.2f | %7.2f | %7.2f |\n", idx, 
                   pf_candidates.pt()[idx], 
                   pf_candidates.eta()[idx], 
                   pf_candidates.phi()[idx]);

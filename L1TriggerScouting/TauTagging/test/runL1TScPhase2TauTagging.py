@@ -17,6 +17,11 @@ process.options.numberOfStreams = args.numberOfStreams if args.numberOfStreams >
 # enable alpaka and GPU support
 process.load("Configuration.StandardSequences.Accelerators_cff")
 
+# logging
+process.load("FWCore.MessageService.MessageLogger_cfi")
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.MessageLogger.cerr.threshold = 'ERROR'
+
 # process a limited number of events
 process.maxEvents.input = args.numberOfEvents if args.numberOfEvents > 1 else 1 
 

@@ -12,7 +12,5 @@
   <use name="HeterogeneousCore/AlpakaInterface"/>
   <use name="L1TriggerScouting/TauTagging"/>
   <use name="L1TriggerScouting/Utilities"/>
-  <flags ALPAKA_BACKENDS="cuda"/>
-  <flags ALPAKA_BACKENDS="rocm"/>
-  <flags ALPAKA_BACKENDS="serial"/>
+  <flags ALPAKA_BACKENDS="1"/>
 </library>

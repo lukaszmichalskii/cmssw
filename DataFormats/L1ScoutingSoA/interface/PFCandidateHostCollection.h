@@ -1,5 +1,5 @@
-#ifndef DATA_FORMATS__L1_SCOUTING_SOA__INTERFACE__PF_CANDIDATE_HOST_COLLECTION_H
-#define DATA_FORMATS__L1_SCOUTING_SOA__INTERFACE__PF_CANDIDATE_HOST_COLLECTION_H
+#ifndef DataFormats_L1ScoutingSoA_interface_PFCandidateHostCollection_h
+#define DataFormats_L1ScoutingSoA_interface_PFCandidateHostCollection_h
 
 #include "DataFormats/Portable/interface/PortableHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/PFCandidateSoA.h"
@@ -10,4 +10,4 @@ namespace l1sc {
 
 }  // namespace l1sc
 
-#endif  // DATA_FORMATS__L1_SCOUTING_SOA__INTERFACE__PF_CANDIDATE_HOST_COLLECTION_H
+#endif  // DataFormats_L1ScoutingSoA_interface_PFCandidateHostCollection_h

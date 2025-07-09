@@ -1,5 +1,5 @@
-#ifndef L1_TRIGGER_SCOUTING__TAU_TAGGING__INTERFACE__L1TSC_PHASE2_COMMON_H
-#define L1_TRIGGER_SCOUTING__TAU_TAGGING__INTERFACE__L1TSC_PHASE2_COMMON_H
+#ifndef L1TriggerScouting_TauTagging_interface_L1TScPhase2Common_h
+#define L1TriggerScouting_TauTagging_interface_L1TScPhase2Common_h
 
 #include <cstdint>
 
@@ -11,4 +11,4 @@ namespace l1sc {
 
 }  // namespace l1sc
 
-#endif  // L1_TRIGGER_SCOUTING__TAU_TAGGING__INTERFACE__L1TSC_PHASE2_COMMON_H
+#endif  // L1TriggerScouting_TauTagging_interface_L1TScPhase2Common_h

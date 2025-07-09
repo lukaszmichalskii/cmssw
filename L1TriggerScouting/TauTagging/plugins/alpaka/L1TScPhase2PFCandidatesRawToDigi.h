@@ -1,6 +1,7 @@
-#ifndef L1_TRIGGER_SCOUTING__TAU_TAGGING__PLUGINS__ALPAKA__L1TSC_PHASE2_PF_CANDIDATES_RAW_TO_DIGI_H
-#define L1_TRIGGER_SCOUTING__TAU_TAGGING__PLUGINS__ALPAKA__L1TSC_PHASE2_PF_CANDIDATES_RAW_TO_DIGI_H
+#ifndef L1TriggerScouting_TauTagging_plugins_alpaka_L1TScPhase2PFCandidatesRawToDigi_h
+#define L1TriggerScouting_TauTagging_plugins_alpaka_L1TScPhase2PFCandidatesRawToDigi_h
 
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/OrbitEventIndexMapCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PFCandidateCollection.h"
 #include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -31,6 +32,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     private:
       const edm::EDGetTokenT<SDSRawDataCollection> raw_data_token_;  // raw data
       const device::EDPutToken<PFCandidateCollection> pf_candidates_token_;  // PF candidates
+      const device::EDPutToken<OrbitEventIndexMapCollection> orbit_association_map_token_;  // orbit association map
       const std::vector<uint32_t> links_ids_;  // front-end devices stream links
       std::chrono::high_resolution_clock::time_point t_start_, t_end_;  // timestamps
       std::array<data_t, kOrbitSize> h_data_{};  // headers 64-bit words
@@ -41,4 +43,4 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc
 
-#endif  // L1_TRIGGER_SCOUTING__TAU_TAGGING__PLUGINS__ALPAKA__L1TSC_PHASE2_PF_CANDIDATES_RAW_TO_DIGI_H
+#endif  // L1TriggerScouting_TauTagging_plugins_alpaka_L1TScPhase2PFCandidatesRawToDigi_h

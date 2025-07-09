@@ -1,5 +1,11 @@
 <lcgdict>
-  <!-- PFCandidateCollection -->
+  <!-- OrbitEventIndexMapHostCollection -->
+  <class name="l1sc::OrbitEventIndexMapSoA"/>
+  <class name="l1sc::OrbitEventIndexMapSoA::View"/>
+  <class name="l1sc::OrbitEventIndexMapSoA::ConstView"/>
+  <class name="l1sc::OrbitEventIndexMapHostCollection"/>
+  <class name="edm::Wrapper<l1sc::OrbitEventIndexMapHostCollection>" splitLevel="0"/>
+  <!-- PFCandidateHostCollection -->
   <class name="l1sc::PFCandidateSoA"/>
   <class name="l1sc::PFCandidateSoA::View"/>
   <class name="l1sc::PFCandidateSoA::ConstView"/>

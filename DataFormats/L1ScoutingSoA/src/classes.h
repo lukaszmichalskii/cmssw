@@ -1,8 +1,10 @@
-#ifndef DATA_FORMATS__L1_SCOUTING_SOA__SRC__CLASSES_H
-#define DATA_FORMATS__L1_SCOUTING_SOA__SRC__CLASSES_H
+#ifndef DataFormats_L1ScoutingSoA_src_classes_h
+#define DataFormats_L1ScoutingSoA_src_classes_h
 
 #include "DataFormats/Common/interface/Wrapper.h"
+#include "DataFormats/L1ScoutingSoA/interface/OrbitEventIndexMapHostCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/OrbitEventIndexMapSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/PFCandidateHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/PFCandidateSoA.h"
 
-#endif  // DATA_FORMATS__L1_SCOUTING_SOA__SRC__CLASSES_H
+#endif  // DataFormats_L1ScoutingSoA_src_classes_h

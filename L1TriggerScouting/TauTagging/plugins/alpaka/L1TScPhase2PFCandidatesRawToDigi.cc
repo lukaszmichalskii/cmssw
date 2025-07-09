@@ -6,27 +6,46 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
   L1TScPhase2PFCandidatesRawToDigi::L1TScPhase2PFCandidatesRawToDigi(const edm::ParameterSet &params)
       : EDProducer<>(params),
-        raw_data_token_{consumes<SDSRawDataCollection>(params.getParameter<edm::InputTag>("src"))},
+        raw_data_token_{consumes(params.getParameter<edm::InputTag>("src"))},
         pf_candidates_token_{produces()},
+        orbit_association_map_token_{produces()},
         links_ids_(params.getParameter<std::vector<uint32_t>>("linksIds")) {}
 
   void L1TScPhase2PFCandidatesRawToDigi::produce(
       device::Event &event, 
       const device::EventSetup &event_setup) {
+
+    // timestamp
     t_start_ = std::chrono::high_resolution_clock::now();    
+
+    // get raw data input
     auto raw_data = event.getHandle(raw_data_token_);  
     
+    // preprocess header -> payload
     collectBuffers(*raw_data);
 
+    // orbit event index association map
+    auto map_size = links_ids_.size() * kOrbitSize + 1;
+    auto orbit_association_map = OrbitEventIndexMapCollection(map_size, event.queue());
+    kernels::AssociateOrbitEventIndex(event.queue(), h_data_.data(), orbit_association_map);
+
+    // pf candidates data
     auto pf_candidates = PFCandidateCollection(pf_data_.size(), event.queue());  
-    // pf_candidates.zeroInitialise(event.queue());
     kernels::RawToDigi(event.queue(), pf_data_.data(), pf_candidates);
-    kernels::PrintPFCandidateCollection(event.queue(), pf_candidates);  
+    kernels::PrintPFCandidateCollection(event.queue(), pf_candidates);
+
+    // store data in the event
+    event.emplace(orbit_association_map_token_, std::move(orbit_association_map));
     event.emplace(pf_candidates_token_, std::move(pf_candidates));
+
+    // explicit device sync (only for time measurements)
     alpaka::wait(event.queue());
 
+    // timestamp
     t_end_ = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t_end_ - t_start_).count();
+
+    // log info
     std::cout << "OK - L1TScPhase2PFCandidatesRawToDigi [" << elapsed << " us]" << std::endl;    
   }
 

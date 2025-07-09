@@ -1,9 +1,11 @@
-#ifndef DATA_FORMATS__L1_SCOUTING_SOA__SRC__ALPAKA__CLASSES_ROCM_H
-#define DATA_FORMATS__L1_SCOUTING_SOA__SRC__ALPAKA__CLASSES_ROCM_H
+#ifndef DataFormats_L1ScoutingSoA_src_alpaka_classes_rocm_h
+#define DataFormats_L1ScoutingSoA_src_alpaka_classes_rocm_h
 
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/Common/interface/DeviceProduct.h"
+#include "DataFormats/L1ScoutingSoA/interface/OrbitEventIndexMapSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/PFCandidateSoA.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/OrbitEventIndexMapCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PFCandidateCollection.h"
 
-#endif  // DATA_FORMATS__L1_SCOUTING_SOA__SRC__ALPAKA__CLASSES_ROCM_H
+#endif  // DataFormats_L1ScoutingSoA_src_alpaka_classes_rocm_h

@@ -1,5 +1,5 @@
-#ifndef DATA_FORMATS__L1_SCOUTING_SOA__INTERFACE__PF_CANDIDATE_SOA_H
-#define DATA_FORMATS__L1_SCOUTING_SOA__INTERFACE__PF_CANDIDATE_SOA_H
+#ifndef DataFormats_L1ScoutingSoA_interface_PFCandidateSoA_h
+#define DataFormats_L1ScoutingSoA_interface_PFCandidateSoA_h
 
 #include "DataFormats/SoATemplate/interface/SoACommon.h"
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
@@ -24,4 +24,4 @@ namespace l1sc {
 
 } // namespace l1sc
 
-#endif  // DATA_FORMATS__L1_SCOUTING_SOA__INTERFACE__PF_CANDIDATE_SOA_H
+#endif  // DataFormats_L1ScoutingSoA_interface_PFCandidateSoA_h

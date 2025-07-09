@@ -1,4 +1,9 @@
 <lcgdict>
+  <!-- OrbitEventIndexMapCollection -->
+  <class name="alpaka_rocm_async::PortableCollection<l1sc::OrbitEventIndexMapSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::l1sc::OrbitEventIndexMapCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::l1sc::OrbitEventIndexMapCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::l1sc::OrbitEventIndexMapCollection>>" persistent="false"/>
   <!-- PFCandidateCollection -->
   <class name="alpaka_rocm_async::PortableCollection<l1sc::PFCandidateSoA>" persistent="false"/>
   <class name="alpaka_rocm_async::l1sc::PFCandidateCollection" persistent="false"/>
