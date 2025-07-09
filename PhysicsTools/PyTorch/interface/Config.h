@@ -6,24 +6,6 @@
 
 namespace cms::torch {
 
-  /** 
-   * The following `constexpr` constants are aliases for various PyTorch data types.
-   * 
-   * Primarily used for specifying tensor types when working with PyTorch 
-   * tensors in the CMS environment.
-   */
-  constexpr auto Byte = ::torch::kByte;     /**< unsigned 8-bit integer type. */
-  constexpr auto Char = ::torch::kChar;     /**< signed 8-bit integer type. */
-  constexpr auto Short = ::torch::kShort;   /**< signed 16-bit integer type. */
-  constexpr auto Int = ::torch::kInt;       /**< signed 32-bit integer type. */
-  constexpr auto Long = ::torch::kLong;     /**< signed 64-bit integer type. */
-  constexpr auto UInt16 = ::torch::kUInt16; /**< unsigned 16-bit integer type. */
-  constexpr auto UInt32 = ::torch::kUInt32; /**< unsigned 32-bit integer type. */
-  constexpr auto UInt64 = ::torch::kUInt64; /**< unsigned 64-bit integer type. */
-  constexpr auto Half = ::torch::kHalf;     /**< 16-bit floating point type. */
-  constexpr auto Float = ::torch::kFloat;   /**< 32-bit floating point type. */
-  constexpr auto Double = ::torch::kDouble; /**< 64-bit floating point type. */
-
   /**
    * @brief Loads a TorchScript model.
    *

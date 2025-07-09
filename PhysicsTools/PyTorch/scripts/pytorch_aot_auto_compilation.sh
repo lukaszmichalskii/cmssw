@@ -46,18 +46,18 @@ echo "OK - Exporting model: ${MODEL} for target: ${TARGET}"
 # unzip and prepare model
 unzip -q "${OUTPUT}".pt2 -d "${OUTPUT}"
 cd "${OUTPUT}"/data/aotinductor/model
-./../../../../scripts/rename_aot.sh .
+./../../../../scripts/pytorch_aot_rename.sh .
 echo "OK - Unzipping and preparing model"
 
 # compilation with cmssw
 if [ "${TARGET}" == "cpu" ]; then
   echo "Compilation for CPU backend"
-  ./../../../../scripts/compile.sh
-  ./../../../../scripts/link.sh
+  ./../../../../scripts/pytorch_aot_compile.sh
+  ./../../../../scripts/pytorch_aot_link.sh
 elif [ "${TARGET}" == "cuda" ]; then
   echo "Compilation for CUDA backend"
-  ./../../../../scripts/compile_cuda.sh
-  ./../../../../scripts/link_cuda.sh
+  ./../../../../scripts/pytorch_aot_compile_cuda.sh
+  ./../../../../scripts/pytorch_aot_link_cuda.sh
 fi
 echo "OK - Compiling model with CMSSW toolchain"
 
