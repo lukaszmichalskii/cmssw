@@ -6,14 +6,13 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-  // CUDA always has a warp size of 32
-  inline constexpr int warpSize = 32;
+  inline constexpr size_t warpSize = 32;  // CUDA warp size is always 32
 #elif ALPAKA_ACC_GPU_HIP_ENABLED
-  // HIP/ROCm defines warpSize as a constant expression in device code, with value 32 or 64 depending on the target device
-  inline constexpr int warpSize = ::warpSize;
-#else
-  // CPU back-ends always have a warp size of 1
-  inline constexpr int warpSize = 1;
+#error "AMD ROCm/HIP backend wavefront size is 32 or 64 depending on the target device but is not yet supported"
+#elif ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
+  inline constexpr size_t warpSize = 1;  // CPU fallback to 1 thread 
+#else 
+#error "Unable to detect backend type."
 #endif
 
   template <typename T>
@@ -134,11 +133,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
         grid, 
         [] ALPAKA_FN_ACC(Acc1D const &acc, OrbitEventIndexMapCollection::ConstView orbit_association_map) {
           if (cms::alpakatools::once_per_grid(acc)) {
-            for (int32_t idx : cms::alpakatools::uniform_elements(acc, orbit_association_map.metadata().size() - 1)) {
-              printf("%d -> [%d, %d]\n", idx, 
-                  orbit_association_map.offsets()[idx], 
-                  orbit_association_map.offsets()[idx + 1]);
+            int32_t head = 10;
+            int32_t span = (orbit_association_map.metadata().size() > head) ? head : orbit_association_map.metadata().size();
+            for (int32_t idx = 1; idx < span ; idx++) {
+              printf("Bx:%d -> [%d, %d]\n", idx, 
+                  orbit_association_map.offsets()[idx - 1], 
+                  orbit_association_map.offsets()[idx]);
             }
+            printf("OrbitEventIndexMapCollection size: %d (%d BX in total)\n", 
+                orbit_association_map.metadata().size(), 
+                orbit_association_map.metadata().size() - 1);
           }
         },
         orbit_association_map.const_view());
