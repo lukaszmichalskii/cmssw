@@ -8,20 +8,19 @@
 namespace l1sc {
 
   GENERATE_SOA_LAYOUT(PFCandidateLayout,
-    SOA_COLUMN(float, pt),
-    SOA_COLUMN(float, eta),
-    SOA_COLUMN(float, phi),
-    SOA_COLUMN(float, z0),
-    SOA_COLUMN(float, dxy),
-    // SOA_COLUMN(float, puppiw),
-    // SOA_COLUMN(float, quality),
-    SOA_COLUMN(int16_t, pdgid)
-  )
+                      SOA_COLUMN(float, pt),
+                      SOA_COLUMN(float, eta),
+                      SOA_COLUMN(float, phi),
+                      SOA_COLUMN(float, z0),
+                      SOA_COLUMN(float, dxy),
+                      // SOA_COLUMN(float, puppiw),
+                      // SOA_COLUMN(float, quality),
+                      SOA_COLUMN(int16_t, pdgid))
 
   using PFCandidateSoA = PFCandidateLayout<>;
   using PFCandidateSoAView = PFCandidateSoA::View;
   using PFCandidateSoAConstView = PFCandidateSoA::ConstView;
 
-} // namespace l1sc
+}  // namespace l1sc
 
 #endif  // DataFormats_L1ScoutingSoA_interface_PFCandidateSoA_h

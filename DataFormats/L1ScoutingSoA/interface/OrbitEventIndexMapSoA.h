@@ -8,14 +8,12 @@
 
 namespace l1sc {
 
-  GENERATE_SOA_LAYOUT(OrbitEventIndexMapLayout,
-    SOA_COLUMN(uint32_t, offsets)
-  )
+  GENERATE_SOA_LAYOUT(OrbitEventIndexMapLayout, SOA_COLUMN(uint32_t, offsets))
 
   using OrbitEventIndexMapSoA = OrbitEventIndexMapLayout<>;
   using OrbitEventIndexMapSoAView = OrbitEventIndexMapSoA::View;
   using OrbitEventIndexMapSoAConstView = OrbitEventIndexMapSoA::ConstView;
 
-} // namespace l1sc
+}  // namespace l1sc
 
 #endif  // DataFormats_L1ScoutingSoA_interface_OrbitEventIndexMapSoA_h

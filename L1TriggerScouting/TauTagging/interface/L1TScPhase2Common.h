@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace l1sc {
-  
+
   using data_t = uint64_t;
 
   constexpr uint32_t kOrbitSize = 3564;

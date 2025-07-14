@@ -18,7 +18,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
     static_assert(std::is_integral<T>::value && std::is_signed<T>::value,
                   "extract_signed_bits expects signed integral types");
     uint64_t raw = (word >> start) & ((1ULL << width) - 1);
-    if (raw & (1ULL << (width - 1))) 
+    if (raw & (1ULL << (width - 1)))
       raw |= (~0ULL << width);  // manual sign extension
     return static_cast<T>(raw);
   }
