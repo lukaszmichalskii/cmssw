@@ -6,8 +6,13 @@
 namespace l1sc {
 
   using data_t = uint64_t;
-
   constexpr uint32_t kOrbitSize = 3564;
+
+  // CLUEstering parameters
+  constexpr uint8_t kDims = 2;
+  constexpr float kDc = 0.2f;
+  constexpr float kRhoc = 5.0f;  
+  constexpr float kDm = 0.4f;
 
 }  // namespace l1sc
 

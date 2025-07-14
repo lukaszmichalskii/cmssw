@@ -35,6 +35,30 @@ args.register(
     "Hardware accelerator backend: serial_sync, cuda_async, or rocm_async"
 )
 
+args.register(
+    "dc",
+    0.2,
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.float,         
+    "Side of the box inside of which the density of a point is calculated"
+)
+
+args.register(
+    "rhoc",
+    0.2,
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.float,         
+    "Minimum rhoc required for a point to be considered a seed candidate "
+)
+
+args.register(
+    "dm",
+    0.4,
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.float,         
+    "Side of the box inside of which the followers of a point are searched"
+)
+
 args.register (
     "runNumber",
     37,

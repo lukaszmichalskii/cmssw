@@ -3,7 +3,8 @@ import os
 import FWCore.ParameterSet.Config as cms
 from L1TriggerScouting.TauTagging.options_cff import args
 from L1TriggerScouting.TauTagging.modules import (
-    l1sc_L1TScPhase2PFCandidatesRawToDigi_alpaka
+    l1sc_L1TScPhase2PFCandidatesRawToDigi_alpaka,
+    l1sc_L1TScPhase2CLUEstering_alpaka
 )
   
 
@@ -73,7 +74,19 @@ process.L1TScPhase2PFCandidatesRawToDigi = l1sc_L1TScPhase2PFCandidatesRawToDigi
     src = cms.InputTag('rawDataCollector'),
 )
 
+process.L1TScPhase2CLUEstering = l1sc_L1TScPhase2CLUEstering_alpaka(
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(args.backend)
+    ),
+    src = cms.InputTag("L1TScPhase2PFCandidatesRawToDigi"),
+    # params for CLUEstering
+    dc = cms.double(args.dc),
+    rhoc = cms.double(args.rhoc),
+    dm = cms.double(args.dm)
+)
+
 # schedule the modules
 process.path = cms.Path(
-    process.L1TScPhase2PFCandidatesRawToDigi
+    process.L1TScPhase2PFCandidatesRawToDigi +
+    process.L1TScPhase2CLUEstering
 )
