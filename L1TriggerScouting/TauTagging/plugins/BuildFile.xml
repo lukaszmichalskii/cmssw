@@ -10,7 +10,10 @@
   <use name="FWCore/Utilities"/>
   <use name="HeterogeneousCore/AlpakaCore"/>
   <use name="HeterogeneousCore/AlpakaInterface"/>
-  <use name="L1TriggerScouting/TauTagging"/>
   <use name="L1TriggerScouting/Utilities"/>
   <flags ALPAKA_BACKENDS="serial cuda rocm"/>
+  <flags CXXFLAGS="-I${CMSSW_BASE}/src/CLUEstering/include"/>
+  <flags ADDINCLUDE="-I${CMSSW_BASE}/src/CLUEstering/include"/>
+  <flags CXXFLAGS="-I${CMSSW_BASE}/src/CLUEstering/extern/xtd/include"/>
+  <flags ADDINCLUDE="-I${CMSSW_BASE}/src/CLUEstering/extern/xtd/include"/>
 </library>

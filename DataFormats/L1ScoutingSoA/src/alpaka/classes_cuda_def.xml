@@ -1,4 +1,9 @@
 <lcgdict>
+  <!-- CLUEsteringCollection -->
+  <class name="alpaka_cuda_async::PortableCollection<l1sc::CLUEsteringSoA>" persistent="false"/>
+  <class name="alpaka_cuda_async::l1sc::CLUEsteringCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_cuda_async::l1sc::CLUEsteringCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_cuda_async::l1sc::CLUEsteringCollection>>" persistent="false"/>
   <!-- PFCandidateCollection -->
   <class name="alpaka_cuda_async::PortableCollection<l1sc::PFCandidateSoA>" persistent="false"/>
   <class name="alpaka_cuda_async::l1sc::PFCandidateCollection" persistent="false"/>

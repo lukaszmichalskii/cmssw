@@ -10,6 +10,10 @@ cmsenv
 # checkout branch
 git cms-checkout-topic -u lukaszmichalskii:ml@l1
 
+# add CLUEstering as external lib
+git clone git@github.com:cms-patatrack/CLUEstering.git
+cd CLUEstering && git submodule update --init && cd ..
+
 # build
 scram b -j $(nproc)
 ```

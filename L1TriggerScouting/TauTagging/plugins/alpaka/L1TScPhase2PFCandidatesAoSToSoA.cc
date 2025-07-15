@@ -1,6 +1,9 @@
 #include <iomanip>
 
 #include "DataFormats/L1ScoutingSoA/interface/PFCandidateHostCollection.h"
+// CLUEsteringCollection is not used explicitly, but this header is needed to let
+// the framework implement the automatic copy from host to device.
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/CLUEsteringCollection.h"
 #include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
 #include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -71,10 +74,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
                  soa_size);
 
       // table header
-      const std::string separator = "+--------------+---------+---------+---------+---------+---------+---------+";
+      const std::string separator = "+-------+---------+---------+---------+---------+---------+---------+";
       fmt::print("{}\n", separator);
-      fmt::print("| {:>12} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
-                 "PFCandidate",
+      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
+                 "index",
                  "pt",
                  "eta",
                  "phi",
@@ -87,7 +90,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       auto span = (soa_size > 10) ? 10 : soa_size;
       for (int32_t idx = 0; idx < span; ++idx) {
         const auto &view = pf_candidates_soa.const_view()[idx];
-        fmt::print("| {:12d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7d} |\n",
+        fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7d} |\n",
                    idx,
                    view.pt(),
                    view.eta(),
@@ -99,7 +102,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
       // log tail if collection size is larger than 10
       if (span < soa_size) {
-        fmt::print("| {:>12} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
+        fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
                    "...",
                    "...",
                    "...",

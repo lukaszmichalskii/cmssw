@@ -1,4 +1,10 @@
 <lcgdict>
+  <!-- CLUEsteringHostCollection -->
+  <class name="l1sc::CLUEsteringSoA"/>
+  <class name="l1sc::CLUEsteringSoA::View"/>
+  <class name="l1sc::CLUEsteringSoA::ConstView"/>
+  <class name="l1sc::CLUEsteringHostCollection"/>
+  <class name="edm::Wrapper<l1sc::CLUEsteringHostCollection>" splitLevel="0"/>
   <!-- PFCandidateHostCollection -->
   <class name="l1sc::PFCandidateSoA"/>
   <class name="l1sc::PFCandidateSoA::View"/>
