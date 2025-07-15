@@ -1,0 +1,7 @@
+<test name="L1ScoutingPhase2TauTaggingSerialSync" command="runL1TScPhase2TauTagging.sh cpu 1"/>
+<test name="L1ScoutingPhase2TauTaggingCudaAsync" command="runL1TScPhase2TauTagging.sh cuda 1">
+  <use name="cuda"/>
+</test>
+<test name="L1ScoutingPhase2TauTaggingROCmAsync" command="runL1TScPhase2TauTagging.sh rocm 1">
+  <use name="rocm"/>
+</test>
