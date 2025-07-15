@@ -1,0 +1,16 @@
+<library file="alpaka/*.cc" name="L1TScoutingTauTaggingPlugins">
+  <use name="alpaka"/>
+  <use name="DataFormats/L1Scouting"/>
+  <use name="DataFormats/L1ScoutingSoA"/>
+  <use name="DataFormats/L1Trigger"/>
+  <use name="DataFormats/L1TParticleFlow"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/PluginManager"/>
+  <use name="FWCore/Utilities"/>
+  <use name="HeterogeneousCore/AlpakaCore"/>
+  <use name="HeterogeneousCore/AlpakaInterface"/>
+  <use name="L1TriggerScouting/TauTagging"/>
+  <use name="L1TriggerScouting/Utilities"/>
+  <flags ALPAKA_BACKENDS="serial cuda rocm"/>
+</library>
