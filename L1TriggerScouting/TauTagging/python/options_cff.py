@@ -53,7 +53,7 @@ args.register(
 
 args.register(
     "rhoc",
-    0.2,
+    5.0,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.float,         
     "Minimum rhoc required for a point to be considered a seed candidate "

@@ -17,18 +17,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
   public:
     explicit L1TScPhase2CLUEstering(float dc, float rhoc, float dm);
 
-    void run(Queue& queue);
-    void bindInputs(PFCandidateCollection& pf_candidates);
-    void bindOutputs(CLUEsteringCollection& clue_collection);
-    void numberOfPoints(uint32_t n_points);
-    void setWrappedCoords(const std::array<uint8_t, kDims>& coords);
-
-  private:
-    std::unique_ptr<clue::Clusterer<kDims>> clue_algo_;
-    const FlatKernel kernel_{0.5f};
-    float* input_buffer_ = nullptr;
-    uint32_t* output_buffer_ = nullptr;
-    uint32_t n_points_ = 0;
+    void run(Queue& queue, PFCandidateCollection& pf_candidates, CLUEsteringCollection& clue_collection);
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc
