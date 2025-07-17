@@ -35,6 +35,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
+    void logDebugMessage(const PFCandidateHostCollection &pf_candidates) const;
+
     const edm::EDGetTokenT<std::vector<l1t::PFCandidate>> pf_candidates_aos_token_;
     const edm::EDPutTokenT<PFCandidateHostCollection> pf_candidates_soa_token_;
     const bool debug_;
@@ -68,52 +70,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     }
 
     // debug log to stdout
-    if (debug_) {
-      const auto soa_size = pf_candidates_soa.const_view().metadata().size();
-      fmt::print("[DEBUG] l1sc::L1TScPhase2PFCandidatesAoSToSoA: Converted PFCandidateCollection[{}] (AoS -> SoA):\n",
-                 soa_size);
-
-      // table header
-      const std::string separator = "+-------+---------+---------+---------+---------+---------+---------+";
-      fmt::print("{}\n", separator);
-      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
-                 "index",
-                 "pt",
-                 "eta",
-                 "phi",
-                 "z0",
-                 "dxy",
-                 "pdgid");
-      fmt::print("{}\n", separator);
-
-      // log head of collection (10 records at most)
-      auto span = (soa_size > 10) ? 10 : soa_size;
-      for (int32_t idx = 0; idx < span; ++idx) {
-        const auto &view = pf_candidates_soa.const_view()[idx];
-        fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7d} |\n",
-                   idx,
-                   view.pt(),
-                   view.eta(),
-                   view.phi(),
-                   view.z0(),
-                   view.dxy(),
-                   view.pdgid());
-      }
-
-      // log tail if collection size is larger than 10
-      if (span < soa_size) {
-        fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
-                   "...",
-                   "...",
-                   "...",
-                   "...",
-                   "...",
-                   "...",
-                   "...");
-      }
-
-      fmt::print("{}\n", separator);
-    }
+    if (debug_)
+      logDebugMessage(pf_candidates_soa);
 
     // move converted soa to event storage
     event.emplace(pf_candidates_soa_token_, std::move(pf_candidates_soa));
@@ -129,6 +87,56 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     desc.add<edm::InputTag>("src");
     desc.addUntracked<bool>("debug", false);
     descriptions.addWithDefaultLabel(desc);
+  }
+
+  /**
+   * Log converstion results to stdout
+   */
+  void L1TScPhase2PFCandidatesAoSToSoA::logDebugMessage(const PFCandidateHostCollection &pf_candidates) const {
+    const auto size = pf_candidates.const_view().metadata().size();
+    fmt::print("[DEBUG] l1sc::L1TScPhase2PFCandidatesAoSToSoA: Converted PFCandidateCollection[{}] (AoS -> SoA):\n",
+               size);
+
+    // table header
+    const std::string separator = "+-------+---------+---------+---------+---------+---------+---------+";
+    fmt::print("{}\n", separator);
+    fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
+               "index",
+               "pt",
+               "eta",
+               "phi",
+               "z0",
+               "dxy",
+               "pdgid");
+    fmt::print("{}\n", separator);
+
+    // log head of collection (10 records at most)
+    auto span = (size > 10) ? 10 : size;
+    for (int32_t idx = 0; idx < span; ++idx) {
+      const auto &view = pf_candidates.const_view()[idx];
+      fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7d} |\n",
+                 idx,
+                 view.pt(),
+                 view.eta(),
+                 view.phi(),
+                 view.z0(),
+                 view.dxy(),
+                 view.pdgid());
+    }
+
+    // log tail if collection size is larger than 10
+    if (span < size) {
+      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
+                 "...",
+                 "...",
+                 "...",
+                 "...",
+                 "...",
+                 "...",
+                 "...");
+    }
+
+    fmt::print("{}\n", separator);
   }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc

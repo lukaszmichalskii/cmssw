@@ -3,7 +3,8 @@ from IOPool.Input.modules import PoolSource
 from L1TriggerScouting.TauTagging.options_cff import args
 from L1TriggerScouting.TauTagging.modules import (
     l1sc_L1TScPhase2PFCandidatesAoSToSoA_alpaka,
-    l1sc_L1TScPhase2CLUETaus_alpaka
+    l1sc_L1TScPhase2CLUETaus_alpaka,
+    l1sc_L1TScPhase2Jets_alpaka
 )
 
 
@@ -47,11 +48,21 @@ process.CLUETaus = l1sc_L1TScPhase2CLUETaus_alpaka(
     src = "PFCandidatesAoSToSoA",
     debug = cms.untracked.bool(args.debug)
 )
+# Jets
+process.Jets = l1sc_L1TScPhase2Jets_alpaka(
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(args.backend)
+    ),
+    srcPFCandidates = "PFCandidatesAoSToSoA",
+    srcCLUETaus = "CLUETaus",
+    debug = cms.untracked.bool(args.debug)
+)
 
 # schedule the modules
 process.path = cms.Path(
     process.PFCandidatesAoSToSoA +
-    process.CLUETaus
+    process.CLUETaus + 
+    process.Jets
 )
 
 # do not needed - framework will run path automatically if there is only one 
