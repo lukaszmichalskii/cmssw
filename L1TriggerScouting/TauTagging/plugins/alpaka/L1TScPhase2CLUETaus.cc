@@ -1,4 +1,3 @@
-#include "CLUEstering/CLUEstering.hpp"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/CLUEsteringCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PFCandidateCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -11,6 +10,8 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "L1TriggerScouting/TauTagging/interface/L1TScPhase2Common.h"
+#include "L1TriggerScouting/TauTagging/plugins/alpaka/L1TScPhase2CLUEstering.h"
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
@@ -28,7 +29,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
   private:
     const device::EDGetToken<PFCandidateCollection> pf_candidates_token_;
     const device::EDPutToken<CLUEsteringCollection> cluestering_token_;
-    std::unique_ptr<clue::Clusterer<kDims>> clue_algo_;
+    std::unique_ptr<L1TScPhase2CLUEstering> clustering_;
     const bool debug_;
   };
 
@@ -40,8 +41,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
         pf_candidates_token_{consumes(params.getParameter<edm::InputTag>("src"))},
         cluestering_token_{produces()},
         debug_(params.getUntrackedParameter<bool>("debug")) {
-    // instantiate CLUEstering
-    clue_algo_ = std::make_unique<clue::Clusterer<kDims>>(
+    clustering_ = std::make_unique<L1TScPhase2CLUEstering>(
         static_cast<float>(params.getParameter<double>("dc")), 
         static_cast<float>(params.getParameter<double>("rhoc")),
         static_cast<float>(params.getParameter<double>("dm")));
@@ -56,30 +56,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     auto clue_collection = CLUEsteringCollection(n_points, event.queue());
     clue_collection.zeroInitialise(event.queue());
 
-    // // extract device pointers? 
-    // auto coords_ptr = reinterpret_cast<std::byte*>(const_cast<float*>(pf_candidates.const_view().eta()));
-    // auto weights_ptr = reinterpret_cast<std::byte*>(const_cast<float*>(pf_candidates.const_view().pt()));
-    // auto clusters_ptr = reinterpret_cast<std::byte*>(clue_collection.view().clusters());
-    // auto seeds_ptr = reinterpret_cast<std::byte*>(clue_collection.view().seeds());
-
-    // // wrap preallocated memory
-    // auto clue_data = clue::PointsDevice<kDims, Device>(
-    //     event.queue(), n_points, coords_ptr, weights_ptr, clusters_ptr, seeds_ptr);
-
-    // // use default kernel
-    // const auto kernel = FlatKernel{0.5};   
-
-    // // set phi coordinate to be circular (wrapped)
-    // auto coords_wrap = std::array<uint8_t, kDims>{{0, 1}};
-    // clue_algo_->setWrappedCoordinates(coords_wrap);
-
-    // // run clustering
-    // clue_algo_->make_clusters(clue_data, kernel, event.queue(), 64);
+    clustering_->bindInputs(const_cast<PFCandidateCollection&>(pf_candidates));
+    clustering_->bindOutputs(clue_collection);
+    clustering_->numberOfPoints(n_points);
+    clustering_->setWrappedCoords({{0, 1}});
+    clustering_->run(event.queue());
 
     if (debug_) {
       auto clue_size = clue_collection.const_view().metadata().size();
       auto clue_host_collection = CLUEsteringHostCollection(clue_size, event.queue());
       alpaka::memcpy(event.queue(), clue_host_collection.buffer(), clue_collection.buffer());
+      alpaka::wait(event.queue());
       fmt::print("[DEBUG] l1sc::L1TScPhase2CLUETaus: CLUEstering results:\n",
                  clue_size);
 

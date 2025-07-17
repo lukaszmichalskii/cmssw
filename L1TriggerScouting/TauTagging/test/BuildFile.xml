@@ -5,3 +5,14 @@
 <test name="L1ScoutingPhase2TauTaggingROCmAsync" command="runL1TScPhase2TauTagging.sh rocm 1">
   <use name="rocm"/>
 </test>
+<!-- 
+<bin name="testCLUE" file="alpaka/testCLUE.dev.cc">
+  <use name="cuda"/>
+  <use name="alpaka"/>
+  <flags ALPAKA_BACKENDS="serial cuda"/>
+  <flags CXXFLAGS="-Wno-sign-compare"/>
+  <flags CXXFLAGS="-I${CMSSW_BASE}/src/CLUEstering/include"/>
+  <flags ADDINCLUDE="-I${CMSSW_BASE}/src/CLUEstering/include"/>
+  <flags CXXFLAGS="-I${CMSSW_BASE}/src/CLUEstering/extern/xtd/include"/>
+  <flags ADDINCLUDE="-I${CMSSW_BASE}/src/CLUEstering/extern/xtd/include"/>
+</bin> -->
