@@ -8,6 +8,7 @@ namespace l1sc {
   constexpr float kDc = 0.2f;
   constexpr float kRhoc = 5.0f;
   constexpr float kDm = 0.4f;
+  constexpr bool kWrapCoords = false;
 
 }  // namespace l1sc
 

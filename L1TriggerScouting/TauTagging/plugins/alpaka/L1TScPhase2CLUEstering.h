@@ -15,9 +15,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
   class L1TScPhase2CLUEstering {
   public:
-    explicit L1TScPhase2CLUEstering(float dc, float rhoc, float dm);
+    explicit L1TScPhase2CLUEstering(float dc, float rhoc, float dm, bool wrap_coords);
 
     void run(Queue& queue, PFCandidateCollection& pf_candidates, CLUEsteringCollection& clue_collection);
+
+  private:
+    float dc_, rhoc_, dm_;
+    bool wrap_coords_;
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc

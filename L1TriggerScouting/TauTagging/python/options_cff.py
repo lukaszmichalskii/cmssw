@@ -36,11 +36,19 @@ args.register(
 )
 
 args.register(
-    "debug",
-    False,
+    "verbose",
+    True,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.bool,         
     "Log debug messages to stdout"
+)
+
+args.register(
+    "verboseLevel",
+    1,
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.int,         
+    "0 - debug, 1 - full"
 )
 
 args.register(
@@ -65,4 +73,12 @@ args.register(
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.float,         
     "Side of the box inside of which the followers of a point are searched"
+)
+
+args.register(
+    "wrapCoords",
+    False,
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.bool,         
+    "Wrap phi coordinate in CLUEstering"
 )

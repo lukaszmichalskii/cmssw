@@ -13,12 +13,12 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
   /**
-   * @class L1TScPhase2Jets
+   * @class L1TScPhase2DirectInference
    * @brief Produces Jet representation for clustered PF candidates used in ML inference
    */
-  class L1TScPhase2Jets : public stream::EDProducer<> {
+  class L1TScPhase2DirectInference : public stream::EDProducer<> {
   public:
-    explicit L1TScPhase2Jets(const edm::ParameterSet &params);
+    explicit L1TScPhase2DirectInference(const edm::ParameterSet &params);
 
     void produce(device::Event &event, const device::EventSetup &event_setup) override;
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
@@ -26,44 +26,47 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
   private:
     const device::EDGetToken<PFCandidateCollection> pf_candidates_token_;
     const device::EDGetToken<CLUEsteringCollection> cluestering_token_;
-    const bool debug_;
+    const bool verbose_;
+    const int verbose_level_;
   };
 
   // __________________________________________________________________________________________________________________
   // IMPLEMENTATION
 
-  L1TScPhase2Jets::L1TScPhase2Jets(const edm::ParameterSet &params)
+  L1TScPhase2DirectInference::L1TScPhase2DirectInference(const edm::ParameterSet &params)
       : EDProducer<>(params),
         pf_candidates_token_{consumes(params.getParameter<edm::InputTag>("srcPFCandidates"))},
         cluestering_token_{consumes(params.getParameter<edm::InputTag>("srcCLUETaus"))},
-        debug_(params.getUntrackedParameter<bool>("debug")) {}
+        verbose_(params.getUntrackedParameter<bool>("verbose")),
+        verbose_level_(params.getUntrackedParameter<int>("verboseLevel")) {}
 
   /**
    * Execute the logic of the module.
    */
-  void L1TScPhase2Jets::produce(device::Event &event, const device::EventSetup &event_setup) {
+  void L1TScPhase2DirectInference::produce(device::Event &event, const device::EventSetup &event_setup) {
     // get collections
     const auto &pf_candidates = event.get(pf_candidates_token_);
     const auto &clue_collection = event.get(cluestering_token_);
 
-    if (debug_) {
+    if (verbose_) {
     }
 
     // log info
-    std::cout << "[INFO] l1sc::L1TScPhase2Jets: OK" << std::endl;
+    std::cout << "[INFO] l1sc::L1TScPhase2DirectInference: OK" << std::endl;
   }
 
   /**
    * Define parameters for the module
    */
-  void L1TScPhase2Jets::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+  void L1TScPhase2DirectInference::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("srcPFCandidates");
     desc.add<edm::InputTag>("srcCLUETaus");
-    desc.addUntracked<bool>("debug", false);
+    desc.addUntracked<bool>("verbose", false);
+    desc.addUntracked<int>("verboseLevel", 0);
     descriptions.addWithDefaultLabel(desc);
   }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc
 
-DEFINE_FWK_ALPAKA_MODULE(l1sc::L1TScPhase2Jets);
+DEFINE_FWK_ALPAKA_MODULE(l1sc::L1TScPhase2DirectInference);

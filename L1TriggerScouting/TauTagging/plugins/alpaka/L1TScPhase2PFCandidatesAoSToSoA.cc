@@ -39,7 +39,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     const edm::EDGetTokenT<std::vector<l1t::PFCandidate>> pf_candidates_aos_token_;
     const edm::EDPutTokenT<PFCandidateHostCollection> pf_candidates_soa_token_;
-    const bool debug_;
+    const bool verbose_;
+    const int verbose_level_;
   };
 
   // __________________________________________________________________________________________________________________
@@ -49,28 +50,37 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       : EDProducer<>(params),
         pf_candidates_aos_token_{consumes(params.getParameter<edm::InputTag>("src"))},
         pf_candidates_soa_token_{produces()},
-        debug_(params.getUntrackedParameter<bool>("debug")) {}
+        verbose_(params.getUntrackedParameter<bool>("verbose")),
+        verbose_level_(params.getUntrackedParameter<int>("verboseLevel")) {}
 
   void L1TScPhase2PFCandidatesAoSToSoA::produce(device::Event &event, const device::EventSetup &event_setup) {
     // grab PF candidates
     const auto &pf_candidates_aos = event.get(pf_candidates_aos_token_);
 
+    // filter out eta domain and estimate mem block size
+    size_t size = std::count_if(pf_candidates_aos.begin(), pf_candidates_aos.end(), [](l1t::PFCandidate c) {
+      return c.eta() > -2.4 && c.eta() < 2.4;
+    });
+
     // allocate buffer to store converted soa
-    auto pf_candidates_soa = PFCandidateHostCollection(pf_candidates_aos.size(), event.queue());
+    auto pf_candidates_soa = PFCandidateHostCollection(size, event.queue());
 
     // convert aos to soa
+    size_t idx_target = 0;
     for (size_t idx = 0; idx < pf_candidates_aos.size(); ++idx) {
       const auto &pf_candidate = pf_candidates_aos[idx];
-      pf_candidates_soa.view()[idx] = {static_cast<float>(pf_candidate.hwEta() * 3.14f / 720.0f),
-                                       static_cast<float>(pf_candidate.hwPhi() * 3.14f / 720.0f),
-                                       static_cast<float>(pf_candidate.hwPt() * 0.25f),
-                                       static_cast<float>(pf_candidate.z0()),
-                                       static_cast<float>(pf_candidate.dxy()),
-                                       static_cast<int16_t>(pf_candidate.id())};  // TODO: map it to real pdgid later
+      if (pf_candidate.eta() <= -2.4 || pf_candidate.eta() >= 2.4)
+        continue;
+      pf_candidates_soa.view()[idx_target] = {static_cast<float>(pf_candidate.eta()),
+                                              static_cast<float>(pf_candidate.phi()),
+                                              static_cast<float>(pf_candidate.pt()),
+                                              static_cast<float>(pf_candidate.z0()),
+                                              static_cast<int16_t>(pf_candidate.pdgId())};
+      ++idx_target;
     }
 
     // debug log to stdout
-    if (debug_)
+    if (verbose_)
       logDebugMessage(pf_candidates_soa);
 
     // move converted soa to event storage
@@ -85,7 +95,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
   void L1TScPhase2PFCandidatesAoSToSoA::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("src");
-    desc.addUntracked<bool>("debug", false);
+    desc.addUntracked<bool>("verbose", false);
+    desc.addUntracked<int>("verboseLevel", 0);
     descriptions.addWithDefaultLabel(desc);
   }
 
@@ -100,40 +111,27 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     // table header
     const std::string separator = "+-------+---------+---------+---------+---------+---------+---------+";
     fmt::print("{}\n", separator);
-    fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
-               "index",
-               "pt",
-               "eta",
-               "phi",
-               "z0",
-               "dxy",
-               "pdgid");
+    fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n", "index", "pt", "eta", "phi", "z0", "pdgid");
     fmt::print("{}\n", separator);
 
-    // log head of collection (10 records at most)
+    // log head of collection
     auto span = (size > 10) ? 10 : size;
+    if (verbose_level_ == 1)
+      span = size;
     for (int32_t idx = 0; idx < span; ++idx) {
       const auto &view = pf_candidates.const_view()[idx];
-      fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7d} |\n",
+      fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7d} |\n",
                  idx,
                  view.pt(),
                  view.eta(),
                  view.phi(),
                  view.z0(),
-                 view.dxy(),
                  view.pdgid());
     }
 
-    // log tail if collection size is larger than 10
+    // log tail
     if (span < size) {
-      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n",
-                 "...",
-                 "...",
-                 "...",
-                 "...",
-                 "...",
-                 "...",
-                 "...");
+      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n", "...", "...", "...", "...", "...", "...");
     }
 
     fmt::print("{}\n", separator);

@@ -12,7 +12,6 @@ namespace l1sc {
                       SOA_COLUMN(float, phi),
                       SOA_COLUMN(float, pt),
                       SOA_COLUMN(float, z0),
-                      SOA_COLUMN(float, dxy),
                       SOA_COLUMN(int16_t, pdgid))
 
   using PFCandidateSoA = PFCandidateLayout<>;

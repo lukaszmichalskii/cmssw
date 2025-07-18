@@ -31,7 +31,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     const device::EDGetToken<PFCandidateCollection> pf_candidates_token_;
     const device::EDPutToken<CLUEsteringCollection> cluestering_token_;
     std::unique_ptr<L1TScPhase2CLUEstering> clustering_;
-    const bool debug_;
+    const bool verbose_;
+    const int verbose_level_;
   };
 
   // __________________________________________________________________________________________________________________
@@ -41,10 +42,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       : EDProducer<>(params),
         pf_candidates_token_{consumes(params.getParameter<edm::InputTag>("src"))},
         cluestering_token_{produces()},
-        debug_(params.getUntrackedParameter<bool>("debug")) {
+        verbose_(params.getUntrackedParameter<bool>("verbose")),
+        verbose_level_(params.getUntrackedParameter<int>("verboseLevel")) {
     clustering_ = std::make_unique<L1TScPhase2CLUEstering>(static_cast<float>(params.getParameter<double>("dc")),
                                                            static_cast<float>(params.getParameter<double>("rhoc")),
-                                                           static_cast<float>(params.getParameter<double>("dm")));
+                                                           static_cast<float>(params.getParameter<double>("dm")),
+                                                           params.getParameter<bool>("wrapCoords"));
   }
 
   /**
@@ -57,12 +60,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     // allocate buffer for CLUEstering results
     auto clue_collection = CLUEsteringCollection(n_points, event.queue());
+    clue_collection.zeroInitialise(event.queue());
 
     // run CLUEstering
     clustering_->run(event.queue(), const_cast<PFCandidateCollection &>(pf_candidates), clue_collection);
 
     // debug info
-    if (debug_) {
+    if (verbose_) {
       auto clue_host_collection = CLUEsteringHostCollection(clue_collection.view().metadata().size(), event.queue());
       alpaka::memcpy(event.queue(), clue_host_collection.buffer(), clue_collection.buffer());
       alpaka::wait(event.queue());
@@ -85,7 +89,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     desc.add<double>("dc", kDc);
     desc.add<double>("rhoc", kRhoc);
     desc.add<double>("dm", kDm);
-    desc.addUntracked<bool>("debug", false);
+    desc.add<bool>("wrapCoords", kWrapCoords);
+    desc.addUntracked<bool>("verbose", false);
+    desc.addUntracked<int>("verboseLevel", 0);
     descriptions.addWithDefaultLabel(desc);
   }
 
@@ -100,13 +106,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     fmt::print("{}\n", separator);
     fmt::print("| {:>5} | {:>7} | {:>7} |\n", "index", "cluster", "is_seed");
     fmt::print("{}\n", separator);
-    // log head of collection (10 records at most)
+    // log collection
     auto span = (size > 10) ? 10 : size;
+    if (verbose_level_ == 1)
+      span = size;
     for (int32_t idx = 0; idx < span; ++idx) {
       const auto &view = clue_collection.const_view()[idx];
       fmt::print("| {:5d} | {:7d} | {:7d} |\n", idx, view.cluster(), view.is_seed());
     }
-    // log tail if collection size is larger than 10
+    // log tail
     if (span < size) {
       fmt::print("| {:>5} | {:>7} | {:>7} |\n", "...", "...", "...");
     }
