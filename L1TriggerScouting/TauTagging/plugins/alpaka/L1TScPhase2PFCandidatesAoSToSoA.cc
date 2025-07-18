@@ -109,9 +109,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
                size);
 
     // table header
-    const std::string separator = "+-------+---------+---------+---------+---------+---------+---------+";
+    const std::string separator = "+-------+---------+---------+---------+---------+-------+";
     fmt::print("{}\n", separator);
-    fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n", "index", "pt", "eta", "phi", "z0", "pdgid");
+    fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>5} |\n", "index", "pt", "eta", "phi", "z0", "pdgid");
     fmt::print("{}\n", separator);
 
     // log head of collection
@@ -120,7 +120,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       span = size;
     for (int32_t idx = 0; idx < span; ++idx) {
       const auto &view = pf_candidates.const_view()[idx];
-      fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:7d} |\n",
+      fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:5d} |\n",
                  idx,
                  view.pt(),
                  view.eta(),
@@ -131,7 +131,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     // log tail
     if (span < size) {
-      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>7} |\n", "...", "...", "...", "...", "...", "...");
+      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>5} |\n", "...", "...", "...", "...", "...", "...");
     }
 
     fmt::print("{}\n", separator);
