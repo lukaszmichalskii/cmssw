@@ -21,7 +21,7 @@ args.register(
 
 args.register(
     "numberOfEvents",
-    5,
+    1,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of events to process"
@@ -45,7 +45,7 @@ args.register(
 
 args.register(
     "verboseLevel",
-    0,
+    1,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,         
     "0 - debug, 1 - full"

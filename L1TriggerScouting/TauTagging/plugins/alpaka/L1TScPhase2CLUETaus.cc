@@ -11,6 +11,8 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "L1TriggerScouting/TauTagging/interface/L1TScPhase2Common.h"
 #include "L1TriggerScouting/TauTagging/plugins/alpaka/L1TScPhase2CLUEstering.h"
+#include "L1TriggerScouting/TauTagging/plugins/alpaka/L1TScPhase2Kernels.h"
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
@@ -60,10 +62,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     // allocate buffer for CLUEstering results
     auto clue_collection = CLUEsteringCollection(n_points, event.queue());
-    clue_collection.zeroInitialise(event.queue());
 
     // run CLUEstering
     clustering_->run(event.queue(), const_cast<PFCandidateCollection &>(pf_candidates), clue_collection);
+    auto num_clusters = kernels::max(event.queue(), clue_collection.const_view().cluster(), n_points);
+    alpaka::wait(event.queue());
+    std::cout << "Number of clusters: " << num_clusters << std::endl;
 
     // debug info
     if (verbose_) {
