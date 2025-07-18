@@ -1,5 +1,4 @@
 #include "L1TriggerScouting/TauTagging/plugins/alpaka/L1TScPhase2CLUEstering.h"
-#include <fmt/format.h>
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 

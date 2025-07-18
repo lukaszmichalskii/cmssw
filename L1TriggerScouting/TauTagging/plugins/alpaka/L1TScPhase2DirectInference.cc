@@ -9,6 +9,7 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
+#include "L1TriggerScouting/TauTagging/plugins/alpaka/L1TScPhase2JetConcatenation.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
@@ -47,6 +48,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     // get collections
     const auto &pf_candidates = event.get(pf_candidates_token_);
     const auto &clue_collection = event.get(cluestering_token_);
+
+    kernels::concatenate(event.queue(), pf_candidates, clue_collection);
 
     if (verbose_) {
     }
