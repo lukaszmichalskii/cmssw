@@ -93,9 +93,7 @@ namespace cms::torch::alpaka {
     static ::torch::Tensor array_to_tensor(::torch::Device device, const Block<SOA_Layout>& block) {
       auto options = ::torch::TensorOptions()
                          .dtype(block.type)
-#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
                          .device(device)
-#endif
                          .pinned_memory(true);
       return ::torch::from_blob(block.ptr, block.size, block.stride, options);
     }

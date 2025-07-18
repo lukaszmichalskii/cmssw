@@ -45,13 +45,21 @@ namespace cms::torch::alpaka {
   template <typename T>
     requires ::alpaka::isDevice<T>
   inline ::torch::Device device(const T &obj) {
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
     return ::torch::Device(kTorchDeviceType, obj.getNativeHandle());
+#else
+    return ::torch::Device(kTorchDeviceType);
+#endif
   }
 
   template <typename T>
     requires ::alpaka::isQueue<T>
   inline ::torch::Device device(const T &obj) {
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
     return ::torch::Device(kTorchDeviceType, ::alpaka::getDev(obj).getNativeHandle());
+#else
+    return ::torch::Device(kTorchDeviceType);
+#endif
   }
 
   inline const ::torch::Device &device(const ::torch::Device &dev) { return dev; }

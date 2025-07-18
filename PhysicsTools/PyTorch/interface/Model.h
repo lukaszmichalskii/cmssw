@@ -32,7 +32,8 @@ namespace cms::torch::alpaka {
   template <>
   class Model<CompilationType::kAheadOfTime> {
   public:
-    explicit Model(const std::string &model_path) : loader_(model_path), runner_(loader_.get_runner()) {}
+    explicit Model(const std::string &model_path, const ::torch::Device &device = ::torch::kCPU)
+        : loader_(model_path), runner_(loader_.get_runner()), device_(device) {}
 
     /**
      * @brief Torch fallback for testing purposes.
@@ -92,9 +93,9 @@ namespace cms::torch::alpaka {
     ::torch::Device device() const { return device_; }
 
   private:
-    ::torch::Device device_ = ::torch::Device(::torch::kCPU, 0);    /**< Device metadata of the model */
     ::torch::inductor::AOTIModelPackageLoader loader_;              /**< AOT model package loader */
     ::torch::inductor::AOTIModelContainerRunner *runner_ = nullptr; /**< AOT model container runner */
+    ::torch::Device device_;                                        /**< Device metadata of the model */
   };
 
   /**
@@ -106,7 +107,12 @@ namespace cms::torch::alpaka {
   template <>
   class Model<CompilationType::kJustInTime> {
   public:
-    explicit Model(const std::string &model_path) : model_(cms::torch::load(model_path)) {}
+    explicit Model(const std::string &model_path) : model_(cms::torch::load(model_path)) {
+      auto it = model_.parameters().begin();
+      if (it != model_.parameters().end()) {
+        device_ = (*it).device();
+      }
+    }
 
     /**
      * @brief Moves the model to a specified device.
@@ -159,8 +165,8 @@ namespace cms::torch::alpaka {
     ::torch::Device device() const { return device_; }
 
   private:
-    ::torch::jit::script::Module model_;                         /**< JIT model */
-    ::torch::Device device_ = ::torch::Device(::torch::kCPU, 0); /**< Device binded to the model */
+    ::torch::jit::script::Module model_;     /**< JIT model */
+    ::torch::Device device_ = ::torch::kCPU; /**< Device binded to the model */
   };
 
 }  // namespace cms::torch::alpaka
