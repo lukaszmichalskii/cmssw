@@ -32,6 +32,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     const device::EDGetToken<PFCandidateCollection> pf_candidates_token_;
     const device::EDPutToken<CLUEsteringCollection> cluestering_token_;
+    const edm::EDPutTokenT<int> num_clusters_token_;
     std::unique_ptr<L1TScPhase2CLUEstering> clustering_;
     const bool verbose_;
     const int verbose_level_;
@@ -44,6 +45,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       : EDProducer<>(params),
         pf_candidates_token_{consumes(params.getParameter<edm::InputTag>("src"))},
         cluestering_token_{produces()},
+        num_clusters_token_{produces()},
         verbose_(params.getUntrackedParameter<bool>("verbose")),
         verbose_level_(params.getUntrackedParameter<int>("verboseLevel")) {
     clustering_ = std::make_unique<L1TScPhase2CLUEstering>(static_cast<float>(params.getParameter<double>("dc")),
@@ -65,9 +67,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     // run CLUEstering
     clustering_->run(event.queue(), const_cast<PFCandidateCollection &>(pf_candidates), clue_collection);
-    auto num_clusters = kernels::max(event.queue(), clue_collection.const_view().cluster(), n_points);
-    alpaka::wait(event.queue());
-    std::cout << "Number of clusters: " << num_clusters << std::endl;
+    int num_clusters = kernels::max(event.queue(), clue_collection.const_view().cluster(), n_points);
 
     // debug info
     if (verbose_) {
@@ -79,6 +79,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     // move clustering results to event storage
     event.emplace(cluestering_token_, std::move(clue_collection));
+    event.emplace(num_clusters_token_, std::move(num_clusters));
 
     // log info
     std::cout << "[INFO] l1sc::L1TScPhase2CLUETaus: OK" << std::endl;

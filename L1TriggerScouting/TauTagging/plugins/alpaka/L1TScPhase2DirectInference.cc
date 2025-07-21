@@ -27,6 +27,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
   private:
     const device::EDGetToken<PFCandidateCollection> pf_candidates_token_;
     const device::EDGetToken<CLUEsteringCollection> cluestering_token_;
+    const edm::EDGetTokenT<int> num_clusters_token_;
     const bool verbose_;
     const int verbose_level_;
   };
@@ -38,6 +39,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       : EDProducer<>(params),
         pf_candidates_token_{consumes(params.getParameter<edm::InputTag>("srcPFCandidates"))},
         cluestering_token_{consumes(params.getParameter<edm::InputTag>("srcCLUETaus"))},
+        num_clusters_token_{consumes(params.getParameter<edm::InputTag>("srcCLUETaus"))},
         verbose_(params.getUntrackedParameter<bool>("verbose")),
         verbose_level_(params.getUntrackedParameter<int>("verboseLevel")) {}
 
@@ -48,10 +50,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     // get collections
     const auto &pf_candidates = event.get(pf_candidates_token_);
     const auto &clue_collection = event.get(cluestering_token_);
+    const auto &num_clusters = event.get(num_clusters_token_);
 
     kernels::concatenate(event.queue(), pf_candidates, clue_collection);
 
     if (verbose_) {
+      std::cout << "[DEBUG] l1sc::L1TScPhase2DirectInference: num clusters = " << num_clusters << std::endl;
     }
 
     // log info
