@@ -10,21 +10,6 @@
 #include "Unpack.h"
 
 
-namespace cms::alpakatools {
-
-#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-  // CUDA always has a warp size of 32
-  inline constexpr int warpSize = 32;
-#elif ALPAKA_ACC_GPU_HIP_ENABLED
-  // HIP/ROCm defines warpSize as a constant expression in device code, with value 32 or 64 depending on the target device
-  inline constexpr int warpSize = ::warpSize;
-#else
-  // CPU back-ends always have a warp size of 1
-  inline constexpr int warpSize = 1;
-#endif
-
-}  // namespace cms::alpakatools
-
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 using namespace cms::alpakatools;
@@ -82,7 +67,7 @@ void Unpack::UnpackHeaders(
       size,
       blocks_per_grid,
       pc.data(),
-      cms::alpakatools::warpSize);
+      alpaka::getPreferredWarpSize(alpaka::getDev(queue)));
 }
 
 class UnpackDataKernel {

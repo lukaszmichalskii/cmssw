@@ -4,8 +4,7 @@
 <use name="DataFormats/L1Scouting"/>
 <use name="DataFormats/L1Trigger"/>
 <use name="DataFormats/L1TParticleFlow"/>
-<flags ALPAKA_BACKENDS="cuda"/>
-<flags ALPAKA_BACKENDS="serial"/>
+<flags ALPAKA_BACKENDS="serial cuda rocm"/>
 <export>
   <lib name="1"/>
 </export>

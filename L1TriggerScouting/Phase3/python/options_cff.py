@@ -74,13 +74,13 @@ options.register ('fffBaseDir',
                   "FFF base directory")
 
 options.register ('numThreads',
-                  1, # default value
+                  2, # default value
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.int,          # string, int, or float
                   "Number of CMSSW threads")
 
 options.register ('numFwkStreams',
-                  1, # default value
+                  2, # default value
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.int,          # string, int, or float
                   "Number of CMSSW streams")

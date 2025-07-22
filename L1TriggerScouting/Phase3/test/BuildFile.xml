@@ -2,6 +2,6 @@
 <test name="W3Pi_CUDA" command="test.sh cuda">
   <use name="cuda"/>
 </test>
-<!-- <test name="W3Pi_ROCm" command="test.sh rocm">
+<test name="W3Pi_ROCm" command="test.sh rocm">
   <use name="rocm"/>
-</test> -->
+</test>

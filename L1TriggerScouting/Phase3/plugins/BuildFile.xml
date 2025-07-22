@@ -12,7 +12,6 @@
   <use name="HeterogeneousCore/AlpakaInterface"/>
   <use name="L1TriggerScouting/Utilities"/>
   <use name="L1TriggerScouting/Phase3"/>
-  <flags ALPAKA_BACKENDS="cuda"/>
-  <flags ALPAKA_BACKENDS="serial"/>
+  <flags ALPAKA_BACKENDS="serial cuda rocm"/>
   <flags EDM_PLUGIN="1"/>
 </library>
