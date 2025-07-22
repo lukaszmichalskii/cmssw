@@ -5,6 +5,7 @@ dimuStruct = cms.EDProducer("ScPhase2TrackerMuonDiMuDemo",
 )
 
 zdeeStruct = cms.EDProducer("ScPhase2TkEmDarkPhotonDiEle",
-    srcTkEm = cms.InputTag("scPhase2TkEmRawToDigiStruct")
+    src = cms.InputTag("scPhase2TkEmRawToDigiStruct"),
+    ptMin = cms.double(5.0)
 )
 
