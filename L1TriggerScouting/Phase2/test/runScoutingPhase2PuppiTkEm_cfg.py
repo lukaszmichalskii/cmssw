@@ -117,13 +117,13 @@ process.p_selected.associate(cms.Task(process.scPhase2PuppiMaskedStructToTable, 
 process.scPhase2NanoAll.fileName = options.outFile.replace(".root","")+".inclusive.root"
 process.scPhase2NanoAll.SelectEvents.SelectEvents = ['p_inclusive']
  
-process.scPhase2PuppiNanoSelected.fileName = options.outFile.replace(".root","")+".selected.root"
-process.scPhase2PuppiNanoSelected.SelectEvents.SelectEvents = ['p_selected']
-process.scPhase2PuppiNanoSelected.outputCommands += [ f"keep *_{a}Struct_*_*" for a in analyses ]
+process.scPhase2NanoSelected.fileName = options.outFile.replace(".root","")+".selected.root"
+process.scPhase2NanoSelected.SelectEvents.SelectEvents = ['p_selected']
+process.scPhase2NanoSelected.outputCommands += [ f"keep *_{a}Struct_*_*" for a in analyses ]
 
 process.o_nanoInclusive = cms.EndPath(process.scPhase2NanoAll)
-process.o_nanoSelected = cms.EndPath(process.scPhase2PuppiNanoSelected)
-process.o_nanoBoth = cms.EndPath(process.scPhase2NanoAll + process.scPhase2PuppiNanoSelected)
+process.o_nanoSelected = cms.EndPath(process.scPhase2NanoSelected)
+process.o_nanoBoth = cms.EndPath(process.scPhase2NanoAll + process.scPhase2NanoSelected)
 
 sched = [ process.p_inclusive, process.p_selected ]
 if options.run != "both":  [ getattr(process, "p_" + options.run)]
