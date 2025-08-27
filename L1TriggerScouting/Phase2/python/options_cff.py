@@ -11,7 +11,7 @@ options.register ('lumiNumber',
                   1,
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.int,          # string, int, or float
-                  "Run Number")
+                  "Lumisection Number (only for filelist mode)")
 
 options.register ('daqSourceMode',
                   'ScoutingPhase2', # default value
@@ -119,7 +119,7 @@ options.register ('outFile',
                   "NanoOutput.root",
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,
-                  "Sub lumisection number to process")
+                  "Output file name")
 
 options.register ('task',
                   0,

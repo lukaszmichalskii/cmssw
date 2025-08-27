@@ -97,6 +97,7 @@ process.s_analyses = cms.Sequence(sum(analysisModules[1:], analysisModules[0]))
 
 ## Configure selected outputs
 process.scPhase2SelectedBXs.analysisLabels = [cms.InputTag(f"{a}Struct", "selectedBx") for a in analyses]
+process.scPhase2SelectedBXs.nPrint = cms.untracked.uint32(1000)
 
 ## Define inclusive processing (ZeroBias)
 from FWCore.Modules.preScaler_cfi import preScaler
