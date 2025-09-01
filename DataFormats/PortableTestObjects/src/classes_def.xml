@@ -42,4 +42,24 @@
 
   <class name="portabletest::TestProductWithPtr<alpaka_common::DevHost>"/>
   <class name="edm::Wrapper<portabletest::TestProductWithPtr<alpaka_common::DevHost>>" persistent="false"/>
+
+  <!-- PyTorchTestCollections -->
+  <!-- Particle -->
+  <class name="torchportabletest::ParticleSoA"/>
+  <class name="torchportabletest::ParticleSoA::View"/>
+  <class name="torchportabletest::ParticleSoA::ConstView"/>
+  <class name="torchportabletest::ParticleHostCollection"/>
+  <class name="edm::Wrapper<torchportabletest::ParticleHostCollection>" splitLevel="0"/>
+  <!-- Classification -->
+  <class name="torchportabletest::ClassificationSoA"/>
+  <class name="torchportabletest::ClassificationSoA::View"/>
+  <class name="torchportabletest::ClassificationSoA::ConstView"/>
+  <class name="torchportabletest::ClassificationHostCollection"/>
+  <class name="edm::Wrapper<torchportabletest::ClassificationHostCollection>" splitLevel="0"/>
+  <!-- Regression -->
+  <class name="torchportabletest::RegressionSoA"/>
+  <class name="torchportabletest::RegressionSoA::View"/>
+  <class name="torchportabletest::RegressionSoA::ConstView"/>
+  <class name="torchportabletest::RegressionHostCollection"/>
+  <class name="edm::Wrapper<torchportabletest::RegressionHostCollection>" splitLevel="0"/>
 </lcgdict>

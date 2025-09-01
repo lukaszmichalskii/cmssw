@@ -65,7 +65,7 @@ echo "OK - Compiling model with CMSSW toolchain"
 # package model shared library
 cd ../../../
 zip -qr "${MODEL}_${TARGET}_${ARCH}".pt2 data/*
-echo "OK - Packaging model shared library..."
+echo "OK - Packaging model shared library"
 
 # move to models registry
 mkdir -p "${MODELS_DIR}"
