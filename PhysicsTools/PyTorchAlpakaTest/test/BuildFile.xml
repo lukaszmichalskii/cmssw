@@ -2,3 +2,6 @@
 <test name="testPyTorchAlpakaHeterogeneousPipelineCudaAsync" command="testPyTorchAlpakaHeterogeneousPipeline.sh cuda">
   <use name="cuda"/>
 </test>
+<test name="testPyTorchAlpakaHeterogeneousPipelineROCmAsync" command="testPyTorchAlpakaHeterogeneousPipeline.sh rocm">
+  <use name="rocm"/>
+</test>
