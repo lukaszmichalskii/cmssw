@@ -20,11 +20,13 @@
 
 namespace torchtest {
 
+  using namespace torchportabletest;
+
   class CollectionAnalyzer : public edm::stream::EDAnalyzer<> {
   public:
-    CollectionAnalyzer(edm::ParameterSet const& config)
-        : particle_token_{consumes(config.getParameter<edm::InputTag>("particles"))},
-          particle_backend_{consumes(torchtest::getBackendTag(config.getParameter<edm::InputTag>("particles")))} {}
+    CollectionAnalyzer(const edm::ParameterSet& params)
+        : particles_token_{consumes(params.getParameter<edm::InputTag>("particles"))},
+          particles_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("particles")))} {}
 
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
       edm::ParameterSetDescription desc;
@@ -33,15 +35,15 @@ namespace torchtest {
     }
 
     void analyze(edm::Event const& event, edm::EventSetup const&) override {
-      auto const& particle_collection = event.get(particle_token_);
-      auto const particle_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(particle_backend_));
+      auto const& particle_collection = event.get(particles_token_);
+      auto const particle_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(particles_backend_));
       
       torchtest::printParticleCollection(particle_collection, particle_collection_backend, event);
     }
 
   private:
-    const edm::EDGetTokenT<torchportabletest::ParticleHostCollection> particle_token_;
-    const edm::EDGetTokenT<unsigned short> particle_backend_;
+    const edm::EDGetTokenT<ParticleHostCollection> particles_token_;
+    const edm::EDGetTokenT<unsigned short> particles_backend_;
   };
 
 }  // namespace torchtest

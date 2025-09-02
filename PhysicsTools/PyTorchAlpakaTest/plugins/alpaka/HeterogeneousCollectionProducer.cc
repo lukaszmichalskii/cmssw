@@ -9,8 +9,11 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "PhysicsTools/PyTorchAlpakaTest/interface/EventTimer.h"
+#include "PhysicsTools/PyTorchAlpakaTest/plugins/alpaka/RandomCollectionFillingKernel.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
+
+  using namespace torchportabletest;
 
   class HeterogeneousCollectionProducer : public stream::EDProducer<> {
   public:
@@ -20,7 +23,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
-    const device::EDPutToken<torchportabletest::ParticleDeviceCollection> particles_token_;
+    const device::EDPutToken<ParticleDeviceCollection> particles_token_;
     const uint32_t batch_size_;
   };
 
@@ -34,8 +37,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   void HeterogeneousCollectionProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
     auto timer = EventTimer("HeterogeneousCollectionProducer", event);
-    auto collection = torchportabletest::ParticleDeviceCollection(batch_size_, event.queue());
-    collection.zeroInitialise(event.queue());
+    auto collection = ParticleDeviceCollection(batch_size_, event.queue());
+    randomFillParticleCollection(event.queue(), collection);
     event.emplace(particles_token_, std::move(collection));
   }
 
