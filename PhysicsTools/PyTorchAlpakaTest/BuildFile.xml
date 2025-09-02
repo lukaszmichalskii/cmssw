@@ -1,0 +1,6 @@
+<use name="DataFormats/PortableTestObjects"/>
+<use name="FWCore/Framework"/>
+<use name="HeterogeneousCore/AlpakaInterface"/>
+<export>
+  <lib name="1"/>
+</export>
