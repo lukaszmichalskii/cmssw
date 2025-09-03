@@ -2,6 +2,7 @@ import FWCore.ParameterSet.Config as cms
 from PhysicsTools.PyTorchAlpakaTest.options_cff import args
 from PhysicsTools.PyTorchAlpakaTest.modules import (
     torchtest_HeterogeneousCollectionProducer_alpaka,
+    torchtest_PortableJitRegressionInferenceProducer_alpaka,
     torchtest_CollectionAnalyzer
 )
   
@@ -34,12 +35,21 @@ process.HeterogeneousCollectionProducer = torchtest_HeterogeneousCollectionProdu
         backend = cms.untracked.string(args.backend)
     ),
 )
+process.PortableJitRegressionInferenceProducer = torchtest_PortableJitRegressionInferenceProducer_alpaka(
+    model = cms.FileInPath(args.regressionJit),
+    particles = 'HeterogeneousCollectionProducer',
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(args.backend)
+    ),
+)
 process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
-    particles = 'HeterogeneousCollectionProducer'
+    particles = 'HeterogeneousCollectionProducer',
+    regression = 'PortableJitRegressionInferenceProducer'
 )
 
 # schedule the modules
 process.path = cms.Path(
     process.HeterogeneousCollectionProducer + 
+    process.PortableJitRegressionInferenceProducer +
     process.CollectionAnalyzer
 )

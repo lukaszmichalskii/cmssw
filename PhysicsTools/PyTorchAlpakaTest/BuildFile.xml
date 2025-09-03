@@ -1,6 +1,7 @@
 <use name="DataFormats/PortableTestObjects"/>
 <use name="FWCore/Framework"/>
 <use name="HeterogeneousCore/AlpakaInterface"/>
+<use name="PhysicsTools/PyTorchAlpaka"/>
 <export>
   <lib name="1"/>
 </export>

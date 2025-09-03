@@ -44,3 +44,11 @@ args.register(
     VarParsing.VarParsing.varType.int,        
     "Batch size"
 )
+
+args.register(
+    "regressionJit",
+    "PhysicsTools/PyTorchAlpakaTest/data/regression_jit.pt",
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.string,         
+    "Regression model (just-in-time compiled)"
+)

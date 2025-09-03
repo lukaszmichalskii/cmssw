@@ -23,4 +23,14 @@
   <class name="alpaka_rocm_async::torchportabletest::ParticleDeviceCollection" persistent="false"/>
   <class name="edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ParticleDeviceCollection>" persistent="false"/>
   <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ParticleDeviceCollection>>" persistent="false"/>
+
+  <class name="alpaka_rocm_async::PortableCollection<torchportabletest::RegressionSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::torchportabletest::RegressionDeviceCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::torchportabletest::RegressionDeviceCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportabletest::RegressionDeviceCollection>>" persistent="false"/>
+
+  <class name="alpaka_rocm_async::PortableCollection<torchportabletest::ClassificationSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::torchportabletest::ClassificationDeviceCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ClassificationDeviceCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ClassificationDeviceCollection>>" persistent="false"/>
 </lcgdict>

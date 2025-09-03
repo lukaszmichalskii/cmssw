@@ -26,11 +26,15 @@ namespace torchtest {
   public:
     CollectionAnalyzer(const edm::ParameterSet& params)
         : particles_token_{consumes(params.getParameter<edm::InputTag>("particles"))},
-          particles_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("particles")))} {}
+          particles_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("particles")))},
+          regression_token_{consumes(params.getParameter<edm::InputTag>("regression"))},
+          regression_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("regression")))} {}
+
 
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
       edm::ParameterSetDescription desc;
       desc.add<edm::InputTag>("particles");
+      desc.add<edm::InputTag>("regression");
       descriptions.addWithDefaultLabel(desc);
     }
 
@@ -38,12 +42,19 @@ namespace torchtest {
       auto const& particle_collection = event.get(particles_token_);
       auto const particle_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(particles_backend_));
       
+      auto const& regression_collection = event.get(regression_token_);
+      auto const regression_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(regression_backend_));
+
       torchtest::printParticleCollection(particle_collection, particle_collection_backend, event);
+      torchtest::printRegressionCollection(regression_collection, regression_collection_backend, event);
     }
 
   private:
     const edm::EDGetTokenT<ParticleHostCollection> particles_token_;
     const edm::EDGetTokenT<unsigned short> particles_backend_;
+
+    const edm::EDGetTokenT<RegressionHostCollection> regression_token_;
+    const edm::EDGetTokenT<unsigned short> regression_backend_;
   };
 
 }  // namespace torchtest

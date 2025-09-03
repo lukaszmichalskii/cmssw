@@ -16,6 +16,8 @@
   <use name="FWCore/Utilities"/>
   <use name="HeterogeneousCore/AlpakaCore"/>
   <use name="HeterogeneousCore/AlpakaInterface"/>
-  <flags ALPAKA_BACKENDS="serial cuda rocm"/>
+  <!-- <use name="PhysicsTools/PyTorch"/> -->
+  <use name="PhysicsTools/PyTorchAlpaka"/>
+  <flags ALPAKA_BACKENDS="serial cuda"/>
   <flags EDM_PLUGIN="1"/>
  </library>
