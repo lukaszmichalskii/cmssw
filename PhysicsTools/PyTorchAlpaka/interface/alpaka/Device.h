@@ -2,6 +2,10 @@
 #ifndef PhysicsTools_PyTorchAlpaka_interface_alpaka_Device_h
 #define PhysicsTools_PyTorchAlpaka_interface_alpaka_Device_h
 
+#ifdef ClassDef
+#undef ClassDef
+#endif
+
 #include <torch/torch.h>
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
@@ -22,10 +26,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
 
   namespace alpakatools {
 
-    inline ::torch::Device device(const Device &dev) { return ::torch::Device(kDevice, dev.getNativeHandle()); }
+    inline ::torch::Device device(const Device &dev) { 
+      if (kDevice == kDevHost)
+        return ::torch::Device(kDevHost);
+      return ::torch::Device(kDevice, dev.getNativeHandle()); 
+    }
 
     inline ::torch::Device device(const Queue &queue) {
-      return ::torch::Device(kDevice, ::alpaka::getDev(queue).getNativeHandle());
+      return device(::alpaka::getDev(queue));
     }
 
   }  // namespace alpakatools
