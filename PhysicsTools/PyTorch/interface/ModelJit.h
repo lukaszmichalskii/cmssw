@@ -2,7 +2,6 @@
 #define PhysicsTools_PyTorch_interface_ModelJit_h
 
 #include <string>
-#include <torch/torch.h>
 #include "PhysicsTools/PyTorch/interface/JitLoad.h"
 
 namespace cms::torch {
@@ -13,8 +12,8 @@ namespace cms::torch {
    */
   class ModelJit {
   public:
-    explicit ModelJit(std::string &model_path);
-    explicit ModelJit(std::string &model_path, ::torch::Device device);
+    explicit ModelJit(const std::string &model_path);
+    explicit ModelJit(const std::string &model_path, ::torch::Device device);
 
     void to(::torch::Device device, bool non_blocking = false);
     ::torch::IValue forward(std::vector<::torch::IValue> &inputs);
