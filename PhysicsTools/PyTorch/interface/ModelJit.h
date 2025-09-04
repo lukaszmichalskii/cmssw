@@ -4,7 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "PhysicsTools/PyTorch/interface/Converter.h"
 #include "PhysicsTools/PyTorch/interface/JitLoad.h"
+#include "PhysicsTools/PyTorch/interface/SoAMetadata.h"
 #include "PhysicsTools/PyTorch/interface/TorchLib.h"
 
 namespace cms::torch {
