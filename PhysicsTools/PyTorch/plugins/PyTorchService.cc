@@ -6,7 +6,7 @@
 #include "FWCore/ServiceRegistry/interface/GlobalContext.h"
 #include "FWCore/ServiceRegistry/interface/ServiceMaker.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
-#include "PhysicsTools/PyTorch/interface/FwkGuards.h"
+#include "PhysicsTools/PyTorch/interface/ThreadingGuard.h"
 
 class PyTorchService {
 public:

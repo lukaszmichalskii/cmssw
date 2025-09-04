@@ -9,6 +9,7 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
+#include "PhysicsTools/PyTorch/interface/SoAMetadata.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/Config.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/FwkGuards.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/ModelJitAlpaka.h"
@@ -51,6 +52,21 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     const auto batch_size = particle_collection.const_view().metadata().size();
     auto regression_collection = RegressionDeviceCollection(batch_size, event.queue());
     regression_collection.zeroInitialise(event.queue());
+
+    // records
+    auto input_records = particle_collection.view().records();
+    auto output_records = regression_collection.view().records();
+
+    // input tensor definition
+    SoAMetadata<ParticleSoA> inputs_metadata(batch_size);
+    inputs_metadata.append_block("features", input_records.pt(), input_records.eta(), input_records.phi());
+
+    // output tensor definition
+    SoAMetadata<RegressionSoA> outputs_metadata(batch_size);
+    outputs_metadata.append_block("preds", output_records.reco_pt());
+
+    // metadata for automatic tensor conversion
+    // ModelMetadata<ParticleSoA, RegressionSoA> metadata(inputs_metadata, outputs_metadata);
 
     // inference
     {

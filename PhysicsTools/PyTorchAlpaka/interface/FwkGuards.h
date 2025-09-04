@@ -60,7 +60,7 @@ namespace cms::torch::alpaka {
   //     /**
   //      * implementation identicat to CUDA backend,
   //      * since PyTorch uses the same namespace and API for ROCm/HIP
-  //      * @see:
+  //      * @see: https://docs.pytorch.org/docs/stable/notes/hip.html
   //      */
   //     static void set(const alpaka_rocm_async::Queue &queue) noexcept {
   //       auto dev = ALPAKA_ACCELERATOR_NAMESPACE::torch::alpakatools::device(queue);
