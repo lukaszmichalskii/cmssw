@@ -22,6 +22,13 @@ namespace cms::torch {
     ::torch::IValue forward(std::vector<::torch::IValue> &inputs);
     ::torch::Device device() const;
 
+    template <typename InMemLayout, typename OutMemLayout>
+    void forward(const ModelMetadata<InMemLayout, OutMemLayout> &metadata) {
+      auto input_tensor = Converter::convert_input(metadata, device_);
+      // TODO: add support for multi-output models (without temporary mem copy)
+      Converter::convert_output(metadata, device_) = model_.forward(input_tensor).toTensor();
+    }
+
   protected:
     ::torch::jit::script::Module model_;
     ::torch::Device device_;

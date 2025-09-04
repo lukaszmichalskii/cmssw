@@ -66,7 +66,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     outputs_metadata.append_block("preds", output_records.reco_pt());
 
     // metadata for automatic tensor conversion
-    // ModelMetadata<ParticleSoA, RegressionSoA> metadata(inputs_metadata, outputs_metadata);
+    ModelMetadata<ParticleSoA, RegressionSoA> metadata(inputs_metadata, outputs_metadata);
 
     // inference
     {
@@ -74,6 +74,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
           fmt::format("PortableJitRegressionInferenceProducer::torchlib({})", event.id().event()).c_str());
       torch::Guard guard(event.queue());
       model_->to(event.queue(), true /**< async */);
+      model_->forward(metadata);
     }
 
     event.emplace(regression_token_, std::move(regression_collection));

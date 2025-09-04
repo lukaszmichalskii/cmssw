@@ -8,23 +8,6 @@
 
 namespace cms::torch {
 
-  // Metadata to run model with input SOA and fill output SOA.
-  template <typename SOA_Input, typename SOA_Output>
-  class ModelMetadata {
-  public:
-    SoAMetadata<SOA_Input> input;
-    SoAMetadata<SOA_Output> output;
-
-    // Used in AOT model class to correctly choose multi or single output conversion
-    // Default value true, as single value can be parsed with multi output
-    bool multi_output;
-
-    ModelMetadata(const SoAMetadata<SOA_Input>& input_,
-                  const SoAMetadata<SOA_Output>& output_,
-                  bool multi_output_ = true)
-        : input(input_), output(output_), multi_output(multi_output_) {}
-  };
-
   // Static class to wrap raw SOA pointer in tensor object without copying.
   class Converter {
   public:
