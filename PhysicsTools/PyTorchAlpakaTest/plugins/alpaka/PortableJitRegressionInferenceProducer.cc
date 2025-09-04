@@ -1,3 +1,4 @@
+#include "DataFormats/PortableTestObjects/interface/TestSoA.h"
 #include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -8,14 +9,16 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/Config.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/FwkGuards.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/ModelJitAlpaka.h"
-#include "PhysicsTools/PyTorchAlpakaTest/interface/EventTimer.h"
+#include "PhysicsTools/PyTorchAlpakaTest/interface/alpaka/EventTimer.h"
 #include "PhysicsTools/PyTorchAlpakaTest/interface/alpaka/Nvtx.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   using namespace torchportabletest;
+  using namespace cms::torch;
 
   class PortableJitRegressionInferenceProducer : public stream::EDProducer<> {
   public:
@@ -34,7 +37,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   // IMPLEMENTATION
 
   PortableJitRegressionInferenceProducer::PortableJitRegressionInferenceProducer(edm::ParameterSet const &params)
-      : EDProducer<>(params), 
+      : EDProducer<>(params),
         particles_token_(consumes(params.getParameter<edm::InputTag>("particles"))),
         regression_token_{produces()},
         model_(std::make_unique<torch::ModelJitAlpaka>(params.getParameter<edm::FileInPath>("model").fullPath())) {}
@@ -42,13 +45,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   void PortableJitRegressionInferenceProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
     Nvtx produce_range(fmt::format("PortableJitRegressionInferenceProducer::produce({})", event.id().event()).c_str());
     auto timer = EventTimer(fmt::format("PortableJitRegressionInferenceProducer({})", model_->device().str()), event);
-    auto& particle_collection = const_cast<ParticleDeviceCollection&>(event.get(particles_token_));
+
+    // in/out collections
+    auto &particle_collection = const_cast<ParticleDeviceCollection &>(event.get(particles_token_));
     const auto batch_size = particle_collection.const_view().metadata().size();
     auto regression_collection = RegressionDeviceCollection(batch_size, event.queue());
     regression_collection.zeroInitialise(event.queue());
 
-    { // set torch stream for the current queue
-      Nvtx torchlib_range(fmt::format("PortableJitRegressionInferenceProducer::torchlib({})", event.id().event()).c_str());
+    // inference
+    {
+      Nvtx torchlib_range(
+          fmt::format("PortableJitRegressionInferenceProducer::torchlib({})", event.id().event()).c_str());
       torch::Guard guard(event.queue());
       model_->to(event.queue(), true /**< async */);
     }

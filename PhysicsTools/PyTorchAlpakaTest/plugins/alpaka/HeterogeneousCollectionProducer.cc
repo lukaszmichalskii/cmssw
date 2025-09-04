@@ -8,10 +8,9 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
-#include "PhysicsTools/PyTorchAlpakaTest/interface/EventTimer.h"
+#include "PhysicsTools/PyTorchAlpakaTest/interface/alpaka/EventTimer.h"
 #include "PhysicsTools/PyTorchAlpakaTest/interface/alpaka/Nvtx.h"
 #include "PhysicsTools/PyTorchAlpakaTest/plugins/alpaka/RandomCollectionFillingKernel.h"
-
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
@@ -33,9 +32,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   // IMPLEMENTATION
 
   HeterogeneousCollectionProducer::HeterogeneousCollectionProducer(edm::ParameterSet const &params)
-      : EDProducer<>(params), 
-        particles_token_{produces()}, 
-        batch_size_(params.getParameter<uint32_t>("batchSize")) {}
+      : EDProducer<>(params), particles_token_{produces()}, batch_size_(params.getParameter<uint32_t>("batchSize")) {}
 
   void HeterogeneousCollectionProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
     Nvtx produce_range(fmt::format("HeterogeneousCollectionProducer::produce({})", event.id().event()).c_str());

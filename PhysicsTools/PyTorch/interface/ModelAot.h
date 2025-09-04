@@ -2,8 +2,11 @@
 #define PhysicsTools_PyTorch_interface_ModelAot_h
 
 #include <string>
-#include <torch/torch.h>
+#include <vector>
+
 #include <torch/csrc/inductor/aoti_package/model_package_loader.h>
+
+#include "PhysicsTools/PyTorch/interface/TorchLib.h"
 
 namespace cms::torch {
 

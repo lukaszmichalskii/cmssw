@@ -1,11 +1,17 @@
 #ifndef PhysicsTools_PyTorchAlpaka_interface_FwkGuards_h
 #define PhysicsTools_PyTorchAlpaka_interface_FwkGuards_h
 
-#include <torch/torch.h>
-#include "PhysicsTools/PyTorchAlpaka/interface/alpaka/Device.h"
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
+
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 #include <c10/cuda/CUDAStream.h>
 #endif
+
+#include "HeterogeneousCore/AlpakaInterface/interface/config.h"
+#include "PhysicsTools/PyTorch/interface/TorchLib.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/alpaka/DeviceUtils.h"
 
 namespace cms::torch::alpaka {
 
@@ -47,6 +53,24 @@ namespace cms::torch::alpaka {
     static void reset() { /**< optional: reset to previous state/stream. */ }
   };
 
+  // #elif ALPAKA_ACC_GPU_ROCM_ENABLED
+
+  //   template <>
+  //   struct FwkGuardTraits<alpaka_rocm_async::Queue> {
+  //     /**
+  //      * implementation identicat to CUDA backend,
+  //      * since PyTorch uses the same namespace and API for ROCm/HIP
+  //      * @see:
+  //      */
+  //     static void set(const alpaka_rocm_async::Queue &queue) noexcept {
+  //       auto dev = ALPAKA_ACCELERATOR_NAMESPACE::torch::alpakatools::device(queue);
+  //       auto stream = c10::cuda::getStreamFromExternal(queue.getNativeHandle(), dev.index());
+  //       c10::cuda::setCurrentCUDAStream(stream);
+  //     }
+
+  //     static void reset() { /**< optional: reset to previous state/stream. */ }
+  //   };
+
 #elif ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
 
   template <>
@@ -64,7 +88,7 @@ namespace cms::torch::alpaka {
   };
 
 #else
-#error "TorchAlpaka guard for this backend is not defined."
+#error "PyTorchAlpaka guard for this backend is not defined."
 #endif
 
 }  // namespace cms::torch::alpaka

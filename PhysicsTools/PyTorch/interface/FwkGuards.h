@@ -1,16 +1,15 @@
 #ifndef PhysicsTools_PyTorch_interface_FwkGuards_h
 #define PhysicsTools_PyTorch_interface_FwkGuards_h
 
-#include <torch/torch.h>
+#include <mutex>
+
+#include "PhysicsTools/PyTorch/interface/TorchLib.h"
 
 namespace cms::torch {
 
   /**
    * @brief Sets the guard to disable multi-threading and control PyTorch's threading model.
    * @note Global call.
-   * 
-   * TODO: this should be called only once to disable PyTorch multi-threading, 
-   *       consider moving to TorchService.
    */
   inline void set_threading_guard() {
     static std::once_flag threading_guard_flag;

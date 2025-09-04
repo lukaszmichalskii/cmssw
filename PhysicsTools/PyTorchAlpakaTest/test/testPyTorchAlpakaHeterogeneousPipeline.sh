@@ -2,7 +2,7 @@
  
 function die { echo Failed $1: status $2 ; exit $2 ; }
 
-SCRIPT="${LOCALTOP}/src/PhysicsTools/PyTorchAlpakaTest/test/runPyTorchAlpakaHeterogeneousPipelineTest.py"
+SCRIPT="${LOCALTOP}/src/PhysicsTools/PyTorchAlpakaTest/test/testPyTorchAlpakaHeterogeneousPipeline.py"
 
 if [ "$#" != "1" ]; then
   die "Need exactly 1 argument: ('cpu', 'cuda', or 'rocm') got $#" 1

@@ -1,4 +1,5 @@
-#include "PhysicsTools/PyTorch/interface/JitLoad.h"
+#include "PhysicsTools/PyTorch/interface/TorchLib.h"
+#include "PhysicsTools/PyTorch/interface/ModelJit.h"
 #include "PhysicsTools/PyTorch/test/testTorchBase.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/requireDevices.h"
 

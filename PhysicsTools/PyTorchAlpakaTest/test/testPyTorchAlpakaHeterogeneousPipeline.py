@@ -28,6 +28,9 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 100
 # do not print the time and trigger reports at the end of the job
 process.options.wantSummary = False
 
+# pytorch service to limit threading
+process.PyTorchService = cms.Service("PyTorchService")
+
 # setup chain configs
 process.HeterogeneousCollectionProducer = torchtest_HeterogeneousCollectionProducer_alpaka(
     batchSize = cms.uint32(args.batchSize if args.batchSize > 1 else 1),

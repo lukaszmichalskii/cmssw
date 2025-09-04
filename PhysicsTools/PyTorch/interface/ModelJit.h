@@ -2,7 +2,10 @@
 #define PhysicsTools_PyTorch_interface_ModelJit_h
 
 #include <string>
+#include <vector>
+
 #include "PhysicsTools/PyTorch/interface/JitLoad.h"
+#include "PhysicsTools/PyTorch/interface/TorchLib.h"
 
 namespace cms::torch {
 

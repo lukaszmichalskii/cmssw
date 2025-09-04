@@ -1,4 +1,5 @@
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/ModelJitAlpaka.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/alpaka/DeviceUtils.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
 

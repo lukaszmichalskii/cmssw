@@ -1,13 +1,12 @@
 #include <iostream>
 
-#include <torch/torch.h>
-#include <torch/script.h>
-
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/GlobalContext.h"
+#include "FWCore/ServiceRegistry/interface/ServiceMaker.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "PhysicsTools/PyTorch/interface/FwkGuards.h"
 
 class PyTorchService {
 public:
@@ -20,17 +19,15 @@ public:
   void preGlobalBeginRun(edm::GlobalContext const&);
 };
 
+// __________________________________________________________________________________________________________________
+// IMPLEMENTATION
+
 void PyTorchService::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
-
   descriptions.add("PyTorchService", desc);
   descriptions.setComment("Set single threading for pytorch after the module is loaded.");
 }
 
-void PyTorchService::preGlobalBeginRun(edm::GlobalContext const&) {
-  at::set_num_threads(1);
-  at::set_num_interop_threads(1);
-}
+void PyTorchService::preGlobalBeginRun(edm::GlobalContext const&) { cms::torch::set_threading_guard(); }
 
-#include "FWCore/ServiceRegistry/interface/ServiceMaker.h"
 DEFINE_FWK_SERVICE(PyTorchService);

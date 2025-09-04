@@ -17,7 +17,6 @@
 #include "PhysicsTools/PyTorchAlpakaTest/interface/Common.h"
 #include "PhysicsTools/PyTorchAlpakaTest/interface/GetBackendTag.h"
 
-
 namespace torchtest {
 
   using namespace torchportabletest;
@@ -30,7 +29,6 @@ namespace torchtest {
           regression_token_{consumes(params.getParameter<edm::InputTag>("regression"))},
           regression_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("regression")))} {}
 
-
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
       edm::ParameterSetDescription desc;
       desc.add<edm::InputTag>("particles");
@@ -41,7 +39,7 @@ namespace torchtest {
     void analyze(edm::Event const& event, edm::EventSetup const&) override {
       auto const& particle_collection = event.get(particles_token_);
       auto const particle_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(particles_backend_));
-      
+
       auto const& regression_collection = event.get(regression_token_);
       auto const regression_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(regression_backend_));
 

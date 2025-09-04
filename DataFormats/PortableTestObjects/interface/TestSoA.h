@@ -76,5 +76,4 @@ namespace torchportabletest {
 
 }  // namespace torchportabletest
 
-
 #endif  // DataFormats_PortableTestObjects_interface_TestSoA_h

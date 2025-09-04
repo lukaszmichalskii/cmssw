@@ -1,5 +1,5 @@
-#ifndef PhysicsTools_PyTorchAlpakaTest_interface_EventTimer_h
-#define PhysicsTools_PyTorchAlpakaTest_interface_EventTimer_h
+#ifndef PhysicsTools_PyTorchAlpakaTest_interface_alpaka_EventTimer_h
+#define PhysicsTools_PyTorchAlpakaTest_interface_alpaka_EventTimer_h
 
 #include <chrono>
 #include <fmt/format.h>
@@ -34,4 +34,4 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
 
-#endif  // PhysicsTools_PyTorchAlpakaTest_interface_EventTimer_h
+#endif  // PhysicsTools_PyTorchAlpakaTest_interface_alpaka_EventTimer_h

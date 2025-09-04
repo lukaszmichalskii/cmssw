@@ -5,7 +5,7 @@
 
 namespace torchtest {
 
-  edm::InputTag getBackendTag(edm::InputTag const& tag) {
+  inline edm::InputTag getBackendTag(edm::InputTag const& tag) {
     return edm::InputTag(tag.label(), "backend", tag.process());
   }
 

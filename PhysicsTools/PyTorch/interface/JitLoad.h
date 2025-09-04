@@ -1,13 +1,10 @@
 #ifndef PhysicsTools_PyTorch_interface_JitLoad_h
 #define PhysicsTools_PyTorch_interface_JitLoad_h
 
-// TODO: find a better way to resolve PyTorch and ROOT's ClassDef macro clash
-#ifdef ClassDef
-#undef ClassDef
-#endif
+#include <optional>
+#include <string>
 
-#include <torch/script.h>
-#include <torch/torch.h>
+#include "PhysicsTools/PyTorch/interface/TorchLib.h"
 
 namespace cms::torch {
 

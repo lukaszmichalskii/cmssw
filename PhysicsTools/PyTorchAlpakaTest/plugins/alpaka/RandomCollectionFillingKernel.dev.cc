@@ -17,9 +17,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
     alpaka::exec<Acc1D>(
-        queue, 
-        grid, 
-        [] ALPAKA_FN_ACC(Acc1D const &acc, torchportabletest::ParticleDeviceCollection::View particles_view) {
+        queue,
+        grid,
+        [] ALPAKA_FN_ACC(Acc1D const& acc, torchportabletest::ParticleDeviceCollection::View particles_view) {
           for (int32_t thread_idx : uniform_elements(acc, particles_view.metadata().size())) {
             auto rnd_gen = alpaka::rand::engine::createDefault(acc, 43, thread_idx);
             auto dist = alpaka::rand::distribution::createUniformReal<float>(acc);
