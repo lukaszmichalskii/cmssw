@@ -2,6 +2,7 @@ import FWCore.ParameterSet.Config as cms
 from PhysicsTools.PyTorchAlpakaTest.options_cff import args
 from PhysicsTools.PyTorchAlpakaTest.modules import (
     torchtest_HeterogeneousCollectionProducer_alpaka,
+    torchtest_PortableJitClassificationInferenceProducer_alpaka,
     torchtest_PortableJitRegressionInferenceProducer_alpaka,
     torchtest_CollectionAnalyzer
 )
@@ -38,6 +39,13 @@ process.HeterogeneousCollectionProducer = torchtest_HeterogeneousCollectionProdu
         backend = cms.untracked.string(args.backend)
     ),
 )
+process.PortableJitClassificationInferenceProducer = torchtest_PortableJitClassificationInferenceProducer_alpaka(
+    model = cms.FileInPath(args.classificationJit),
+    particles = 'HeterogeneousCollectionProducer',
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(args.backend)
+    ),
+)
 process.PortableJitRegressionInferenceProducer = torchtest_PortableJitRegressionInferenceProducer_alpaka(
     model = cms.FileInPath(args.regressionJit),
     particles = 'HeterogeneousCollectionProducer',
@@ -47,6 +55,7 @@ process.PortableJitRegressionInferenceProducer = torchtest_PortableJitRegression
 )
 process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
     particles = 'HeterogeneousCollectionProducer',
+    classification = 'PortableJitClassificationInferenceProducer',
     regression = 'PortableJitRegressionInferenceProducer'
 )
 
@@ -54,5 +63,6 @@ process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
 process.path = cms.Path(
     process.HeterogeneousCollectionProducer + 
     process.PortableJitRegressionInferenceProducer +
+    process.PortableJitClassificationInferenceProducer +
     process.CollectionAnalyzer
 )

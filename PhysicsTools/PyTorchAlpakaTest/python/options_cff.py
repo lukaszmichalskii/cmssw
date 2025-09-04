@@ -52,3 +52,11 @@ args.register(
     VarParsing.VarParsing.varType.string,         
     "Regression model (just-in-time compiled)"
 )
+
+args.register(
+    "classificationJit",
+    "PhysicsTools/PyTorchAlpakaTest/data/classification_jit.pt",
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.string,         
+    "Classification model (just-in-time compiled)"
+)
