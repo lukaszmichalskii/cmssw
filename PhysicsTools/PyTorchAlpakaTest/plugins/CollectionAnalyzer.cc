@@ -27,7 +27,8 @@ namespace torchtest {
         : particles_token_{consumes(params.getParameter<edm::InputTag>("particles"))},
           particles_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("particles")))},
           classification_token_{consumes(params.getParameter<edm::InputTag>("classification"))},
-          classification_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("classification")))},
+          classification_backend_{
+              consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("classification")))},
           regression_token_{consumes(params.getParameter<edm::InputTag>("regression"))},
           regression_backend_{consumes(torchtest::getBackendTag(params.getParameter<edm::InputTag>("regression")))} {}
 
@@ -44,7 +45,8 @@ namespace torchtest {
       auto const particle_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(particles_backend_));
 
       auto const& classififcation_collection = event.get(classification_token_);
-      auto const classifiacation_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(classification_backend_));
+      auto const classifiacation_collection_backend =
+          static_cast<cms::alpakatools::Backend>(event.get(classification_backend_));
 
       auto const& regression_collection = event.get(regression_token_);
       auto const regression_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(regression_backend_));

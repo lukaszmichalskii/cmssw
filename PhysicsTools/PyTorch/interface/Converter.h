@@ -74,10 +74,7 @@ namespace cms::torch {
     // Wrap raw pointer by torch::Tensor based on type, size and stride.
     template <typename SOA_Layout>
     static ::torch::Tensor array_to_tensor(::torch::Device device, const Block<SOA_Layout>& block) {
-      auto options = ::torch::TensorOptions()
-                         .dtype(block.type)
-                         .device(device)
-                         .pinned_memory(true);
+      auto options = ::torch::TensorOptions().dtype(block.type).device(device).pinned_memory(true);
       return ::torch::from_blob(block.ptr, block.size, block.stride, options);
     }
   };

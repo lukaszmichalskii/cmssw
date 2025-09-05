@@ -10,15 +10,13 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torch::alpakatools {
 
-    inline ::torch::Device device(const Device &dev) { 
-      if (kDevice == kDevHost)
-        return ::torch::Device(kDevHost);
-      return ::torch::Device(kDevice, dev.getNativeHandle()); 
-    }
+  inline ::torch::Device device(const Device &dev) {
+    if (kDevice == kDevHost)
+      return ::torch::Device(kDevHost);
+    return ::torch::Device(kDevice, dev.getNativeHandle());
+  }
 
-    inline ::torch::Device device(const Queue &queue) {
-      return device(::alpaka::getDev(queue));
-    }
+  inline ::torch::Device device(const Queue &queue) { return device(::alpaka::getDev(queue)); }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torch::alpakatools
 

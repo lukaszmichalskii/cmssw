@@ -101,7 +101,8 @@ namespace torchtest {
     // Table rows (preview)
     for (int32_t i = 0; i < std::min<int32_t>(kMaxView, size); ++i) {
       const auto& view = collection.const_view()[i];
-      fmt::format_to(std::back_inserter(buffer), "| {:5d} | {:5.2f} | {:5.2f} |\n", static_cast<int>(i), view.c1(), view.c2());
+      fmt::format_to(
+          std::back_inserter(buffer), "| {:5d} | {:5.2f} | {:5.2f} |\n", static_cast<int>(i), view.c1(), view.c2());
     }
 
     // Ellipsis row if truncated

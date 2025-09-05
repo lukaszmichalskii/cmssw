@@ -1,15 +1,15 @@
 #ifndef PhysicsTools_PyTorch_interface_SoAMetadata_h
 #define PhysicsTools_PyTorch_interface_SoAMetadata_h
 
-#include <cassert>          
-#include <cmath>              
-#include <cstddef>           
-#include <iostream>           
-#include <map>               
-#include <string>            
-#include <tuple>             
-#include <type_traits>       
-#include <utility> 
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <iostream>
+#include <map>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include <Eigen/Core>

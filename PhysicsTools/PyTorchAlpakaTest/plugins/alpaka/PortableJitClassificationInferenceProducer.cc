@@ -43,9 +43,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
         classification_token_{produces()},
         model_(std::make_unique<torch::ModelJitAlpaka>(params.getParameter<edm::FileInPath>("model").fullPath())) {}
 
-  void PortableJitClassificationInferenceProducer::produce(device::Event &event, const device::EventSetup &event_setup) {
-    Nvtx produce_range(fmt::format("PortableJitClassificationInferenceProducer::produce({})", event.id().event()).c_str());
-    auto timer = EventTimer(fmt::format("PortableJitClassificationInferenceProducer({})", model_->device().str()), event);
+  void PortableJitClassificationInferenceProducer::produce(device::Event &event,
+                                                           const device::EventSetup &event_setup) {
+    Nvtx produce_range(
+        fmt::format("PortableJitClassificationInferenceProducer::produce({})", event.id().event()).c_str());
+    auto timer =
+        EventTimer(fmt::format("PortableJitClassificationInferenceProducer({})", model_->device().str()), event);
 
     // in/out collections
     auto &particle_collection = const_cast<ParticleDeviceCollection &>(event.get(particles_token_));
