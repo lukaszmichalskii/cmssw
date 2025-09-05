@@ -1,0 +1,22 @@
+<library file="*.cc" name="PhysicsToolsPyTorchAlpakaTestPlugins">
+  <use name="fmt"/>
+  <use name="DataFormats/PortableTestObjects"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/MessageLogger"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/Utilities"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
+
+<library file="alpaka/*.cc" name="PhysicsToolsPyTorchAlpakaTestPluginsPortable">
+  <use name="alpaka"/>
+  <use name="DataFormats/PortableTestObjects"/>
+  <use name="FWCore/MessageLogger"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/Utilities"/>
+  <use name="HeterogeneousCore/AlpakaCore"/>
+  <use name="HeterogeneousCore/AlpakaInterface"/>
+  <use name="PhysicsTools/PyTorchAlpaka"/>
+  <flags ALPAKA_BACKENDS="serial cuda"/>
+  <flags EDM_PLUGIN="1"/>
+ </library>

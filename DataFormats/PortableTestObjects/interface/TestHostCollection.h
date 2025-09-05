@@ -15,4 +15,12 @@ namespace portabletest {
 
 }  // namespace portabletest
 
+namespace torchportabletest {
+
+  using ParticleHostCollection = PortableHostCollection<ParticleSoA>;
+  using ClassificationHostCollection = PortableHostCollection<ClassificationSoA>;
+  using RegressionHostCollection = PortableHostCollection<RegressionSoA>;
+
+}  // namespace torchportabletest
+
 #endif  // DataFormats_PortableTestObjects_interface_TestHostCollection_h
