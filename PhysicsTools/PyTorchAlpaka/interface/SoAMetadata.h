@@ -1,5 +1,5 @@
-#ifndef PhysicsTools_PyTorch_interface_SoAMetadata_h
-#define PhysicsTools_PyTorch_interface_SoAMetadata_h
+#ifndef PhysicsTools_PyTorchAlpaka_interface_SoAMetadata_h
+#define PhysicsTools_PyTorchAlpaka_interface_SoAMetadata_h
 
 #include <cassert>
 #include <cmath>
@@ -18,7 +18,7 @@
 #include "PhysicsTools/PyTorch/interface/TorchCompat.h"
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 
-namespace cms::torch {
+namespace cms::torch::alpakatools {
 
   using namespace cms::soa;
 
@@ -230,6 +230,6 @@ namespace cms::torch {
         : input(input_), output(output_), multi_output(multi_output_) {}
   };
 
-}  // namespace cms::torch
+}  // namespace cms::torch::alpakatools
 
-#endif  // PhysicsTools_PyTorch_interface_SoAMetadata_h
+#endif  // PhysicsTools_PyTorchAlpaka_interface_SoAMetadata_h

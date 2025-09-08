@@ -4,9 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "PhysicsTools/PyTorch/interface/Converter.h"
 #include "PhysicsTools/PyTorch/interface/ScriptModuleLoad.h"
-#include "PhysicsTools/PyTorch/interface/SoAMetadata.h"
 #include "PhysicsTools/PyTorch/interface/TorchCompat.h"
 
 namespace cms::torch {
@@ -17,15 +15,15 @@ namespace cms::torch {
     explicit TorchModelJit(const std::string &model_path)
         : model_(cms::torch::load(model_path)), device_(::torch::kCPU) {}
 
-    explicit TorchModelJit(const std::string &model_path, ::torch::Device device)
-        : model_(cms::torch::load(model_path, device)), device_(device) {}
+    explicit TorchModelJit(const std::string &model_path, ::torch::Device dev)
+        : model_(cms::torch::load(model_path, dev)), device_(dev) {}
 
     // Move model to specified device memory space. Async load (in default stream if not overridden by the caller)
-    void to(::torch::Device device, bool non_blocking = false) {
-      if (device == device_)
+    void to(::torch::Device dev, bool non_blocking = false) {
+      if (dev == device_)
         return;
-      model_.to(device, non_blocking);
-      device_ = device;
+      model_.to(dev, non_blocking);
+      device_ = dev;
     }
 
     // Forward pass (inference) of model, returns torch::IValue (multi output support). Match native torchlib interface.

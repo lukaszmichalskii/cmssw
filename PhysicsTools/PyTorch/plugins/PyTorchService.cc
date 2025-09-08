@@ -11,25 +11,25 @@
 
 using namespace cms::torch;
 
-class PyTorchThreadingService {
+class PyTorchService {
 public:
-  PyTorchThreadingService(const edm::ParameterSet& config, edm::ActivityRegistry& registry)
+  PyTorchService(const edm::ParameterSet& config, edm::ActivityRegistry& registry)
     : verbose_(config.getUntrackedParameter<bool>("verbose", false)) {
-    registry.watchPreGlobalBeginRun(this, &PyTorchThreadingService::preGlobalBeginRun);
+    registry.watchPreGlobalBeginRun(this, &PyTorchService::preGlobalBeginRun);
   };
-  ~PyTorchThreadingService() = default;
+  ~PyTorchService() = default;
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
     desc.addUntracked<bool>("verbose", false);
-    descriptions.add("PyTorchThreadingService", desc);
+    descriptions.add("PyTorchService", desc);
     descriptions.setComment("Disable internal PyTorch threading model.");
   }
 
   void preGlobalBeginRun(edm::GlobalContext const&) {
     if (verbose_) {
       std::cout << "XXX" << std::endl;
-      edm::LogInfo("PyTorchThreadingService") 
+      edm::LogInfo("PyTorchService") 
           << "Disabling PyTorch internal threading model."
             "All CPU based operations will run single-threaded.";
     }
@@ -40,4 +40,4 @@ private:
   const bool verbose_;
 };
 
-DEFINE_FWK_SERVICE(PyTorchThreadingService);
+DEFINE_FWK_SERVICE(PyTorchService);

@@ -1,5 +1,5 @@
-#ifndef PhysicsTools_PyTorch_interface_Converter_h
-#define PhysicsTools_PyTorch_interface_Converter_h
+#ifndef PhysicsTools_PyTorchAlpaka_interface_Converter_h
+#define PhysicsTools_PyTorchAlpaka_interface_Converter_h
 
 #include <cassert>
 #include <cstdint>
@@ -7,9 +7,9 @@
 
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 #include "PhysicsTools/PyTorch/interface/TorchCompat.h"
-#include "PhysicsTools/PyTorch/interface/SoAMetadata.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/SoAMetadata.h"
 
-namespace cms::torch {
+namespace cms::torch::alpakatools {
 
   // Static class to wrap raw SOA pointer in tensor object without copying.
   class Converter {
@@ -82,6 +82,6 @@ namespace cms::torch {
     }
   };
 
-}  // namespace cms::torch
+}  // namespace cms::torch::alpakatools
 
-#endif  // PhysicsTools_PyTorch_interface_Converter_h
+#endif  // PhysicsTools_PyTorchAlpaka_interface_Converter_h

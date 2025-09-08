@@ -1,4 +1,3 @@
-<use name="eigen"/>
 <use name="pytorch"/>
 <iftool name="cuda-gcc-support">
   <use name="pytorch-cuda"/>
