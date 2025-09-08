@@ -10,8 +10,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
   constexpr auto kDevice = c10::DeviceType::CUDA;
-// #elif ALPAKA_ACC_GPU_HIP_ENABLED
-//   constexpr auto kDevice = c10::DeviceType::HIP;
+#elif ALPAKA_ACC_GPU_HIP_ENABLED
+  // full ROCm/HIP backend not yet supported, fallback to CPU
+  // @see: https://github.com/pytorch/pytorch/blob/v2.6.0/aten/CMakeLists.txt#L73-L76
+  constexpr auto kDevice = c10::DeviceType::CPU;
+  // constexpr auto kDevice = c10::DeviceType::HIP;
 #elif ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
   constexpr auto kDevice = c10::DeviceType::CPU;
 #elif ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLED

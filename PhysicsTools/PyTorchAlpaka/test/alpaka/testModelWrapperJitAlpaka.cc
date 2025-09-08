@@ -3,15 +3,15 @@
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 #include <c10/cuda/CUDAStream.h>
 #endif
-#include <torch/torch.h>
 
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/devices.h"
+#include "PhysicsTools/PyTorch/interface/TorchLib.h"
 #include "PhysicsTools/PyTorch/test/NvtxScopedRange.h"
 #include "PhysicsTools/PyTorch/test/testTorchBase.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/FwkGuards.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/ModelJitAlpaka.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/DeviceUtils.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/alpaka/ModelJitAlpaka.h"
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 static c10::cuda::CUDAStream default_stream{c10::cuda::getCurrentCUDAStream()};
@@ -64,7 +64,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     const auto& dev = devices[0];
 
     auto m_path = modelPath() + "/linear_dnn.pt";
-    auto m = ModelJitAlpaka(m_path, dev);
+    auto m = cms::torch::alpaka::ModelJitAlpaka(m_path, dev);
 
     CPPUNIT_ASSERT_EQUAL(alpakatools::device(dev), m.device());
   }
@@ -76,7 +76,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     Queue queue{dev};
 
     auto m_path = modelPath() + "/linear_dnn.pt";
-    auto m = ModelJitAlpaka(m_path, queue);
+    auto m = cms::torch::alpaka::ModelJitAlpaka(m_path, queue);
 
     CPPUNIT_ASSERT_EQUAL(alpakatools::device(queue), m.device());
   }
@@ -87,7 +87,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     const auto& dev = devices[0];
 
     auto m_path = modelPath() + "/linear_dnn.pt";
-    auto m = ModelJitAlpaka(m_path);
+    auto m = cms::torch::alpaka::ModelJitAlpaka(m_path);
     m.to(dev);
 
     CPPUNIT_ASSERT_EQUAL(alpakatools::device(dev), m.device());
@@ -100,7 +100,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     Queue queue{dev};
 
     auto m_path = modelPath() + "/linear_dnn.pt";
-    auto m = ModelJitAlpaka(m_path);
+    auto m = cms::torch::alpaka::ModelJitAlpaka(m_path);
     m.to(queue);
 
     CPPUNIT_ASSERT_EQUAL(alpakatools::device(queue), m.device());
@@ -117,7 +117,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
     // load model
     auto m_path = modelPath() + "/linear_dnn.pt";
-    auto m = ModelJitAlpaka(m_path);
+    auto m = cms::torch::alpaka::ModelJitAlpaka(m_path);
 
     // prepare input buffers
     ::torchtest::NvtxScopedRange inbuf("inputBuffers");
@@ -134,7 +134,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       // async model load and inference check
       ::torchtest::NvtxScopedRange exec1("execInExternalStream");
       ::torchtest::NvtxScopedRange mmove("modelMoveToDevice");
-      m.to(queue, true);
+      m.to(queue);
       mmove.end();
 
       for (uint32_t i = 0; i < 10; ++i) {

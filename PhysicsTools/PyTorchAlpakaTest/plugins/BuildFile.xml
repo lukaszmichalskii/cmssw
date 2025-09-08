@@ -17,6 +17,6 @@
   <use name="HeterogeneousCore/AlpakaCore"/>
   <use name="HeterogeneousCore/AlpakaInterface"/>
   <use name="PhysicsTools/PyTorchAlpaka"/>
-  <flags ALPAKA_BACKENDS="serial cuda"/>
+  <flags ALPAKA_BACKENDS="serial rocm cuda"/>
   <flags EDM_PLUGIN="1"/>
  </library>

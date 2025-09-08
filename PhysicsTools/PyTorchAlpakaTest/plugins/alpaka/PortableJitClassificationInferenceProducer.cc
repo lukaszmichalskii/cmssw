@@ -11,8 +11,8 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "PhysicsTools/PyTorch/interface/SoAMetadata.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/Config.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/ModelJitAlpaka.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/FwkGuards.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/alpaka/ModelJitAlpaka.h"
 #include "PhysicsTools/PyTorchAlpakaTest/interface/alpaka/EventTimer.h"
 #include "PhysicsTools/PyTorchAlpakaTest/interface/alpaka/Nvtx.h"
 
@@ -31,7 +31,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   private:
     const device::EDGetToken<ParticleDeviceCollection> particles_token_;
     const device::EDPutToken<ClassificationDeviceCollection> classification_token_;
-    std::unique_ptr<torch::ModelJitAlpaka> model_;
+    std::unique_ptr<cms::torch::alpaka::ModelJitAlpaka> model_;
   };
 
   // __________________________________________________________________________________________________________________
@@ -76,7 +76,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       Nvtx torchlib_range(
           fmt::format("PortableJitClassificationInferenceProducer::torchlib({})", event.id().event()).c_str());
       torch::Guard guard(event.queue());
-      model_->to(event.queue(), true /**< async */);
+      model_->to(event.queue());
       model_->forward(metadata);
     }
 

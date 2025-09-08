@@ -9,7 +9,8 @@ namespace cms::torch {
 
   /**
    * @brief Sets the guard to disable multi-threading and control PyTorch's threading model.
-   * @note Global call.
+   * @note Global call, has to be called once per job before any PyTorch code is executed.
+   * @see: PhysicsTools/PyTorch/plugins/PyTorchService.cc
    */
   inline void set_threading_guard() {
     static std::once_flag threading_guard_flag;

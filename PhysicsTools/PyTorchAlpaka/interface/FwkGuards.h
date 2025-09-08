@@ -7,6 +7,8 @@
 
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
 #include <c10/cuda/CUDAStream.h>
+#elif ALPAKA_ACC_GPU_HIP_ENABLED
+// #include <c10/hip/HIPStream.h>
 #endif
 
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
@@ -53,7 +55,7 @@ namespace cms::torch::alpaka {
     static void reset() { /**< optional: reset to previous state/stream. */ }
   };
 
-  // #elif ALPAKA_ACC_GPU_ROCM_ENABLED
+#elif ALPAKA_ACC_GPU_HIP_ENABLED
 
   //   template <>
   //   struct FwkGuardTraits<alpaka_rocm_async::Queue> {
@@ -70,6 +72,12 @@ namespace cms::torch::alpaka {
 
   //     static void reset() { /**< optional: reset to previous state/stream. */ }
   //   };
+
+  template <>
+  struct FwkGuardTraits<alpaka_rocm_async::Queue> {
+    static void set(const alpaka_rocm_async::Queue &) { /**< nothing to be done, since CPU fallback is used */ }
+    static void reset() { /**< nothing to be done, since CPU fallback is used */ }
+  };
 
 #elif ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
 
