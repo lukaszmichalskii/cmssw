@@ -3,7 +3,6 @@
 <use name="pytorch"/>
 <use name="pytorch-cuda" for="alpaka/cuda"/>
 <use name="HeterogeneousCore/AlpakaInterface"/>
-<!-- <use name="PhysicsTools/PyTorch"/> -->
 <flags ALPAKA_BACKENDS="1"/>
 <export>
   <lib name="1"/>
