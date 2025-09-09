@@ -69,3 +69,7 @@
   <use name="HeterogeneousCore/CUDAUtilities"/>
   <use name="PhysicsTools/PyTorch"/>
 </bin>
+
+<test name="testPyTorchService" command="cmsRun ${LOCALTOP}/src/PhysicsTools/PyTorch/test/testPyTorchService.py">
+  <use name="PhysicsTools/PyTorch"/>
+</test>
