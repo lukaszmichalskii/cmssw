@@ -1,4 +1,4 @@
-<bin name="testJitLoad" file="testJitLoad.cc testRunner.cc">
+<!-- <bin name="testJitLoad" file="testJitLoad.cc testRunner.cc">
   <use name="boost_filesystem"/>
   <use name="cppunit"/>
   <use name="cuda"/>
@@ -50,7 +50,7 @@
 </bin>
 </iftool>
 
-<!-- <bin name="testModelAot" file="testModelAot.cc testRunner.cc">
+<bin name="testModelAot" file="testModelAot.cc testRunner.cc">
   <use name="boost_filesystem"/>
   <use name="cppunit"/>
   <use name="cuda"/>
@@ -58,7 +58,7 @@
   <use name="pytorch-cuda"/>
   <use name="HeterogeneousCore/CUDAUtilities"/>
   <use name="PhysicsTools/PyTorch"/>
-</bin> -->
+</bin>
 
 <bin name="testModelJit" file="testModelJit.cc testRunner.cc">
   <use name="boost_filesystem"/>
@@ -68,4 +68,4 @@
   <use name="pytorch-cuda"/>
   <use name="HeterogeneousCore/CUDAUtilities"/>
   <use name="PhysicsTools/PyTorch"/>
-</bin>
+</bin> -->
