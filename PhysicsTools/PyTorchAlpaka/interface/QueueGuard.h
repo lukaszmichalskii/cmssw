@@ -5,7 +5,9 @@
 
 #include <alpaka/alpaka.hpp>
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-#include <c10/cuda/CUDAStream.h>
+// #include <c10/cuda/CUDAStream.h>
+#elif ALPAKA_ACC_GPU_HIP_ENABLED
+// #include <c10/hip/HIPStream.h>
 #endif
 
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/Config.h"
@@ -65,7 +67,6 @@ namespace cms::torch::alpakatools {
   // - https://github.com/pytorch/pytorch/tree/v2.6.0/c10/cuda#readme c10::cuda -> c10::hip
   //
   //
-  // #include <c10/hip/HIPStream.h>
   //
   // template <>
   // struct QueueGuardTraits<alpaka_rocm_async::Queue> {

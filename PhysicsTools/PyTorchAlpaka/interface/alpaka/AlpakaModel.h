@@ -12,6 +12,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
 
   class AlpakaModel : public cms::torch::Model {
   public:
+    // inherit common methods
     using cms::torch::Model::forward;
     using cms::torch::Model::to;
 
@@ -47,10 +48,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
       // ROCm/HIP not yet directly supported → fallback to CPU inference
       this->Model::to(getDevice(acc_mem));
       return;
-#else
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED 
       // CUDA → keep async execution
       this->Model::to(getDevice(acc_mem), true);
-#endif  // ALPAKA_ACC_GPU_HIP_ENABLED 
     }
     
     // Overload for Queue to simplify the interface for the common case of async execution.
