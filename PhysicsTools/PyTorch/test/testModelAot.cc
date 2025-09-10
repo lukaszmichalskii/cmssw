@@ -2,10 +2,11 @@
 #include <c10/cuda/CUDAStream.h>
 #include <cppunit/extensions/HelperMacros.h>
 
-#include "PhysicsTools/PyTorch/interface/ModelAOT.h"
-#include "PhysicsTools/PyTorch/test/NvtxScopedRange.h"
-#include "PhysicsTools/PyTorch/test/testUtilities.h"
+#include "FWCore/Utilities/interface/FileInPath.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/requireDevices.h"
+#include "PhysicsTools/PyTorch/interface/ModelAOT.h"
+#include "PhysicsTools/PyTorch/test/Nvtx.h"
+#include "PhysicsTools/PyTorch/test/testUtilities.h"
 
 namespace torchtest {
 
@@ -34,7 +35,7 @@ namespace torchtest {
   CPPUNIT_TEST_SUITE_REGISTRATION(TestModelAOT);
 
   void TestModelAOT::testCpu() {
-    auto m_path = cmsswPath("/src/PhysicsTools/PyTorch/models/regression_cpu_el9_amd64_gcc12.pt2");
+    auto m_path = edm::FileInPath("PhysicsTools/PyTorch/models/regression_cpu.pt2").fullPath();
     auto m = ModelAOT(m_path);
 
     std::vector<::torch::IValue> inputs;
@@ -55,7 +56,7 @@ namespace torchtest {
     if (!cms::cudatest::testDevices())
       return;
 
-    auto m_path = cmsswPath("/src/PhysicsTools/PyTorch/models/regression_cuda_el9_amd64_gcc12.pt2");
+    auto m_path = edm::FileInPath("PhysicsTools/PyTorch/models/regression_cuda.pt2").fullPath();
     auto m = ModelAOT(m_path);
 
     std::vector<::torch::IValue> inputs;
@@ -76,7 +77,7 @@ namespace torchtest {
     if (!cms::cudatest::testDevices())
       return;
 
-    NvtxScopedRange test("test");
+    Nvtx test("test");
 
     cudaStream_t stream;
     cudaError_t err = cudaStreamCreate(&stream);
@@ -84,15 +85,15 @@ namespace torchtest {
       CPPUNIT_FAIL("cudaStreamCreate failed");
 
     auto dev = ::torch::Device(::torch::kCUDA, 0);
-    auto m_path = cmsswPath("/src/PhysicsTools/PyTorch/models/regression_cuda_el9_amd64_gcc12.pt2");
+    auto m_path = edm::FileInPath("PhysicsTools/PyTorch/models/regression_cpu.pt2").fullPath();
 
     // async model load and inference check
-    NvtxScopedRange range("testAsyncExecutionModelExplicitStream");
-    NvtxScopedRange mload("modelLoad");
+    Nvtx range("testAsyncExecutionModelExplicitStream");
+    Nvtx mload("modelLoad");
     auto m = ModelAOT(m_path);
     mload.end();
 
-    NvtxScopedRange inbuf("inputBuffers");
+    Nvtx inbuf("inputBuffers");
     auto inputs = std::vector<torch::IValue>();
     inputs.push_back(torch::randn({batch_size_, 3}, dev));
     std::vector<at::Tensor> inputs_tensor;
@@ -101,7 +102,7 @@ namespace torchtest {
     inbuf.end();
 
     for (uint32_t i = 0; i < 10; ++i) {
-      NvtxScopedRange iter(("forwardPass:" + std::to_string(i)).c_str());
+      Nvtx iter(("forwardPass:" + std::to_string(i)).c_str());
       auto out = m.forward(inputs_tensor, stream);
       iter.end();
     }
@@ -119,7 +120,7 @@ namespace torchtest {
     if (!cms::cudatest::testDevices())
       return;
 
-    NvtxScopedRange test("test");
+    Nvtx test("test");
 
     cudaStream_t stream;
     cudaError_t err = cudaStreamCreate(&stream);
@@ -127,7 +128,7 @@ namespace torchtest {
       CPPUNIT_FAIL("cudaStreamCreate failed");
 
     auto dev = ::torch::Device(::torch::kCUDA, 0);
-    auto m_path = cmsswPath("/src/PhysicsTools/PyTorch/models/regression_cuda_el9_amd64_gcc12.pt2");
+    auto m_path = edm::FileInPath("PhysicsTools/PyTorch/models/regression_cuda.pt2").fullPath();
 
     // set torch stream from external
     auto default_stream = c10::cuda::getCurrentCUDAStream();
@@ -135,12 +136,12 @@ namespace torchtest {
     c10::cuda::setCurrentCUDAStream(torch_stream);
 
     // async model load and inference check
-    NvtxScopedRange range("testAsyncExecutionImplicitStream");
-    NvtxScopedRange mload("modelLoad");
+    Nvtx range("testAsyncExecutionImplicitStream");
+    Nvtx mload("modelLoad");
     auto m = ModelAOT(m_path);
     mload.end();
 
-    NvtxScopedRange inbuf("inputBuffers");
+    Nvtx inbuf("inputBuffers");
     auto inputs = std::vector<torch::IValue>();
     inputs.push_back(torch::randn({batch_size_, 3}, dev));
     std::vector<at::Tensor> inputs_tensor;
@@ -149,7 +150,7 @@ namespace torchtest {
     inbuf.end();
 
     for (uint32_t i = 0; i < 10; ++i) {
-      NvtxScopedRange iter(("forwardPass:" + std::to_string(i)).c_str());
+      Nvtx iter(("forwardPass:" + std::to_string(i)).c_str());
       auto out = m.forward(inputs_tensor, torch_stream);
       iter.end();
     }

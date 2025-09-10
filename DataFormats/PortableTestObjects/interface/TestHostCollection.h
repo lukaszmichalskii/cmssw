@@ -20,6 +20,7 @@ namespace torchportabletest {
   using ParticleHostCollection = PortableHostCollection<ParticleSoA>;
   using ClassificationHostCollection = PortableHostCollection<ClassificationSoA>;
   using RegressionHostCollection = PortableHostCollection<RegressionSoA>;
+  using ReconstructionHostCollection = PortableHostCollection<ReconstructionSoA>;
 
 }  // namespace torchportabletest
 

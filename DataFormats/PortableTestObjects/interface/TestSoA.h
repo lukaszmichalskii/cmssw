@@ -74,6 +74,9 @@ namespace torchportabletest {
   GENERATE_SOA_LAYOUT(RegressionLayout, SOA_COLUMN(float, reco_pt))
   using RegressionSoA = RegressionLayout<>;
 
+  GENERATE_SOA_LAYOUT(ReconstructionLayout, SOA_COLUMN(float, merged))
+  using ReconstructionSoA = ReconstructionLayout<>;
+
 }  // namespace torchportabletest
 
 #endif  // DataFormats_PortableTestObjects_interface_TestSoA_h

@@ -8,8 +8,9 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   using namespace cms::alpakatools;
+  using namespace torchportabletest;
 
-  void randomFillParticleCollection(Queue& queue, torchportabletest::ParticleDeviceCollection& particles) {
+  void randomFillParticleCollection(Queue& queue, ParticleDeviceCollection& particles) {
     Nvtx kernel_range("randomFillParticleCollection()");
 
     uint32_t threads_per_block = 1024;
@@ -19,7 +20,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     alpaka::exec<Acc1D>(
         queue,
         grid,
-        [] ALPAKA_FN_ACC(Acc1D const& acc, torchportabletest::ParticleDeviceCollection::View particles_view) {
+        [] ALPAKA_FN_ACC(Acc1D const& acc, ParticleDeviceCollection::View particles_view) {
           for (int32_t thread_idx : uniform_elements(acc, particles_view.metadata().size())) {
             auto rnd_gen = alpaka::rand::engine::createDefault(acc, 43, thread_idx);
             auto dist = alpaka::rand::distribution::createUniformReal<float>(acc);

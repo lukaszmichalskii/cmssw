@@ -33,4 +33,9 @@
   <class name="alpaka_rocm_async::torchportabletest::ClassificationDeviceCollection" persistent="false"/>
   <class name="edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ClassificationDeviceCollection>" persistent="false"/>
   <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ClassificationDeviceCollection>>" persistent="false"/>
+
+  <class name="alpaka_rocm_async::PortableCollection<torchportabletest::ReconstructionSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::torchportabletest::ReconstructionDeviceCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ReconstructionDeviceCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportabletest::ReconstructionDeviceCollection>>" persistent="false"/>
 </lcgdict>
