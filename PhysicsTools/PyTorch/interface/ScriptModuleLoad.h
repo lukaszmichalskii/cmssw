@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "FWCore/Utilities/interface/Exception.h"
 #include "PhysicsTools/PyTorch/interface/TorchCompat.h"
 
 namespace cms::torch {

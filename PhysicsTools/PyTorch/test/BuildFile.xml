@@ -1,4 +1,4 @@
-<!-- <bin name="testJitLoad" file="testJitLoad.cc testRunner.cc">
+<bin name="testJitLoad" file="testJitLoad.cc testRunner.cc">
   <use name="boost_filesystem"/>
   <use name="cppunit"/>
   <use name="cuda"/>
@@ -56,6 +56,7 @@
   <use name="cuda"/>
   <use name="pytorch"/>
   <use name="pytorch-cuda"/>
+  <use name="FWCore/Utilities"/>
   <use name="HeterogeneousCore/CUDAUtilities"/>
   <use name="PhysicsTools/PyTorch"/>
 </bin>
@@ -68,4 +69,4 @@
   <use name="pytorch-cuda"/>
   <use name="HeterogeneousCore/CUDAUtilities"/>
   <use name="PhysicsTools/PyTorch"/>
-</bin> -->
+</bin>

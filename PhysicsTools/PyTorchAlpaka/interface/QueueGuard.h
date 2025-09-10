@@ -5,7 +5,8 @@
 
 #include <alpaka/alpaka.hpp>
 #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-// #include <c10/cuda/CUDAStream.h>
+#include <cuda_runtime.h>
+#include <c10/cuda/CUDAStream.h>
 #elif ALPAKA_ACC_GPU_HIP_ENABLED
 // #include <c10/hip/HIPStream.h>
 #endif
@@ -22,8 +23,8 @@ namespace cms::torch::alpakatools {
   template <typename TQueue>
     requires ::alpaka::isQueue<TQueue>
   struct QueueGuardTraits {
-    static void set(const TQueue&) noexcept { /* no-op default */ }
-    static void reset() noexcept { /* no-op default */ }
+    static void set(const TQueue&) noexcept { /* no-op default, threading disabled by `PyTorchService` */ }
+    static void reset() noexcept { /* no-op default, once threading is disabled cannot be reset */ }
   };
 
   template <typename TQueue>
@@ -58,7 +59,9 @@ namespace cms::torch::alpakatools {
     }
   };
 
-#elif ALPAKA_ACC_GPU_HIP_ENABLED
+#endif  // ALPAKA_ACC_GPU_CUDA_ENABLED
+
+#if ALPAKA_ACC_GPU_HIP_ENABLED
 
   // AMD ROCm/HIP backend not yet supported (though Alpaka HIP backend is available), the CPU fallback is used.
   // When CMSSW provide `pytorch-hip` counterpart in addition to `pytorch-cuda`, this can be implemented analogously to CUDA above.
@@ -78,6 +81,35 @@ namespace cms::torch::alpakatools {
   //   static void reset() noexcept { /* no-op */ }
   // };
 
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
+
+  // __________________________________________________________________________________________________________________
+  // Utilities for debugging queue managament
+
+  // Default fallback for CPU / unknown
+  template <typename TQueue>
+    requires ::alpaka::isQueue<TQueue>
+  struct QueueHash {
+    static std::string alpakaQueue(const TQueue&) { return fmt::format("{:#x}", std::hash<std::thread::id>{}(std::this_thread::get_id())); }
+    static std::string pytorchQueue(const TQueue &queue) { return alpakaQueue(queue); }
+  };
+
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+  template <>
+  struct QueueHash<alpaka_cuda_async::Queue> {
+    static std::string alpakaQueue(const alpaka_cuda_async::Queue &queue) { 
+      auto cuStream = c10::cuda::getStreamFromExternal(queue.getNativeHandle(), ALPAKA_ACCELERATOR_NAMESPACE::torch::getDevice(queue).index());
+      unsigned long long streamId{};
+      cudaStreamGetId(cuStream, &streamId);
+      return fmt::format("{:#d}", streamId);
+    }
+    static std::string pytorchQueue(const alpaka_cuda_async::Queue &queue) {
+      auto stream = c10::cuda::getCurrentCUDAStream(ALPAKA_ACCELERATOR_NAMESPACE::torch::getDevice(queue).index());
+      unsigned long long streamId{};
+      cudaStreamGetId(stream, &streamId);
+      return fmt::format("{:#d}", streamId);
+    }
+  };
 #endif
 
 }  // namespace cms::torch::alpakatools 

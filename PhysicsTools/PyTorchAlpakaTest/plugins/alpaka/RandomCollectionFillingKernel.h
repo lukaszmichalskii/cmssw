@@ -7,7 +7,9 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
-  void randomFillParticleCollection(Queue& queue, torchportabletest::ParticleDeviceCollection& particles);
+  using namespace torchportabletest;
+
+  void randomFillParticleCollection(Queue& queue, ParticleDeviceCollection& particles);
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
 

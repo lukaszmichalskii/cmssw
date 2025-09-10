@@ -61,4 +61,10 @@
   <class name="torchportabletest::RegressionSoA::ConstView"/>
   <class name="torchportabletest::RegressionHostCollection"/>
   <class name="edm::Wrapper<torchportabletest::RegressionHostCollection>" splitLevel="0"/>
+
+  <class name="torchportabletest::ReconstructionSoA"/>
+  <class name="torchportabletest::ReconstructionSoA::View"/>
+  <class name="torchportabletest::ReconstructionSoA::ConstView"/>
+  <class name="torchportabletest::ReconstructionHostCollection"/>
+  <class name="edm::Wrapper<torchportabletest::ReconstructionHostCollection>" splitLevel="0"/>
 </lcgdict>

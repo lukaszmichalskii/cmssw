@@ -23,7 +23,7 @@ args.register(
 
 args.register(
     "numberOfEvents",
-    1,
+    4,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of events to process"
@@ -43,6 +43,14 @@ args.register(
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,        
     "Batch size"
+)
+
+args.register(
+    "verbose",
+    False,
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.bool,        
+    "Log debug output"
 )
 
 args.register(

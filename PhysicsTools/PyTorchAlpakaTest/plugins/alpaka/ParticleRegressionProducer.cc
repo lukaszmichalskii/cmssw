@@ -13,6 +13,8 @@
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/AlpakaModel.h"
 #include "PhysicsTools/PyTorchAlpakaTest/plugins/alpaka/EventTimer.h"
 #include "PhysicsTools/PyTorchAlpakaTest/plugins/alpaka/Nvtx.h"
+#include "PhysicsTools/PyTorchAlpakaTest/plugins/alpaka/MapAlpakaBackend.h"
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
@@ -25,17 +27,19 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
         : EDProducer<>(params),
           particles_token_(consumes(params.getParameter<edm::InputTag>("particles"))),
           regression_token_{produces()},
-          model_(std::make_unique<torch::AlpakaModel>(params.getParameter<edm::FileInPath>("model").fullPath())) {}
+          model_(std::make_unique<torch::AlpakaModel>(params.getParameter<edm::FileInPath>("model").fullPath())),
+          verbose_{params.getUntrackedParameter<bool>("verbose")} {}
 
     void produce(device::Event &event, const device::EventSetup &event_setup) override {
       Nvtx produce_range(
-        fmt::format("ParticleRegressionProducer::produce({})", event.id().event()).c_str());
+        fmt::format("Regression::produce(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
       auto timer =
-          EventTimer(fmt::format("ParticleRegressionProducer({})", alpaka::getName(alpaka::getDev(event.queue()))).c_str(), event);
+          EventTimer(fmt::format("ParticleRegressionProducer({})", kAlpakaBackend).c_str(), event, verbose_);
 
       // in/out collections
       Nvtx alloc_range(
-          fmt::format("ParticleRegressionProducer::malloc({})", event.id().event()).c_str());
+          fmt::format("Regression::malloc(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
+      // TODO: hide const_cast from end-user code
       auto &particle_collection = const_cast<ParticleDeviceCollection &>(event.get(particles_token_));
       const auto batch_size = particle_collection.const_view().metadata().size();
       auto regression_collection = RegressionDeviceCollection(batch_size, event.queue());
@@ -48,7 +52,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
       // input tensor definition
       Nvtx metadata_range(
-          fmt::format("ParticleRegressionProducer::metadata({})", event.id().event()).c_str());
+          fmt::format("Regression::metadata(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
       SoAMetadata<ParticleSoA> inputs_metadata(batch_size);
       inputs_metadata.append_block("features", input_records.pt(), input_records.eta(), input_records.phi());
 
@@ -63,8 +67,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       // inference
       {
         Nvtx torchlib_range(
-            fmt::format("ParticleRegressionProducer::torchlib({})", event.id().event()).c_str());
+            fmt::format("Regression::torchlib(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
         QueueGuard<Queue> guard(event.queue());
+        // santity check 
+        assert(QueueHash<Queue>::alpakaQueue(event.queue()) == QueueHash<Queue>::pytorchQueue(event.queue()));
         model_->to(event.queue());
         model_->forward(metadata);
       }
@@ -76,6 +82,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       edm::ParameterSetDescription desc;
       desc.add<edm::FileInPath>("model");
       desc.add<edm::InputTag>("particles");
+      desc.addUntracked<bool>("verbose", false);
       descriptions.addWithDefaultLabel(desc);
     }
 
@@ -83,6 +90,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     const device::EDGetToken<ParticleDeviceCollection> particles_token_;
     const device::EDPutToken<RegressionDeviceCollection> regression_token_;
     std::unique_ptr<torch::AlpakaModel> model_;
+    const bool verbose_;
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
