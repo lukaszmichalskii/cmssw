@@ -21,9 +21,9 @@ scram b -j $(nproc)
 To run standalone tests for different backends change configuration [options](python/options_cff.py) first (if customization needed):
 ```bash
 # cpu backend
-scram b runtests_L1ScoutingPhase2TauTaggingSerialSync -v 
+cmsRun L1TriggerScouting/TauTagging/test/runL1TScPhase2TauTagging.py backend=serial_sync 
 # cuda backend
-scram b runtests_L1ScoutingPhase2TauTaggingCudaAsync -v 
+cmsRun L1TriggerScouting/TauTagging/test/runL1TScPhase2TauTagging.py backend=cuda_async 
 # rocm backend
-scram b runtests_L1ScoutingPhase2TauTaggingROCmAsync -v 
+cmsRun L1TriggerScouting/TauTagging/test/runL1TScPhase2TauTagging.py backend=rocm_async 
 ```

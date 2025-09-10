@@ -8,12 +8,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
   int max(Queue& queue, const int* data, const size_t size) {
     int num_clusters = 0;
 
+    auto extent = Vec<alpaka::DimInt<1>>{1};
+    auto host_buffer = createView(cms::alpakatools::host(), &num_clusters, extent);
+    auto device_buffer = alpaka::allocAsyncBuf<int, Idx>(queue, extent);
+    alpaka::memset(queue, device_buffer, 0x0);
+
     uint32_t threads_per_block = 64;
     uint32_t blocks_per_grid = divide_up_by(size, threads_per_block);      
     auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
 
-    auto extent = Vec<alpaka::DimInt<1>>{1};
-    auto device_buffer = alpaka::allocAsyncBuf<int, Idx>(queue, extent);
     alpaka::exec<Acc1D>(
         queue, 
         grid, 
@@ -25,7 +28,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
         data, 
         size,
         device_buffer.data());
-    auto host_buffer = createView(cms::alpakatools::host(), &num_clusters, extent);
+
     alpaka::memcpy(queue, host_buffer, device_buffer); 
     return num_clusters;
   }

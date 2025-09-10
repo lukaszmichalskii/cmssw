@@ -27,7 +27,7 @@ process.MessageLogger.cerr.threshold = 'ERROR'
 # process a limited number of events
 process.source = PoolSource(
     fileNames = [
-        "file:/eos/home-l/lmichals/data/l1tPFCandidatesTest.root"
+      "file:" + cms.FileInPath("L1TriggerScouting/TauTagging/data/l1tPFCandidatesTest.root").value()
     ]
 )
 
