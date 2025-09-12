@@ -1,5 +1,8 @@
-#include "DataFormats/L1ScoutingSoA/interface/alpaka/OrbitEventIndexMapDeviceCollection.h"
-#include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiDeviceCollection.h"
+#include <queue>
+#include <vector>
+
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/DeviceCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/DeviceObject.h"
 #include "DataFormats/L1ScoutingRawData/interface/SDSRawDataCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -15,6 +18,21 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
+  struct BxData {
+    unsigned int bx;
+    const data_t* payload_begin;
+    size_t payload_size;
+    const data_t* header_ptr;
+  };
+
+  struct BxDataComparator {
+    bool operator()(const BxData &t, const BxData &u) const {
+      return t.bx > u.bx;  // min-heap by bx
+    }
+  };
+
+  using MinHeap = std::priority_queue<BxData, std::vector<BxData>, BxDataComparator>;
+
   using namespace ::l1sc;
 
   /**
@@ -29,18 +47,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
-    const edm::EDGetTokenT<SDSRawDataCollection> raw_data_token_;                               // raw data
-    const device::EDPutToken<PuppiDeviceCollection> puppi_token_;                               // PUPPI candidates
-    const device::EDPutToken<OrbitEventIndexMapDeviceCollection> orbit_association_map_token_;  // orbit association map
+    const edm::EDGetTokenT<SDSRawDataCollection> raw_data_token_;                     // raw data
+    const device::EDPutToken<PuppiDeviceCollection> puppi_token_;                     // PUPPI candidates
+    const device::EDPutToken<NbxMapDeviceCollection> nbx_map_token_;                  // orbit association map
+    const device::EDPutToken<BxCounterDeviceObject> bx_ct_token_;
     const std::vector<uint32_t> links_ids_;                                           // front-end devices stream links
-    std::array<data_t, kOrbitSize> h_data_{};                                         // headers 64-bit words
+    std::vector<data_t> h_data_{};                                                    // headers 64-bit words
     std::vector<data_t> p_data_{};                                                    // payload 64-bit words
     std::unique_ptr<kernels::L1TScPhase2PuppiRawToDigiKernels> raw_to_digi_kernels_;  // kernels for decoding
     const bool verbose_;                                                              // verbose output
-    const int verbose_level_;                                                         // verbose level
 
     void collectBuffers(const SDSRawDataCollection &raw_data);
-    void logDebugMessage(int event_id, const PuppiHostCollection &puppi_host) const;
   };
 
   // __________________________________________________________________________________________________________________
@@ -50,13 +67,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       : EDProducer<>(params),
         raw_data_token_{consumes(params.getParameter<edm::InputTag>("src"))},
         puppi_token_{produces()},
-        orbit_association_map_token_{produces()},
+        nbx_map_token_{produces()},
+        bx_ct_token_{produces()},
         links_ids_(params.getParameter<std::vector<uint32_t>>("linksIds")),
         raw_to_digi_kernels_(std::make_unique<kernels::L1TScPhase2PuppiRawToDigiKernels>()),
-        verbose_(params.getUntrackedParameter<bool>("verbose")),
-        verbose_level_(params.getUntrackedParameter<int>("verboseLevel")) {}
+        verbose_(params.getUntrackedParameter<bool>("verbose")) {}
 
   void L1TScPhase2PuppiRawToDigi::produce(device::Event &event, const device::EventSetup &event_setup) {
+    auto timestamp = std::chrono::steady_clock::now();
     // intialize device constant memory -> called only once
     raw_to_digi_kernels_->initialize(event.queue());
 
@@ -65,27 +83,36 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     // preprocess header -> payload
     collectBuffers(*raw_data);
+    auto nbx = static_cast<int32_t>(h_data_.size());
 
-    // orbit event index association map
-    auto map_size = links_ids_.size() * kOrbitSize + 1;
-    auto orbit_association_map = OrbitEventIndexMapDeviceCollection(map_size, event.queue());
-    kernels::associateOrbitEventIndex(event.queue(), h_data_.data(), orbit_association_map);
+    // nbx index map
+    std::array<int32_t, 2> const sizes{{nbx, nbx + 1}};
+    auto nbx_map = NbxMapDeviceCollection(sizes, event.queue());
+    nbx_map.zeroInitialise(event.queue());
+    kernels::associateNbxEventIndex(event.queue(), h_data_.data(), nbx_map);
 
     // pf candidates data
     auto puppi = PuppiDeviceCollection(p_data_.size(), event.queue());
     kernels::rawToDigi(event.queue(), p_data_.data(), puppi);
 
     // debug log to stdout
-    if (verbose_) {
-      auto puppi_host = PuppiHostCollection(puppi.view().metadata().size(), event.queue());
-      alpaka::memcpy(event.queue(), puppi_host.buffer(), puppi.buffer());
-      alpaka::wait(event.queue());  // explicitly synchronize the device
-      logDebugMessage(event.id().event(), puppi_host);
-    }
+    // if (verbose_) {
+    //   fmt::print("[DEBUG] l1sc::L1TScPhase2PuppiRawToDigi: OK (event: {})\n", event.id().event());
+    // }
+
+    auto bx_ct_host = BxCounterHostObject(event.queue(), nbx);
+    auto bx_ct = BxCounterDeviceObject(event.queue());
+    alpaka::memcpy(event.queue(), bx_ct.buffer(), bx_ct_host.buffer());
 
     // store data in the event
-    event.emplace(orbit_association_map_token_, std::move(orbit_association_map));
+    event.emplace(nbx_map_token_, std::move(nbx_map));
     event.emplace(puppi_token_, std::move(puppi));
+    event.emplace(bx_ct_token_, std::move(bx_ct));
+
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - timestamp);
+    // if (verbose_) {
+    fmt::print("[DEBUG] l1sc::L1TScPhase2PuppiRawToDigi: OK {} us\n", elapsed.count());
+    // }
   }
 
   void L1TScPhase2PuppiRawToDigi::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
@@ -93,78 +120,50 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     desc.add<std::vector<uint32_t>>("linksIds");
     desc.add<edm::InputTag>("src");
     desc.addUntracked<bool>("verbose", false);
-    desc.addUntracked<int>("verboseLevel", 0);
     descriptions.addWithDefaultLabel(desc);
   }
 
   void L1TScPhase2PuppiRawToDigi::collectBuffers(const SDSRawDataCollection &raw_data) {
-    p_data_.clear();  // reset payload buffer
+    p_data_.clear();
+    h_data_.clear();
 
-    size_t h_idx = 0;
-    for (auto &link_id : links_ids_) {
-      const auto &link = raw_data.FEDData(link_id);
-      const auto chunk_begin = reinterpret_cast<const data_t *>(link.data());
-      const auto chunk_end = reinterpret_cast<const data_t *>(link.data() + link.size());
+    MinHeap min_heap;
+    // readout data from links breadth-first (order not guaranteed)
+    for (size_t link_idx = 0; link_idx < links_ids_.size(); ++link_idx) {
+        auto link_id = links_ids_[link_idx];
+        const auto &link = raw_data.FEDData(link_id);
+        const auto chunk_begin = reinterpret_cast<const data_t *>(link.data());
+        const auto chunk_end = reinterpret_cast<const data_t *>(link.data() + link.size());
 
-      for (auto ptr = chunk_begin; ptr < chunk_end;) {
-        // skip empty words
-        if (*ptr == 0) {
-          ++ptr;
-          continue;
+        for (auto ptr = chunk_begin; ptr < chunk_end;) {
+            if (*ptr == 0) { ++ptr; continue; }  // skip empty words
+ 
+            unsigned int bx = ((*ptr) >> 12) & 0xFFF;  // unpack bx number
+            auto chunk_size = (*ptr) & 0xFFF;          // unpack chunk size
+            ++ptr;                                     // move past header
+
+            const size_t payload = chunk_end - ptr;                           // calculate payload size
+            const size_t copy_count = std::min<size_t>(chunk_size, payload);  // block size
+            if (copy_count == 0) continue;                                    // skip if no trailing payload
+
+            min_heap.push(BxData{
+                .bx = bx,
+                .payload_begin = ptr,
+                .payload_size = copy_count,
+                .header_ptr = ptr - 1,
+            });
+
+            ptr += copy_count;  // move to the next word
         }
-
-        h_data_[h_idx++] = *ptr;           // store header
-        auto chunk_size = (*ptr) & 0xFFF;  // unpack chunk size
-        ++ptr;                             // move to the next word
-
-        const size_t payload = chunk_end - ptr;                           // calculate payload size
-        const size_t copy_count = std::min<size_t>(chunk_size, payload);  // block size
-
-        // skip if no trailing payload
-        if (copy_count == 0)
-          continue;
-
-        p_data_.insert(p_data_.end(), ptr, ptr + copy_count);  // copy payload
-        ptr += copy_count;                                     // move to the next word
-      }
-    }
-  }
-
-  /**
-   * Log converstion results to stdout
-   */
-  void L1TScPhase2PuppiRawToDigi::logDebugMessage(int event_id, const PuppiHostCollection &puppi_host) const {
-    const auto size = puppi_host.const_view().metadata().size();
-    fmt::print("[DEBUG] l1sc::L1TScPhase2PuppiRawToDigi: PuppiDeviceCollection[{}]:\n", size);
-
-    // table header
-    const std::string separator = "+-------+---------+---------+---------+---------+-------+";
-    fmt::print("{}\n", separator);
-    fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>5} |\n", "index", "pt", "eta", "phi", "z0", "pdgid");
-    fmt::print("{}\n", separator);
-
-    // log head of collection
-    auto span = (size > 10) ? 10 : size;
-    if (verbose_level_ == 1)
-      span = size;
-    for (int32_t idx = 0; idx < span; ++idx) {
-      const auto &view = puppi_host.const_view()[idx];
-      fmt::print("| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} | {:7.2f} | {:5d} |\n",
-                 idx,
-                 view.pt(),
-                 view.eta(),
-                 view.phi(),
-                 view.z0(),
-                 view.pdgid());
     }
 
-    // log tail
-    if (span < size) {
-      fmt::print("| {:>5} | {:>7} | {:>7} | {:>7} | {:>7} | {:>5} |\n", "...", "...", "...", "...", "...", "...");
+    // restore bx order (size of heap at max 3564 not that heavy to track)
+    while (!min_heap.empty()) {
+        const auto &bx_data = min_heap.top();
+        h_data_.push_back(*(bx_data.header_ptr));                                                            // store header
+        p_data_.insert(p_data_.end(), bx_data.payload_begin, bx_data.payload_begin + bx_data.payload_size);  // copy payload
+        min_heap.pop();
     }
-
-    fmt::print("{}\n", separator);
-    fmt::print("[DEBUG] l1sc::L1TScPhase2PuppiRawToDigi: OK ({})\n", event_id);
   }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc
