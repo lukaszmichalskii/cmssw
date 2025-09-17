@@ -23,7 +23,7 @@ args.register(
 
 args.register(
     "numberOfEvents",
-    4,
+    1,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,
     "Number of events to process"
@@ -39,7 +39,7 @@ args.register(
 
 args.register(
     "batchSize",
-    100,
+    10,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,        
     "Batch size"

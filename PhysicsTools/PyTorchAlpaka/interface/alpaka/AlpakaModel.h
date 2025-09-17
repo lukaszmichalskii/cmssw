@@ -33,7 +33,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
     template <typename InMemLayout, typename OutMemLayout>
     void forward(const cms::torch::alpakatools::ModelMetadata<InMemLayout, OutMemLayout> &metadata) {
       auto input_tensor = cms::torch::alpakatools::Converter::convert_input(metadata, device_);
-      cms::torch::alpakatools::Converter::convert_output(metadata, device_) = model_.forward(input_tensor).toTensor();
+      cms::torch::alpakatools::Converter::convert_output(metadata, device_) = model_.forward(input_tensor).toTensor();;
     }
 
     // Move model to specified device memory space. Async load (in default stream if not overridden by the caller)

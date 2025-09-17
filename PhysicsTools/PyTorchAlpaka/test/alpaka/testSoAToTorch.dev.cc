@@ -108,25 +108,24 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     // Create SoA Metadata
     SoAMetadata<SoAPosition> input(batch_size);
     auto posview = positionCollection.view().records();
-    input.append_block("main", posview.x(), posview.y(), posview.z());
+    input.append_block(queue, std::string{"main"}, posview.x(), posview.y(), posview.z());
 
     SoAMetadata<SoAResult> output(batch_size);
     auto view = resultCollection.view().records();
-    output.append_block("result", view.x(), view.y());
+    output.append_block(queue, std::string{"result"}, view.x(), view.y());
     ModelMetadata metadata(input, output);
 
     // Call inference
     model.forward(metadata);
     check(queue, resultCollection);
+
+    PortableHostCollection<SoAResult> resultHostCollection(batch_size, cms::alpakatools::host());
+    alpaka::memcpy(queue, resultHostCollection.buffer(), resultCollection.buffer());
     alpaka::wait(queue);
 
-    // PortableHostCollection<SoAResult> resultHostCollection(batch_size, cms::alpakatools::host());
-    // alpaka::memcpy(queue, resultHostCollection.buffer(), resultCollection.buffer());
-    // alpaka::wait(queue);
-
-    // for (uint32_t i = 0; i < batch_size; i++) {
-    //   std::cout << "(" << resultHostCollection.view().x()[i] << ", " << resultHostCollection.view().y()[i] << ")" << std::endl;
-    // }
+    for (uint32_t i = 0; i < batch_size; i++) {
+      std::cout << "(" << resultHostCollection.view().x()[i] << ", " << resultHostCollection.view().y()[i] << ")" << std::endl;
+    }
   }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest

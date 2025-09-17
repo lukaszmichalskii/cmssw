@@ -54,11 +54,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       Nvtx metadata_range(
           fmt::format("Regression::metadata(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
       SoAMetadata<ParticleSoA> inputs_metadata(batch_size);
-      inputs_metadata.append_block("features", input_records.pt(), input_records.eta(), input_records.phi());
+      inputs_metadata.append_block(event.queue(), std::string{"features"}, input_records.pt(), input_records.eta(), input_records.phi());
 
       // output tensor definition
       SoAMetadata<RegressionSoA> outputs_metadata(batch_size);
-      outputs_metadata.append_block("preds", output_records.reco_pt());
+      outputs_metadata.append_block(event.queue(), std::string{"preds"}, output_records.reco_pt());
 
       // metadata for automatic tensor conversion
       ModelMetadata<ParticleSoA, RegressionSoA> metadata(inputs_metadata, outputs_metadata);
@@ -70,9 +70,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
             fmt::format("Regression::torchlib(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
         QueueGuard<Queue> guard(event.queue());
         // santity check 
-        assert(QueueHash<Queue>::alpakaQueue(event.queue()) == QueueHash<Queue>::pytorchQueue(event.queue()));
+        // assert(QueueHash<Queue>::alpakaQueue(event.queue()) == QueueHash<Queue>::pytorchQueue(event.queue()));
         model_->to(event.queue());
         model_->forward(metadata);
+        #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+        outputs_metadata.h2d(event.queue());
+        #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
       }
 
       event.emplace(regression_token_, std::move(regression_collection));

@@ -47,30 +47,54 @@ namespace torchtest {
     }
 
     void analyze(edm::Event const& event, edm::EventSetup const&) override {
-      auto const& particle_collection = event.get(particles_token_);
-      auto const particle_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(particles_backend_));
-
-      auto const& classififcation_collection = event.get(classification_token_);
-      auto const classifiacation_collection_backend =
-          static_cast<cms::alpakatools::Backend>(event.get(classification_backend_));
-
-      auto const& regression_collection = event.get(regression_token_);
-      auto const regression_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(regression_backend_));
-
-      auto const& reconstruction_collection = event.get(reconstruction_token_);
-      auto const reconstruction_collection_backend = static_cast<cms::alpakatools::Backend>(event.get(reconstruction_backend_));
-
-      if (verbose_) {
-        printParticleCollection(particle_collection, particle_collection_backend, event);
-        printClassificationCollection(classififcation_collection, classifiacation_collection_backend, event);
-        printRegressionCollection(regression_collection, regression_collection_backend, event);
-        printReconstructionCollection(reconstruction_collection, reconstruction_collection_backend, event);
+      // particles
+      auto particles_handle = event.getHandle(particles_token_);
+      if (particles_handle.isValid()) {
+        auto const& particle_collection = *particles_handle;
+        auto const particle_collection_backend =
+          static_cast<cms::alpakatools::Backend>(event.get(particles_backend_));
+        if (verbose_) {
+          printParticleCollection(particle_collection, particle_collection_backend, event);
+        }
       }
 
-      const auto tol = 1e-6;
-      const auto gt = 0.5;
-      for (int32_t idx = 0; idx < reconstruction_collection.view().metadata().size(); ++idx) {
-        assert(std::abs(reconstruction_collection.view().merged()[idx] - gt) < tol);
+      // classification
+      auto classification_handle = event.getHandle(classification_token_);
+      if (classification_handle.isValid()) {
+        auto const& classification_collection = *classification_handle;
+        auto const classifiacation_collection_backend =
+          static_cast<cms::alpakatools::Backend>(event.get(classification_backend_));
+        if (verbose_) {
+          printClassificationCollection(classification_collection, classifiacation_collection_backend, event);
+        }
+      }
+
+      // regression
+      auto regression_handle = event.getHandle(regression_token_);
+      if (regression_handle.isValid()) {
+        auto const& regression_collection = *regression_handle;
+        auto const regression_collection_backend =
+          static_cast<cms::alpakatools::Backend>(event.get(regression_backend_));
+        if (verbose_) {
+          printRegressionCollection(regression_collection, regression_collection_backend, event);
+        }
+      }
+
+      // merger
+      auto reconstruction_handle = event.getHandle(reconstruction_token_);
+      if (reconstruction_handle.isValid()) {
+        auto const& reconstruction_collection = *reconstruction_handle;
+        auto const reconstruction_collection_backend =
+          static_cast<cms::alpakatools::Backend>(event.get(reconstruction_backend_));
+        if (verbose_) {
+          printReconstructionCollection(reconstruction_collection, reconstruction_collection_backend, event);
+        }
+        // assert
+        const auto tol = 1e-6;
+        const auto gt = 0.5;
+        for (int32_t idx = 0; idx < reconstruction_collection.view().metadata().size(); ++idx) {
+          assert(std::abs(reconstruction_collection.view().merged()[idx] - gt) < tol);
+        }
       }
     }
 

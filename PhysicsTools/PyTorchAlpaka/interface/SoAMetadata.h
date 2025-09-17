@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <any>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -17,6 +18,9 @@
 
 #include "PhysicsTools/PyTorch/interface/TorchCompat.h"
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+#include "HeterogeneousCore/AlpakaInterface/interface/memory.h"
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
 
 namespace cms::torch::alpakatools {
 
@@ -111,12 +115,42 @@ namespace cms::torch::alpakatools {
     }
   };
 
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+  struct IAutoCopyableMemBuf {
+    virtual ~IAutoCopyableMemBuf() = default;
+    virtual void h2d(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) = 0;
+  };
+
+  template <typename T>
+  struct AutoCopyableMemBuf : IAutoCopyableMemBuf {
+    using HostView = cms::alpakatools::host_view<T[]>;
+    using DeviceView = cms::alpakatools::device_view<ALPAKA_ACCELERATOR_NAMESPACE::Device, T[]>;
+
+    HostView host_view_;
+    DeviceView device_view_;
+
+    AutoCopyableMemBuf(HostView host_view, DeviceView device_view)
+       : host_view_(host_view), device_view_(device_view) {}
+
+    ~AutoCopyableMemBuf() override {}
+
+    void h2d(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) override {
+      alpaka::memcpy(queue, device_view_, host_view_);
+    }
+  };
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
+
   // Metadata for SOA split into multiple blocks.
   // An order for the resulting tensors can be defined.
   template <typename SOA_Layout>
   struct SoAMetadata {
   private:
     std::map<std::string, Block<SOA_Layout>> blocks;
+
+    #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    std::vector<std::shared_ptr<IAutoCopyableMemBuf>> lifetime_policy_buffers_;  // debug
+    std::vector<std::any> host_buffers_;  // RAII hack
+    #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
 
     template <typename T>
     inline static ::torch::ScalarType get_type() {
@@ -154,6 +188,14 @@ namespace cms::torch::alpakatools {
 
     SoAMetadata(int nElements_) : nElements(nElements_), nBlocks(0) {}
 
+    #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    void h2d(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+      for (auto& autocpybuf : lifetime_policy_buffers_) {
+        autocpybuf->h2d(queue);
+      }
+    }
+    #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
+
     template <typename T, typename... Others>
       requires(SameTypes<typename T::ValueType, typename Others::ValueType...> && T::columnType == SoAColumnType::eigen)
     void append_block(const std::string& name,
@@ -180,9 +222,51 @@ namespace cms::torch::alpakatools {
     template <typename T, typename... Others>
       requires(SameTypes<typename T::ScalarType, typename Others::ScalarType...> &&
                T::columnType == SoAColumnType::column)
-    void append_block(const std::string& name,
+    void append_block(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue,
+                      const std::string& name,
                       std::tuple<T, cms::soa::size_type> column,
                       std::tuple<Others, cms::soa::size_type>... others) {
+      #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+      using ScalarType = typename T::ScalarType;
+      int nCols = 1 + sizeof...(Others);
+      int elemsPerCol = Block<SOA_Layout>::get_elems_per_column(nElements, sizeof(ScalarType));
+      size_t totalElems = elemsPerCol * nCols;
+
+      // allocate one contiguous host buffer for all columns
+      auto hostBuf = cms::alpakatools::make_host_buffer<ScalarType[]>(totalElems);
+      alpaka::memset(queue, hostBuf, 0x00);
+      ScalarType* hostPtr = alpaka::getPtrNative(hostBuf);
+
+      // keep buffer alive by storing in std::any
+      host_buffers_.push_back(hostBuf);
+
+      // helper to copy each column into contiguous buffer
+      auto copy_to_offset = [&](auto &col_tuple, int offset) {
+        auto* dev_ptr = std::get<0>(col_tuple).tupleOrPointer();
+        auto dev = alpaka::getDev(queue);
+        auto dev_view = cms::alpakatools::make_device_view(dev, dev_ptr, nElements);
+
+        std::span<ScalarType> target_span(hostPtr + offset * elemsPerCol, elemsPerCol);
+        auto host_view = cms::alpakatools::make_host_view(target_span);
+        alpaka::memcpy(queue, host_view, dev_view);
+        lifetime_policy_buffers_.emplace_back(std::make_shared<AutoCopyableMemBuf<ScalarType>>(host_view, dev_view));
+      };
+
+      // copy columns to host buffer
+      copy_to_offset(column, 0);
+      int idx = 1;
+      (copy_to_offset(others, idx++), ...);
+
+      // store metadata block
+      blocks.try_emplace(name,
+                        nElements,
+                        hostPtr,
+                        sizeof...(others) + 1,
+                        get_type<typename T::ScalarType>(),
+                        sizeof(ScalarType));
+      order.push_back(name);
+      nBlocks += 1;
+      #else
       int elems = Block<SOA_Layout>::get_elems_per_column(nElements, sizeof(typename T::ScalarType));
       assert(check_location(elems, std::get<0>(column).tupleOrPointer(), std::get<0>(others).tupleOrPointer()...));
 
@@ -194,6 +278,32 @@ namespace cms::torch::alpakatools {
                          sizeof(typename T::ScalarType));
       order.push_back(name);
       nBlocks += 1;
+      #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
+
+      // for (int col = 0; col < nCols; ++col) {
+      //   int padding = elemsPerCol - nElements;
+
+      //   std::cout << "Column " << col 
+      //             << " (nElements = " << nElements
+      //             << ", elemsPerCol = " << elemsPerCol
+      //             << ", padding = " << padding << "):" << std::endl;
+
+      //   // print actual data
+      //   std::cout << "  data: ";
+      //   for (int i = 0; i < nElements; ++i) {
+      //     std::cout << hostPtr[col * elemsPerCol + i] << ", ";
+      //   }
+      //   std::cout << std::endl;
+
+      //   // print padding/trailing zeros
+      //   if (padding > 0) {
+      //     std::cout << "  padding/trailing zeros: ";
+      //     for (int i = nElements; i < elemsPerCol; ++i) {
+      //         std::cout << hostPtr[col * elemsPerCol + i] << ", ";
+      //     }
+      //     std::cout << std::endl;
+      //   }
+      // }
     }
 
     template <SoAColumnType col_type, typename T>
@@ -228,6 +338,8 @@ namespace cms::torch::alpakatools {
                   const SoAMetadata<SOA_Output>& output_,
                   bool multi_output_ = true)
         : input(input_), output(output_), multi_output(multi_output_) {}
+
+    void h2d(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) { output.h2d(queue); alpaka::wait(queue); }
   };
 
 }  // namespace cms::torch::alpakatools
