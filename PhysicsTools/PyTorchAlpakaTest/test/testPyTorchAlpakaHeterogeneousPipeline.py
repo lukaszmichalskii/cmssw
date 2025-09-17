@@ -59,18 +59,9 @@ process.ParticleRegressionPortableProducer = torchtest_ParticleRegressionProduce
     ),
     verbose = cms.untracked.bool(args.verbose)
 )
-process.ParticleRegressionProducerSerialSync = torchtest_ParticleRegressionProducer_alpaka(
-    model = cms.FileInPath(args.regressionJit),
-    particles = 'PortableCollectionProducer',
-    alpaka = cms.untracked.PSet(
-        backend = cms.untracked.string("serial_sync")  # force CPU
-    ),
-    verbose = cms.untracked.bool(args.verbose)
-)
 process.ReconstructionMergePortableProducer = torchtest_ReconstructionMergeProducer_alpaka(
     classification = 'ParticleClassificationPortableProducer',
     regression = 'ParticleRegressionPortableProducer',
-    # regression = 'ParticleRegressionProducerSerialSync',
     alpaka = cms.untracked.PSet(
         backend = cms.untracked.string(args.backend)
     ),
@@ -80,7 +71,6 @@ process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
     particles = 'PortableCollectionProducer',
     classification = 'ParticleClassificationPortableProducer',
     regression = 'ParticleRegressionPortableProducer',
-    # regression = 'ParticleRegressionProducerSerialSync',
     reconstruction = 'ReconstructionMergePortableProducer',
     verbose = cms.untracked.bool(args.verbose)
 )
@@ -90,7 +80,6 @@ process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
 process.path = cms.Path(
     process.PortableCollectionProducer + 
     process.ParticleRegressionPortableProducer +
-    # process.ParticleRegressionProducerSerialSync +
     process.ParticleClassificationPortableProducer +
     process.ReconstructionMergePortableProducer +
     process.CollectionAnalyzer

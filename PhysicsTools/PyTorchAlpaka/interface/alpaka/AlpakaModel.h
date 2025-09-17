@@ -31,26 +31,30 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
     // Refer: PhysicsTools/PyTorch/interface/Converter.h for details about wrapping memory layouts.
     // TODO: add support for multi-output models (without temporary mem copy)
     template <typename InMemLayout, typename OutMemLayout>
-    void forward(const cms::torch::alpakatools::ModelMetadata<InMemLayout, OutMemLayout> &metadata) {
+    void forward(Queue &queue, cms::torch::alpakatools::ModelMetadata<InMemLayout, OutMemLayout> &metadata) {
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+      metadata.copyToHost(queue);
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
       auto input_tensor = cms::torch::alpakatools::Converter::convert_input(metadata, device_);
-      cms::torch::alpakatools::Converter::convert_output(metadata, device_) = model_.forward(input_tensor).toTensor();
+      cms::torch::alpakatools::Converter::convert_output(metadata, device_) =  model_.forward(input_tensor).toTensor();
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+      metadata.copyToDevice(queue);
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
     }
 
     // Move model to specified device memory space. Async load (in default stream if not overridden by the caller)
-    template <typename T>
-      requires ::alpaka::isDevice<T> || ::alpaka::isQueue<T>
-    void to(const T &acc_mem) {
-      if constexpr (std::is_same_v<::alpaka::Dev<T>, ::alpaka::DevCpu>) {
-        this->Model::to(getDevice(acc_mem));
+    void to(const Device &dev) {
+      if constexpr (std::is_same_v<::alpaka::Dev<Device>, ::alpaka::DevCpu>) {
+        this->Model::to(getDevice(dev));
         return;
       }
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       // ROCm/HIP not yet directly supported → fallback to CPU inference
-      this->Model::to(getDevice(acc_mem));
+      this->Model::to(getDevice(dev));
       return;
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED 
       // CUDA → keep async execution
-      this->Model::to(getDevice(acc_mem), true);
+      this->Model::to(getDevice(dev), true);
     }
     
     // Overload for Queue to simplify the interface for the common case of async execution.

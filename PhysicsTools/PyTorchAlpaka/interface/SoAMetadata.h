@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <any>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -17,10 +18,13 @@
 
 #include "PhysicsTools/PyTorch/interface/TorchCompat.h"
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
+#include "HeterogeneousCore/AlpakaInterface/interface/memory.h"
+
 
 namespace cms::torch::alpakatools {
 
   using namespace cms::soa;
+  using namespace cms::alpakatools;
 
   template <typename T, typename... Others>
   concept SameTypes = (std::same_as<T, Others> && ...);
@@ -39,7 +43,7 @@ namespace cms::torch::alpakatools {
     size_t size() const { return columns.size(); }
     int operator[](int i) const { return columns[i]; }
     void push(int i) { columns.push_back(i); }
-  };
+  };  
 
   // Block of SoA Columns with same type and element size.
   // Calculates size and stride and stores torch type.
@@ -54,18 +58,19 @@ namespace cms::torch::alpakatools {
     bool is_scalar = false;
 
     Block() : ptr(nullptr) {}
-    // Constructor for columns and eigen columns
+
+    // Constructor for columns
     Block(int nElements, void* ptr_, const Columns& columns_, ::torch::ScalarType type_, size_t bytes_)
         : ptr(ptr_), type(type_), bytes(bytes_) {
-      stride = create_stride(nElements, columns_, bytes_);
-      size = create_size(nElements, columns_);
-    };
+        stride = create_stride(nElements, columns_, bytes_);
+        size = create_size(nElements, columns_);
+    }
 
     // Constructor for scalar columns
     Block(int nElements, void* ptr_, ::torch::ScalarType type_, size_t bytes_) : ptr(ptr_), type(type_), bytes(bytes_) {
       stride = create_stride(nElements, 1, bytes_, true);
       size = create_size(nElements, 1);
-    };
+    }
 
     static int get_elems_per_column(int nElements, size_t bytes) {
       int per_bunch = SOA_Layout::alignment / bytes;
@@ -111,12 +116,70 @@ namespace cms::torch::alpakatools {
     }
   };
 
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+  struct HipMemcpyFallbackBase {
+    virtual ~HipMemcpyFallbackBase() = default;
+    virtual void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue&) = 0;
+    virtual void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue&) = 0;
+    virtual void* hostPtr() = 0; 
+  };
+
+  template <typename T>
+  struct HipMemcpyFallback : HipMemcpyFallbackBase {
+    size_t size_;
+    size_t stride_;
+    void* d_ptr_;
+    std::optional<host_buffer<T[]>> h_buf_;
+
+    HipMemcpyFallback(const size_t size, const size_t stride, void* d_ptr)
+       : size_(size), stride_(stride), d_ptr_(d_ptr) {
+      const size_t n_elems = size * stride;
+      h_buf_ = make_host_buffer<T[]>(n_elems);
+    }
+
+    void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+      auto extent = Vec1D{size_ * stride_};
+      auto d_view = alpaka::createView(
+          alpaka::getDev(queue),
+          static_cast<T*>(d_ptr_), 
+          extent);
+
+      auto h_view = alpaka::createView(
+          cms::alpakatools::host(),
+          alpaka::getPtrNative(h_buf_.value()),
+          extent);
+      alpaka::memcpy(queue, h_view, d_view);
+    }
+
+    void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+      auto extent = Vec1D{size_ * stride_};
+      auto d_view = alpaka::createView(
+            alpaka::getDev(queue),
+            static_cast<T*>(d_ptr_), 
+            extent);
+
+      auto h_view = alpaka::createView(
+          cms::alpakatools::host(),
+          alpaka::getPtrNative(h_buf_.value()),
+          extent);
+      alpaka::memcpy(queue, d_view, h_view);
+    }
+
+    void* hostPtr() {
+      return alpaka::getPtrNative(h_buf_.value());
+    }
+  };
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
+
   // Metadata for SOA split into multiple blocks.
   // An order for the resulting tensors can be defined.
   template <typename SOA_Layout>
   struct SoAMetadata {
   private:
     std::map<std::string, Block<SOA_Layout>> blocks;
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    std::vector<std::shared_ptr<HipMemcpyFallbackBase>> buffers_;
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
 
     template <typename T>
     inline static ::torch::ScalarType get_type() {
@@ -186,12 +249,24 @@ namespace cms::torch::alpakatools {
       int elems = Block<SOA_Layout>::get_elems_per_column(nElements, sizeof(typename T::ScalarType));
       assert(check_location(elems, std::get<0>(column).tupleOrPointer(), std::get<0>(others).tupleOrPointer()...));
 
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+      auto hip_memcpy = std::make_shared<HipMemcpyFallback<typename T::ScalarType>>(
+          1 + sizeof...(Others), 
+          Block<SOA_Layout>::get_elems_per_column(nElements, sizeof(typename T::ScalarType)), 
+          static_cast<void*>(std::get<0>(column).tupleOrPointer()));
+      buffers_.push_back(std::move(hip_memcpy));
+    
+      auto* ptr = buffers_.back()->hostPtr();
+#else
+      auto *ptr = std::get<0>(column).tupleOrPointer();
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
       blocks.try_emplace(name,
                          nElements,
-                         std::get<0>(column).tupleOrPointer(),
+                         ptr,
                          sizeof...(others) + 1,
                          get_type<typename T::ScalarType>(),
                          sizeof(typename T::ScalarType));
+      
       order.push_back(name);
       nBlocks += 1;
     }
@@ -211,6 +286,16 @@ namespace cms::torch::alpakatools {
     void change_order(std::vector<std::string>&& new_order) { order = std::move(new_order); }
 
     inline Block<SOA_Layout> operator[](const std::string& key) const { return blocks.at(key); }
+
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+      for (int i = 0; i < nBlocks; i++) buffers_[i]->copyToHost(queue);
+    } 
+
+    void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+      for (int i = 0; i < nBlocks; i++) buffers_[i]->copyToDevice(queue);
+    }
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
   };
 
   // Metadata to run model with input SOA and fill output SOA.
@@ -228,6 +313,21 @@ namespace cms::torch::alpakatools {
                   const SoAMetadata<SOA_Output>& output_,
                   bool multi_output_ = true)
         : input(input_), output(output_), multi_output(multi_output_) {}
+
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    // For AMD CPU fallback both inputs and outputs are copied to host
+    void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
+      input.copyToHost(queue);
+      output.copyToHost(queue);
+      alpaka::wait(queue);
+    }
+
+    // For AMD CPU fallback only outputs are copied to device, no need to copy inputs also
+    void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
+      output.copyToDevice(queue);
+      alpaka::wait(queue);
+    }
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
   };
 
 }  // namespace cms::torch::alpakatools

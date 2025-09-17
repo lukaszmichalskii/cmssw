@@ -116,17 +116,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     ModelMetadata metadata(input, output);
 
     // Call inference
-    model.forward(metadata);
+    model.forward(queue, metadata);
     check(queue, resultCollection);
+
+    PortableHostCollection<SoAResult> resultHostCollection(batch_size, cms::alpakatools::host());
+    alpaka::memcpy(queue, resultHostCollection.buffer(), resultCollection.buffer());
     alpaka::wait(queue);
 
-    // PortableHostCollection<SoAResult> resultHostCollection(batch_size, cms::alpakatools::host());
-    // alpaka::memcpy(queue, resultHostCollection.buffer(), resultCollection.buffer());
-    // alpaka::wait(queue);
-
-    // for (uint32_t i = 0; i < batch_size; i++) {
-    //   std::cout << "(" << resultHostCollection.view().x()[i] << ", " << resultHostCollection.view().y()[i] << ")" << std::endl;
-    // }
+    for (uint32_t i = 0; i < batch_size; i++) {
+      std::cout << "(" << resultHostCollection.view().x()[i] << ", " << resultHostCollection.view().y()[i] << ")" << std::endl;
+    }
   }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
