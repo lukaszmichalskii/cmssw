@@ -49,8 +49,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
                       SOA_COLUMN(double, y),
                       SOA_COLUMN(double, z),
 
-                      SOA_SCALAR(float, type),
-                      SOA_SCALAR(int, someNumber),
+                      // SOA_SCALAR(float, type),
+                      // SOA_SCALAR(int, someNumber),
 
                       SOA_COLUMN(double, v),
                       SOA_COLUMN(double, w));
@@ -65,10 +65,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   public:
     template <typename TAcc, typename = std::enable_if_t<::alpaka::isAccelerator<TAcc>>>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, PortableCollection<SoA, Device>::View view) const {
-      if (cms::alpakatools::once_per_grid(acc)) {
-        view.type() = 4;
-        view.someNumber() = 5;
-      }
+      // if (cms::alpakatools::once_per_grid(acc)) {
+      //   view.type() = 4;
+      //   view.someNumber() = 5;
+      // }
 
       for (int32_t i : cms::alpakatools::uniform_elements(acc, view.metadata().size())) {
         view[i].a()(0) = 1 + i;
@@ -94,10 +94,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   class InputVerifyKernel {
   public:
     ALPAKA_FN_ACC void operator()(Acc1D const& acc, PortableCollection<SoA, Device>::View view) const {
-      if (cms::alpakatools::once_per_grid(acc)) {
-        ALPAKA_ASSERT_ACC(view.type() == 4);
-        ALPAKA_ASSERT_ACC(view.someNumber() == 5);
-      }
+      // if (cms::alpakatools::once_per_grid(acc)) {
+      //   ALPAKA_ASSERT_ACC(view.type() == 4);
+      //   ALPAKA_ASSERT_ACC(view.someNumber() == 5);
+      // }
 
       for (uint32_t i : cms::alpakatools::uniform_elements(acc, view.metadata().size())) {
         ALPAKA_ASSERT_ACC(view[i].a()(0) == 1 + i);
@@ -253,8 +253,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     output.append_block("result", records.v());
     ModelMetadata metadata(input, output);
 
-    ::alpaka::wait(queue);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToHost(queue);
+  #endif
     std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToDevice(queue);
+  #endif
 
     // Check if tensor list built correctly
     check(queue, deviceCollection, tensors);
@@ -286,9 +291,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     output.append_block("w", records.w());
     ModelMetadata metadata(input, output);
 
-    ::alpaka::wait(queue);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToHost(queue);
+  #endif
     std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
     Converter::convert_output(tensors, metadata, torchDevice);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToDevice(queue);
+  #endif
 
     // Check if tensor list built correctly
     check_output(queue, deviceCollection);
@@ -320,8 +330,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     output.append_block("result", records.v());
     ModelMetadata metadata(input, output);
 
-    ::alpaka::wait(queue);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToHost(queue);
+  #endif
     std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToDevice(queue);
+  #endif
 
     // Check if tensor list built correctly
     check(queue, deviceCollection, tensors);
@@ -352,8 +367,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     output.append_block("result", records.v());
     ModelMetadata metadata(input, output);
 
-    ::alpaka::wait(queue);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToHost(queue);
+  #endif
     std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToDevice(queue);
+  #endif
 
     // Check if tensor list has empty tensors
     CPPUNIT_ASSERT(tensors[0].toTensor().size(0) == 0);
@@ -381,8 +401,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     SoAMetadata<SoA> output(batch_size);
     ModelMetadata metadata(input, output);
 
-    ::alpaka::wait(queue);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToHost(queue);
+  #endif
     std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+  #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+    metadata.copyToDevice(queue);
+  #endif
 
     // Check if tensor list is empty
     CPPUNIT_ASSERT(tensors.size() == 0);

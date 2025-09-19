@@ -222,7 +222,7 @@ namespace cms::torch::alpakatools {
     void append_block(const std::string& name,
                       std::tuple<T, cms::soa::size_type> column,
                       std::tuple<Others, cms::soa::size_type>... others) {
-      const auto [ptr, stride] = std::get<0>(column).tupleOrPointer();
+      auto [ptr, stride] = std::get<0>(column).tupleOrPointer();
 
       int elems = Block<SOA_Layout>::get_elems_per_column(nElements, sizeof(typename T::ScalarType));
       assert(check_location(elems * T::ValueType::RowsAtCompileTime * T::ValueType::ColsAtCompileTime,
@@ -233,7 +233,24 @@ namespace cms::torch::alpakatools {
       if (T::ValueType::ColsAtCompileTime > 1)
         col.push(T::ValueType::ColsAtCompileTime);
 
-      blocks.try_emplace(name, nElements, ptr, col, get_type<typename T::ScalarType>(), sizeof(typename T::ScalarType));
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+      auto hip_memcpy = std::make_shared<HipMemcpyFallback<typename T::ScalarType>>(
+          1 + sizeof...(Others), 
+          elems, 
+          static_cast<void*>(ptr));
+      buffers_.push_back(std::move(hip_memcpy));
+    
+      auto* target_ptr = buffers_.back()->hostPtr();
+#else
+      auto* target_ptr = ptr;
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
+
+      blocks.try_emplace(name, 
+                         nElements, 
+                         target_ptr, 
+                         col, 
+                         get_type<typename T::ScalarType>(), 
+                         sizeof(typename T::ScalarType));
       order.push_back(name);
       nBlocks += 1;
     }
@@ -252,7 +269,7 @@ namespace cms::torch::alpakatools {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       auto hip_memcpy = std::make_shared<HipMemcpyFallback<typename T::ScalarType>>(
           1 + sizeof...(Others), 
-          Block<SOA_Layout>::get_elems_per_column(nElements, sizeof(typename T::ScalarType)), 
+          elems, 
           static_cast<void*>(std::get<0>(column).tupleOrPointer()));
       buffers_.push_back(std::move(hip_memcpy));
     
@@ -274,7 +291,23 @@ namespace cms::torch::alpakatools {
     template <SoAColumnType col_type, typename T>
       requires(std::is_arithmetic_v<T> && col_type == SoAColumnType::scalar)
     void append_block(const std::string& name, std::tuple<SoAParametersImpl<col_type, T>, cms::soa::size_type> column) {
-      blocks.try_emplace(name, nElements, std::get<0>(column).tupleOrPointer(), get_type<T>(), sizeof(T));
+#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
+      auto hip_memcpy = std::make_shared<HipMemcpyFallback<T>>(
+          1, 
+          1, 
+          static_cast<void*>(std::get<0>(column).tupleOrPointer()));
+      buffers_.push_back(std::move(hip_memcpy));
+    
+      auto* ptr = buffers_.back()->hostPtr();
+#else
+      auto *ptr = std::get<0>(column).tupleOrPointer();
+#endif  // ALPAKA_ACC_GPU_HIP_ENABLED
+      
+      blocks.try_emplace(name, 
+                         nElements, 
+                         ptr, 
+                         get_type<T>(), 
+                         sizeof(T));
       order.push_back(name);
       nBlocks += 1;
     }
