@@ -236,7 +236,7 @@ namespace cms::torch::alpakatools {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       auto hip_memcpy = std::make_shared<HipMemcpyFallback<typename T::ScalarType>>(
           1 + sizeof...(Others), 
-          elems, 
+          elems * T::ValueType::RowsAtCompileTime * T::ValueType::ColsAtCompileTime, 
           static_cast<void*>(ptr));
       buffers_.push_back(std::move(hip_memcpy));
     
@@ -256,7 +256,6 @@ namespace cms::torch::alpakatools {
     }
 
     // Append a block based on a typed pointer and a column object.
-    // Can be normal column or eigen column.
     template <typename T, typename... Others>
       requires(SameTypes<typename T::ScalarType, typename Others::ScalarType...> &&
                T::columnType == SoAColumnType::column)
