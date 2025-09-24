@@ -7,7 +7,6 @@
 #include "FWCore/ServiceRegistry/interface/ServiceMaker.h"
 #include "PhysicsTools/PyTorch/interface/TorchCompat.h"
 
-
 class PyTorchService {
 public:
   PyTorchService(const edm::ParameterSet& config, edm::ActivityRegistry& registry) {
@@ -22,9 +21,8 @@ public:
   }
 
   void preGlobalBeginRun(edm::GlobalContext const&) {
-    edm::LogInfo("PyTorchService") 
-        << "Disabling PyTorch internal threading model. "
-          "All CPU based operations will run single-threaded.";
+    edm::LogInfo("PyTorchService") << "Disabling PyTorch internal threading model. "
+                                      "All CPU based operations will run single-threaded.";
     at::set_num_threads(1);
     at::set_num_interop_threads(1);
   }

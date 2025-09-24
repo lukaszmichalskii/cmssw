@@ -9,7 +9,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   using namespace torchportabletest;
 
-  void merge(Queue& queue, ReconstructionDeviceCollection& collection, const ClassificationDeviceCollection& classification, const RegressionDeviceCollection& regression);
+  void merge(Queue& queue,
+             ReconstructionDeviceCollection& collection,
+             const ClassificationDeviceCollection& classification,
+             const RegressionDeviceCollection& regression);
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
 

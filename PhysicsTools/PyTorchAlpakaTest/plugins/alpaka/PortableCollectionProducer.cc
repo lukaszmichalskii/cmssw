@@ -13,7 +13,6 @@
 #include "PhysicsTools/PyTorchAlpakaTest/plugins/alpaka/RandomCollectionFillingKernel.h"
 #include "PhysicsTools/PyTorchAlpakaTest/plugins/alpaka/MapAlpakaBackend.h"
 
-
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   using namespace torchportabletest;
@@ -21,17 +20,25 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   class PortableCollectionProducer : public stream::EDProducer<> {
   public:
     PortableCollectionProducer(const edm::ParameterSet &params)
-        : EDProducer<>(params), 
-          particles_token_{produces()}, 
+        : EDProducer<>(params),
+          particles_token_{produces()},
           batch_size_(params.getParameter<uint32_t>("batchSize")),
           verbose_{params.getUntrackedParameter<bool>("verbose")} {}
 
-
     void produce(device::Event &event, const device::EventSetup &event_setup) override {
-      Nvtx produce_range(fmt::format("PortableCollectionProducer::produce(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
-      auto timer = EventTimer(fmt::format("PortableCollectionProducer ({})", kAlpakaBackend).c_str(), event, verbose_);
+      Nvtx produce_range(
+          fmt::format("PortableCollectionProducer::produce(event: {}, stream: {}, device: {}, queue: {})",
+                      event.id().event(),
+                      static_cast<int>(event.streamID().value()),
+                      formatDevice(event.device()),
+                      QueueHash<Queue>::alpakaQueue(event.queue()))
+              .c_str());
+      auto timer = EventTimer(fmt::format("PortableCollectionProducer ({})", kAlpakaBackend), event, verbose_);
+
+      // particles
       auto collection = ParticleDeviceCollection(batch_size_, event.queue());
       randomFillParticleCollection(event.queue(), collection);
+
       event.emplace(particles_token_, std::move(collection));
     }
 

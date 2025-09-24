@@ -78,7 +78,13 @@ namespace cms::torch::alpakatools {
     template <typename SOA_Layout>
     static ::torch::Tensor array_to_tensor(::torch::Device device, const Block<SOA_Layout>& block) {
       auto options = ::torch::TensorOptions().dtype(block.type).device(device).pinned_memory(true);
-      return ::torch::from_blob(block.ptr, block.size, block.stride, options);
+      // const_cast is required as `from_blob` does not take const pointer even if it does not modify the data
+      // see: https://discuss.pytorch.org/t/using-torch-from-blob-with-const-data/141597
+      // https://github.com/pytorch/pytorch/blob/89a6dbe73af4ca64ee26f4e46219e163b827e698/aten/src/ATen/ops/from_blob.h#L107
+      //
+      // TODO: open issue to `pytorch` repo:
+      //  - see if they can add const correctness, or get to know why const is currently prevented?
+      return ::torch::from_blob(const_cast<void*>(block.ptr), block.size, block.stride, options);
     }
   };
 

@@ -14,22 +14,28 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   inline std::string formatDevice(Device device) {
     std::string dev_str;
-    #ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-      dev_str = "cuda:";
-    #elif ALPAKA_ACC_GPU_HIP_ENABLED
-      dev_str = "rocm:";
-    #else
-      dev_str = "cpu";
-      return dev_str;
-    #endif
+#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
+    dev_str = "cuda:";
+#elif ALPAKA_ACC_GPU_HIP_ENABLED
+    dev_str = "rocm:";
+#else
+    dev_str = "cpu";
+    return dev_str;
+#endif
 
     return dev_str + std::to_string(device.getNativeHandle());
   }
 
   class EventTimer {
   public:
-    EventTimer(const std::string& label, const device::Event& event, bool verbose) : timestamp_{Clock_t::now()}, event_{event}, verbose_{verbose} {
-      msg_ += fmt::format("[DEBUG] OK - {} [event: {}, stream: {}, device: {}, queue: {}] ", label, event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue()));
+    EventTimer(const std::string& label, const device::Event& event, bool verbose)
+        : timestamp_{Clock_t::now()}, event_{event}, verbose_{verbose} {
+      msg_ += fmt::format("[DEBUG] OK - {} [event: {}, stream: {}, device: {}, queue: {}] ",
+                          label,
+                          event.id().event(),
+                          static_cast<int>(event.streamID().value()),
+                          formatDevice(event.device()),
+                          QueueHash<Queue>::alpakaQueue(event.queue()));
     }
 
     ~EventTimer() {

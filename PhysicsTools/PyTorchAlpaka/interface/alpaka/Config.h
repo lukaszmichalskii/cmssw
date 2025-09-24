@@ -25,9 +25,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
 #endif
 
   inline ::torch::Device getDevice(const Device &device) {
-    return (kDevice == kDevHost)
-           ? ::torch::Device(kDevHost)
-           : ::torch::Device(kDevice, device.getNativeHandle());
+    return (kDevice == kDevHost) ? ::torch::Device(kDevHost) : ::torch::Device(kDevice, device.getNativeHandle());
   }
 
   inline ::torch::Device getDevice(const Queue &queue) { return getDevice(::alpaka::getDev(queue)); }

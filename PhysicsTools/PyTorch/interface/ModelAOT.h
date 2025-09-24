@@ -13,8 +13,8 @@ namespace cms::torch {
   using AotPkgLoader = ::torch::inductor::AOTIModelPackageLoader;
 
   // wrapper of AOTIModelPackageLoader
-  // Following torchlib APIs are subject to change due to active development. 
-  // Authors provide NO BC guarantee for these APIs. Implementation based on 2.6 version. 
+  // Following torchlib APIs are subject to change due to active development.
+  // Authors provide NO BC guarantee for these APIs. Implementation based on 2.6 version.
   // Backward compatibility may be required to support multiple PyTorch versions within CMSSW.
   // See: https://github.com/pytorch/pytorch/blob/v2.6.0/torch/csrc/inductor/aoti_package/model_package_loader.h#L8
   class ModelAOT {
@@ -22,17 +22,16 @@ namespace cms::torch {
     // Does not support async loading, the H2D copy is done on pageable memory in default torch stream.
     // Refer: PhysicsTools/PyTorch/test/testModelWrapperAot.cc -> testAsyncExecutionImplicitStream() / testAsyncExecutionExplicitStream()
 
-    explicit ModelAOT(const std::string &precompiled_lib_path) 
-        : pkg_loader_(precompiled_lib_path), 
-          device_(::torch::Device(pkg_loader_.get_metadata()["AOTI_DEVICE_KEY"])) {}
+    explicit ModelAOT(const std::string &precompiled_lib_path)
+        : pkg_loader_(precompiled_lib_path), device_(::torch::Device(pkg_loader_.get_metadata()["AOTI_DEVICE_KEY"])) {}
 
     // Forward pass (inference) of model, returns std::vector<at::Tensor> (multi output support). Thread safety not verified yet.
     // Match native torchlib interface. cudaStream_t can be passed to run inference on specific stream.
     // If not passed then the one associated with device is grabed from thread local stream registry.
     // See: https://github.com/pytorch/pytorch/blob/v2.6.0/c10/cuda/CUDAStream.cpp#L169
-    // 
-    // Following torchlib APIs are subject to change due to active development. 
-    // Authors provide NO BC guarantee for these APIs. Implementation based on 2.6 version. 
+    //
+    // Following torchlib APIs are subject to change due to active development.
+    // Authors provide NO BC guarantee for these APIs. Implementation based on 2.6 version.
     // Backward compatibility may be required to support multiple PyTorch versions within CMSSW
     // See: https://github.com/pytorch/pytorch/blob/v2.6.0/torch/csrc/inductor/aoti_runner/model_container_runner_cuda.h#L9
     std::vector<at::Tensor> forward(std::vector<at::Tensor> &inputs, void *stream_handle = nullptr) {
@@ -46,13 +45,11 @@ namespace cms::torch {
     //    - https://github.com/pytorch/pytorch/issues/136369
     //    - https://github.com/pytorch/pytorch/issues/141042
     //    - https://github.com/pytorch/pytorch/pull/136715
-    ::torch::Device device() const {
-      return device_;
-    }
+    ::torch::Device device() const { return device_; }
 
   protected:
     AotPkgLoader pkg_loader_;  // AOT package wrapper
-    ::torch::Device device_;   // device 
+    ::torch::Device device_;   // device
   };
 
 }  // namespace cms::torch

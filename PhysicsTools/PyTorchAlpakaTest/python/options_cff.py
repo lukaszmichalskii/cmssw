@@ -39,7 +39,7 @@ args.register(
 
 args.register(
     "batchSize",
-    1024,
+    1,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.int,        
     "Batch size"
@@ -47,7 +47,7 @@ args.register(
 
 args.register(
     "verbose",
-    False,
+    True,
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.bool,        
     "Log debug output"
@@ -67,4 +67,12 @@ args.register(
     VarParsing.VarParsing.multiplicity.singleton,
     VarParsing.VarParsing.varType.string,         
     "Classification model (just-in-time compiled)"
+)
+
+args.register(
+    "resnetJit",
+    "PhysicsTools/PyTorchAlpakaTest/data/resnet18.pt",
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.string,         
+    "ResNet model (just-in-time compiled)"
 )

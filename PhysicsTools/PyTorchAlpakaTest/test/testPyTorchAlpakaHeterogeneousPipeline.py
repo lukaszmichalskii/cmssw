@@ -21,6 +21,8 @@ process.MessageLogger.PyTorchService = {}
 
 # enable alpaka and GPU support
 process.load("Configuration.StandardSequences.Accelerators_cff")
+
+# load the PyTorchService, disable internal multithreading
 process.PyTorchService = cms.Service("PyTorchService")
 
 # process a limited number of events
@@ -29,11 +31,8 @@ process.maxEvents.input = args.numberOfEvents if args.numberOfEvents > 1 else 1
 # empty source
 process.source = cms.Source("EmptySource")
 
-# print a message every event
-# process.MessageLogger.cerr.FwkReport.reportEvery = 100
-
 # do not print the time and trigger reports at the end of the job
-process.options.wantSummary = False
+process.options.wantSummary = True
 
 # setup chain configs
 process.PortableCollectionProducer = torchtest_PortableCollectionProducer_alpaka(
@@ -74,7 +73,6 @@ process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
     reconstruction = 'ReconstructionMergePortableProducer',
     verbose = cms.untracked.bool(args.verbose)
 )
-
 
 # schedule the modules
 process.path = cms.Path(

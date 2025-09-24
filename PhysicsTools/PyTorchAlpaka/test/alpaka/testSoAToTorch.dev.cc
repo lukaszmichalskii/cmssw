@@ -10,7 +10,6 @@
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/AlpakaModel.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/Config.h"
 
-
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   using namespace ALPAKA_ACCELERATOR_NAMESPACE::torch;
@@ -124,7 +123,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     alpaka::wait(queue);
 
     for (uint32_t i = 0; i < batch_size; i++) {
-      std::cout << "(" << resultHostCollection.view().x()[i] << ", " << resultHostCollection.view().y()[i] << ")" << std::endl;
+      std::cout << "(" << resultHostCollection.view().x()[i] << ", " << resultHostCollection.view().y()[i] << ")"
+                << std::endl;
     }
   }
 

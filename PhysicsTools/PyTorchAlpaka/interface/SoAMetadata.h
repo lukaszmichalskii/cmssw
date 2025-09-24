@@ -20,7 +20,6 @@
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/memory.h"
 
-
 namespace cms::torch::alpakatools {
 
   using namespace cms::soa;
@@ -43,7 +42,7 @@ namespace cms::torch::alpakatools {
     size_t size() const { return columns.size(); }
     int operator[](int i) const { return columns[i]; }
     void push(int i) { columns.push_back(i); }
-  };  
+  };
 
   // Block of SoA Columns with same type and element size.
   // Calculates size and stride and stores torch type.
@@ -52,22 +51,21 @@ namespace cms::torch::alpakatools {
     std::vector<long int> stride;
     std::vector<long int> size;
 
-    void* ptr;
+    const void* ptr;
     ::torch::ScalarType type;
     size_t bytes;
     bool is_scalar = false;
 
-    Block() : ptr(nullptr) {}
-
     // Constructor for columns
-    Block(int nElements, void* ptr_, const Columns& columns_, ::torch::ScalarType type_, size_t bytes_)
+    Block(int nElements, const void* ptr_, const Columns& columns_, ::torch::ScalarType type_, size_t bytes_)
         : ptr(ptr_), type(type_), bytes(bytes_) {
-        stride = create_stride(nElements, columns_, bytes_);
-        size = create_size(nElements, columns_);
+      stride = create_stride(nElements, columns_, bytes_);
+      size = create_size(nElements, columns_);
     }
 
     // Constructor for scalar columns
-    Block(int nElements, void* ptr_, ::torch::ScalarType type_, size_t bytes_) : ptr(ptr_), type(type_), bytes(bytes_) {
+    Block(int nElements, const void* ptr_, ::torch::ScalarType type_, size_t bytes_)
+        : ptr(ptr_), type(type_), bytes(bytes_) {
       stride = create_stride(nElements, 1, bytes_, true);
       size = create_size(nElements, 1);
     }
@@ -121,53 +119,39 @@ namespace cms::torch::alpakatools {
     virtual ~HipMemcpyFallbackBase() = default;
     virtual void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue&) = 0;
     virtual void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue&) = 0;
-    virtual void* hostPtr() = 0; 
+    virtual void* hostPtr() = 0;
   };
 
   template <typename T>
   struct HipMemcpyFallback : HipMemcpyFallbackBase {
     size_t size_;
     size_t stride_;
-    void* d_ptr_;
+    const void* d_ptr_;
     std::optional<host_buffer<T[]>> h_buf_;
 
-    HipMemcpyFallback(const size_t size, const size_t stride, void* d_ptr)
-       : size_(size), stride_(stride), d_ptr_(d_ptr) {
+    HipMemcpyFallback(const size_t size, const size_t stride, const void* d_ptr)
+        : size_(size), stride_(stride), d_ptr_(d_ptr) {
       const size_t n_elems = size * stride;
       h_buf_ = make_host_buffer<T[]>(n_elems);
     }
 
-    void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+    void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
       auto extent = Vec1D{size_ * stride_};
-      auto d_view = alpaka::createView(
-          alpaka::getDev(queue),
-          static_cast<T*>(d_ptr_), 
-          extent);
+      auto d_view = alpaka::createView(alpaka::getDev(queue), const_cast<T*>(static_cast<const T*>(d_ptr_)), extent);
 
-      auto h_view = alpaka::createView(
-          cms::alpakatools::host(),
-          alpaka::getPtrNative(h_buf_.value()),
-          extent);
+      auto h_view = alpaka::createView(cms::alpakatools::host(), alpaka::getPtrNative(h_buf_.value()), extent);
       alpaka::memcpy(queue, h_view, d_view);
     }
 
-    void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
+    void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
       auto extent = Vec1D{size_ * stride_};
-      auto d_view = alpaka::createView(
-            alpaka::getDev(queue),
-            static_cast<T*>(d_ptr_), 
-            extent);
+      auto d_view = alpaka::createView(alpaka::getDev(queue), const_cast<T*>(static_cast<const T*>(d_ptr_)), extent);
 
-      auto h_view = alpaka::createView(
-          cms::alpakatools::host(),
-          alpaka::getPtrNative(h_buf_.value()),
-          extent);
+      auto h_view = alpaka::createView(cms::alpakatools::host(), alpaka::getPtrNative(h_buf_.value()), extent);
       alpaka::memcpy(queue, d_view, h_view);
     }
 
-    void* hostPtr() {
-      return alpaka::getPtrNative(h_buf_.value());
-    }
+    void* hostPtr() { return alpaka::getPtrNative(h_buf_.value()); }
   };
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
 
@@ -195,17 +179,17 @@ namespace cms::torch::alpakatools {
     }
 
     template <typename T, typename... Others>
-    bool check_location(int elements, T* column, T* other_column, Others... others) {
+    bool check_location(int elements, const T* column, const T* other_column, Others... others) {
       return check_location(elements, other_column, others...) && (column + elements) == other_column;
     }
 
     template <typename T>
-    bool check_location(int elements, T* column, T* other_column) {
+    bool check_location(int elements, const T* column, const T* other_column) {
       return (column + elements) == other_column;
     }
 
     template <typename T>
-    bool check_location(int elements, T* column) {
+    bool check_location(int elements, const T* column) {
       return true;
     }
 
@@ -235,22 +219,16 @@ namespace cms::torch::alpakatools {
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       auto hip_memcpy = std::make_shared<HipMemcpyFallback<typename T::ScalarType>>(
-          1 + sizeof...(Others), 
-          elems * T::ValueType::RowsAtCompileTime * T::ValueType::ColsAtCompileTime, 
-          static_cast<void*>(ptr));
+          1 + sizeof...(Others), elems * T::ValueType::RowsAtCompileTime * T::ValueType::ColsAtCompileTime, ptr);
       buffers_.push_back(std::move(hip_memcpy));
-    
+
       auto* target_ptr = buffers_.back()->hostPtr();
 #else
       auto* target_ptr = ptr;
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
 
-      blocks.try_emplace(name, 
-                         nElements, 
-                         target_ptr, 
-                         col, 
-                         get_type<typename T::ScalarType>(), 
-                         sizeof(typename T::ScalarType));
+      blocks.try_emplace(
+          name, nElements, target_ptr, col, get_type<typename T::ScalarType>(), sizeof(typename T::ScalarType));
       order.push_back(name);
       nBlocks += 1;
     }
@@ -267,14 +245,12 @@ namespace cms::torch::alpakatools {
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       auto hip_memcpy = std::make_shared<HipMemcpyFallback<typename T::ScalarType>>(
-          1 + sizeof...(Others), 
-          elems, 
-          static_cast<void*>(std::get<0>(column).tupleOrPointer()));
+          1 + sizeof...(Others), elems, std::get<0>(column).tupleOrPointer());
       buffers_.push_back(std::move(hip_memcpy));
-    
+
       auto* ptr = buffers_.back()->hostPtr();
 #else
-      auto *ptr = std::get<0>(column).tupleOrPointer();
+      auto* ptr = std::get<0>(column).tupleOrPointer();
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
       blocks.try_emplace(name,
                          nElements,
@@ -282,7 +258,7 @@ namespace cms::torch::alpakatools {
                          sizeof...(others) + 1,
                          get_type<typename T::ScalarType>(),
                          sizeof(typename T::ScalarType));
-      
+
       order.push_back(name);
       nBlocks += 1;
     }
@@ -291,22 +267,15 @@ namespace cms::torch::alpakatools {
       requires(std::is_arithmetic_v<T> && col_type == SoAColumnType::scalar)
     void append_block(const std::string& name, std::tuple<SoAParametersImpl<col_type, T>, cms::soa::size_type> column) {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
-      auto hip_memcpy = std::make_shared<HipMemcpyFallback<T>>(
-          1, 
-          1, 
-          static_cast<void*>(std::get<0>(column).tupleOrPointer()));
+      auto hip_memcpy = std::make_shared<HipMemcpyFallback<T>>(1, 1, std::get<0>(column).tupleOrPointer());
       buffers_.push_back(std::move(hip_memcpy));
-    
+
       auto* ptr = buffers_.back()->hostPtr();
 #else
-      auto *ptr = std::get<0>(column).tupleOrPointer();
+      auto* ptr = std::get<0>(column).tupleOrPointer();
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
-      
-      blocks.try_emplace(name, 
-                         nElements, 
-                         ptr, 
-                         get_type<T>(), 
-                         sizeof(T));
+
+      blocks.try_emplace(name, nElements, ptr, get_type<T>(), sizeof(T));
       order.push_back(name);
       nBlocks += 1;
     }
@@ -320,12 +289,14 @@ namespace cms::torch::alpakatools {
     inline Block<SOA_Layout> operator[](const std::string& key) const { return blocks.at(key); }
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
-    void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
-      for (int i = 0; i < nBlocks; i++) buffers_[i]->copyToHost(queue);
-    } 
+    void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
+      for (int i = 0; i < nBlocks; i++)
+        buffers_[i]->copyToHost(queue);
+    }
 
-    void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue &queue) {
-      for (int i = 0; i < nBlocks; i++) buffers_[i]->copyToDevice(queue);
+    void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
+      for (int i = 0; i < nBlocks; i++)
+        buffers_[i]->copyToDevice(queue);
     }
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
   };
@@ -351,13 +322,15 @@ namespace cms::torch::alpakatools {
     void copyToHost(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
       input.copyToHost(queue);
       output.copyToHost(queue);
+      // explicit synchronize to ensure data is in place before inference
       alpaka::wait(queue);
     }
 
-    // For AMD CPU fallback only outputs are copied to device, no need to copy inputs also
+    // For AMD CPU fallback only outputs are copied to device, no need to copy inputs back
     void copyToDevice(ALPAKA_ACCELERATOR_NAMESPACE::Queue& queue) {
       output.copyToDevice(queue);
-      alpaka::wait(queue);
+      // no need to explicitly synchronize, rely on implicit synchronization mechanism in framework
+      // alpaka::wait(queue);
     }
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
   };

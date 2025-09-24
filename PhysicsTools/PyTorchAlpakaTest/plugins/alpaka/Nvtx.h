@@ -5,7 +5,7 @@
 #include <nvtx3/nvToolsExt.h>
 #endif
 
-namespace ALPAKA_ACCELERATOR_NAMESPACE {
+namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
   class Nvtx {
   public:
@@ -33,6 +33,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 #endif
   };
 
-}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest
 
 #endif  // PhysicsTools_PyTorchAlpakaTest_plugins_alpaka_Nvtx_h

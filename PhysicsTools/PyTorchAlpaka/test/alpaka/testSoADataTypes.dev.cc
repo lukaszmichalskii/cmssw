@@ -23,8 +23,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     CPPUNIT_TEST(testInterfaceVerbose);
     CPPUNIT_TEST(testMultiOutput);
     CPPUNIT_TEST(testSingleElement);
-     CPPUNIT_TEST(testNoElement);
-     CPPUNIT_TEST(testEmptyMetadata);
+    CPPUNIT_TEST(testNoElement);
+    CPPUNIT_TEST(testEmptyMetadata);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -119,7 +119,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     }
   };
 
-
   class TestOutputVerifyKernel {
   public:
     ALPAKA_FN_ACC void operator()(Acc1D const& acc, PortableCollection<SoA, Device>::View view) const {
@@ -141,7 +140,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     ::alpaka::exec<Acc1D>(queue, workDiv, InputVerifyKernel{}, collection.view());
   }
 
-
   void check_output(Queue& queue, PortableCollection<SoA, Device>& collection) {
     uint32_t items = 64;
     uint32_t groups = cms::alpakatools::divide_up_by(collection->metadata().size(), items);
@@ -150,45 +148,45 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   }
 
   void check(PortableHostCollection<SoA>& hostCollection, std::vector<::torch::IValue> tensors) {
-	auto view = hostCollection.view();
+    auto view = hostCollection.view();
 
     // Check if tensor list built correctly
-      for (int i = 0; i < view.metadata().size(); i++) {
-        CPPUNIT_ASSERT(view[i].a()(0) - tensors[3].toTensor()[i][0][0].item<double>() < tol);
-        CPPUNIT_ASSERT(view[i].a()(1) - tensors[3].toTensor()[i][0][1].item<double>() < tol);
-        CPPUNIT_ASSERT(view[i].a()(2) - tensors[3].toTensor()[i][0][2].item<double>() < tol);
-        CPPUNIT_ASSERT(view[i].a()(0) - tensors[3].toTensor()[i][0][0].item<double>() > -tol);
-        CPPUNIT_ASSERT(view[i].a()(1) - tensors[3].toTensor()[i][0][1].item<double>() > -tol);
-        CPPUNIT_ASSERT(view[i].a()(2) - tensors[3].toTensor()[i][0][2].item<double>() > -tol);
-		
-        CPPUNIT_ASSERT(view[i].b()(0) - tensors[3].toTensor()[i][1][0].item<double>() < tol);
-        CPPUNIT_ASSERT(view[i].b()(1) - tensors[3].toTensor()[i][1][1].item<double>() < tol);
-        CPPUNIT_ASSERT(view[i].b()(2) - tensors[3].toTensor()[i][1][2].item<double>() < tol);
-        CPPUNIT_ASSERT(view[i].b()(0) - tensors[3].toTensor()[i][1][0].item<double>() > -tol);
-        CPPUNIT_ASSERT(view[i].b()(1) - tensors[3].toTensor()[i][1][1].item<double>() > -tol);
-        CPPUNIT_ASSERT(view[i].b()(2) - tensors[3].toTensor()[i][1][2].item<double>() > -tol);
+    for (int i = 0; i < view.metadata().size(); i++) {
+      CPPUNIT_ASSERT(view[i].a()(0) - tensors[3].toTensor()[i][0][0].item<double>() < tol);
+      CPPUNIT_ASSERT(view[i].a()(1) - tensors[3].toTensor()[i][0][1].item<double>() < tol);
+      CPPUNIT_ASSERT(view[i].a()(2) - tensors[3].toTensor()[i][0][2].item<double>() < tol);
+      CPPUNIT_ASSERT(view[i].a()(0) - tensors[3].toTensor()[i][0][0].item<double>() > -tol);
+      CPPUNIT_ASSERT(view[i].a()(1) - tensors[3].toTensor()[i][0][1].item<double>() > -tol);
+      CPPUNIT_ASSERT(view[i].a()(2) - tensors[3].toTensor()[i][0][2].item<double>() > -tol);
 
-        CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0][0].item<float>() < tol);
-        CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0][0].item<float>() > -tol);
-        CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][0][1].item<float>() < tol);
-        CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][0][1].item<float>() > -tol);
-        CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][0][1][0].item<float>() < tol);
-        CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][0][1][0].item<float>() > -tol);
-        CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][0][1][1].item<float>() < tol);
-        CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][0][1][1].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].b()(0) - tensors[3].toTensor()[i][1][0].item<double>() < tol);
+      CPPUNIT_ASSERT(view[i].b()(1) - tensors[3].toTensor()[i][1][1].item<double>() < tol);
+      CPPUNIT_ASSERT(view[i].b()(2) - tensors[3].toTensor()[i][1][2].item<double>() < tol);
+      CPPUNIT_ASSERT(view[i].b()(0) - tensors[3].toTensor()[i][1][0].item<double>() > -tol);
+      CPPUNIT_ASSERT(view[i].b()(1) - tensors[3].toTensor()[i][1][1].item<double>() > -tol);
+      CPPUNIT_ASSERT(view[i].b()(2) - tensors[3].toTensor()[i][1][2].item<double>() > -tol);
 
-        CPPUNIT_ASSERT((view.x()[i] - tensors[0].toTensor()[i][0].item<double>()) < tol);
-        CPPUNIT_ASSERT(view.x()[i] - tensors[0].toTensor()[i][0].item<double>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0][0].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0][0].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][0][1].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][0][1].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][0][1][0].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][0][1][0].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][0][1][1].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][0][1][1].item<float>() > -tol);
 
-        CPPUNIT_ASSERT((view.y()[i] - tensors[0].toTensor()[i][1].item<double>()) < tol);
-        CPPUNIT_ASSERT(view.y()[i] - tensors[0].toTensor()[i][1].item<double>() > -tol);
+      CPPUNIT_ASSERT((view.x()[i] - tensors[0].toTensor()[i][0].item<double>()) < tol);
+      CPPUNIT_ASSERT(view.x()[i] - tensors[0].toTensor()[i][0].item<double>() > -tol);
 
-        CPPUNIT_ASSERT((view.z()[i] - tensors[0].toTensor()[i][2].item<double>()) < tol);
-        CPPUNIT_ASSERT(view.z()[i] - tensors[0].toTensor()[i][2].item<double>() > -tol);
+      CPPUNIT_ASSERT((view.y()[i] - tensors[0].toTensor()[i][1].item<double>()) < tol);
+      CPPUNIT_ASSERT(view.y()[i] - tensors[0].toTensor()[i][1].item<double>() > -tol);
 
-        CPPUNIT_ASSERT(view.type() - tensors[1].toTensor()[i].item<float>() < tol);
-        CPPUNIT_ASSERT(view.type() - tensors[1].toTensor()[i].item<float>() > -tol);
-       }
+      CPPUNIT_ASSERT((view.z()[i] - tensors[0].toTensor()[i][2].item<double>()) < tol);
+      CPPUNIT_ASSERT(view.z()[i] - tensors[0].toTensor()[i][2].item<double>() > -tol);
+
+      CPPUNIT_ASSERT(view.type() - tensors[1].toTensor()[i].item<float>() < tol);
+      CPPUNIT_ASSERT(view.type() - tensors[1].toTensor()[i].item<float>() > -tol);
+    }
   }
 
   void TestSOADataTypesAlpaka::testInterfaceVerbose() {
@@ -227,9 +225,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToDevice(queue);
 #endif
-  
-	::alpaka::memcpy(queue, hostCollection.buffer(), deviceCollection.buffer());
-	check(hostCollection, tensors);
+
+    ::alpaka::memcpy(queue, hostCollection.buffer(), deviceCollection.buffer());
+    check(hostCollection, tensors);
   };
 
   void TestSOADataTypesAlpaka::testMultiOutput() {
@@ -269,7 +267,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     ::alpaka::wait(queue);
 
     // Check if tensor list built correctly
-	check_output(queue, deviceCollection);
+    check_output(queue, deviceCollection);
   };
 
   void TestSOADataTypesAlpaka::testSingleElement() {
@@ -308,7 +306,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 #endif
 
     // Check if tensor list built correctly
-	::alpaka::memcpy(queue, hostCollection.buffer(), deviceCollection.buffer());
+    ::alpaka::memcpy(queue, hostCollection.buffer(), deviceCollection.buffer());
     check(hostCollection, tensors);
   };
 
@@ -379,8 +377,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     metadata.copyToDevice(queue);
 #endif
 
-        // Check if tensor list is empty
-        CPPUNIT_ASSERT(tensors.size() == 0);
+    // Check if tensor list is empty
+    CPPUNIT_ASSERT(tensors.size() == 0);
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest

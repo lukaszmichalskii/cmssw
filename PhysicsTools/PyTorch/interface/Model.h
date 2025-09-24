@@ -9,17 +9,16 @@
 
 namespace cms::torch {
 
-  // Wrapper of torch::jit::script::Module: 
+  // Wrapper of torch::jit::script::Module:
   // - https://docs.pytorch.org/cppdocs/api/classtorch_1_1nn_1_1_module.html#class-module
   class Model {
   public:
-    explicit Model(const std::string &model_path)
-        : model_(cms::torch::load(model_path)), device_(::torch::kCPU) {}
+    explicit Model(const std::string &model_path) : model_(cms::torch::load(model_path)), device_(::torch::kCPU) {}
 
     explicit Model(const std::string &model_path, ::torch::Device dev)
         : model_(cms::torch::load(model_path, dev)), device_(dev) {}
 
-    // Move model to specified device memory space. Async load (in default stream if not overridden by the caller)
+    // Move model to specified device memory space. Async load by specifying `non_blocking` (in default stream if not overridden by the caller)
     void to(::torch::Device dev, const bool non_blocking = false) {
       if (dev == device_)
         return;
@@ -28,14 +27,10 @@ namespace cms::torch {
     }
 
     // Forward pass (inference) of model, returns torch::IValue (multi output support). Match native torchlib interface.
-    ::torch::IValue forward(std::vector<::torch::IValue> &inputs) {
-      return model_.forward(inputs);
-    }
-     
+    ::torch::IValue forward(std::vector<::torch::IValue> &inputs) { return model_.forward(inputs); }
+
     // Get model current device information.
-    ::torch::Device device() const {
-      return device_;
-    }
+    ::torch::Device device() const { return device_; }
 
   protected:
     ::torch::jit::script::Module model_;  // underlying JIT model
