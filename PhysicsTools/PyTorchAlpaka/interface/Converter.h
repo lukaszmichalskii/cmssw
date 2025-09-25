@@ -78,6 +78,16 @@ namespace cms::torch::alpakatools {
     template <typename SOA_Layout>
     static ::torch::Tensor array_to_tensor(::torch::Device device, const Block<SOA_Layout>& block) {
       auto options = ::torch::TensorOptions().dtype(block.type).device(device).pinned_memory(true);
+      std::cout << "Size: ";
+      for (auto s : block.size) {
+        std::cout << s << " ";
+      }
+      std::cout << std::endl;
+      std::cout << "Stride: ";
+      for (auto s : block.stride) {
+        std::cout << s << " ";
+      }
+      std::cout << std::endl;
       return ::torch::from_blob(block.ptr, block.size, block.stride, options);
     }
   };

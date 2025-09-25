@@ -37,12 +37,32 @@ namespace cms::torch::alpakatools {
     Columns(int columns_) { columns.push_back(columns_); }
 
     // Constructor for multidimensional eigen columns
-    Columns(const std::vector<int>& columns_) : columns(columns_) {}
-    Columns(std::vector<int>&& columns_) : columns(std::move(columns_)) {}
+    Columns(const std::vector<int>& columns_) {
+        for (auto c : columns_) {
+            if (c != 1)  // skip dimensions of size 1
+                this->columns.push_back(c);
+        }
+    }
+
+    Columns(std::vector<int>&& columns_) {
+        for (auto c : columns_) {
+            if (c != 1)
+                this->columns.push_back(c);
+        }
+    }
 
     size_t size() const { return columns.size(); }
     int operator[](int i) const { return columns[i]; }
     void push(int i) { columns.push_back(i); }
+    // Columns(int columns_) { columns.push_back(columns_); }
+
+    // // Constructor for multidimensional eigen columns
+    // Columns(const std::vector<int>& columns_) : columns(columns_) {}
+    // Columns(std::vector<int>&& columns_) : columns(std::move(columns_)) {}
+
+    // size_t size() const { return columns.size(); }
+    // int operator[](int i) const { return columns[i]; }
+    // void push(int i) { columns.push_back(i); }
   };  
 
   // Block of SoA Columns with same type and element size.
@@ -229,9 +249,17 @@ namespace cms::torch::alpakatools {
                             ptr,
                             std::get<0>(std::get<0>(others).tupleOrPointer())...));
 
+      // Columns col({sizeof...(others) + 1, T::ValueType::RowsAtCompileTime});
+      // if (T::ValueType::ColsAtCompileTime > 1)
+      //   col.push(T::ValueType::ColsAtCompileTime);
       Columns col({sizeof...(others) + 1, T::ValueType::RowsAtCompileTime});
-      if (T::ValueType::ColsAtCompileTime > 1)
-        col.push(T::ValueType::ColsAtCompileTime);
+
+      // Flatten 1xN into N
+      if (T::ValueType::RowsAtCompileTime == 1 && T::ValueType::ColsAtCompileTime > 1) {
+          col = Columns({T::ValueType::ColsAtCompileTime});
+      } else if (T::ValueType::ColsAtCompileTime > 1) {
+          col.push(T::ValueType::ColsAtCompileTime);
+      }
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       auto hip_memcpy = std::make_shared<HipMemcpyFallback<typename T::ScalarType>>(
