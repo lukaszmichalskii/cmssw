@@ -1,4 +1,23 @@
 <lcgdict>
+  <class name="alpaka_rocm_async::PortableCollection<torchportable::ResNetInputSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::torchportable::ResNetInputCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::torchportable::ResNetInputCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportable::ResNetInputCollection>>" persistent="false"/>
+  <!-- ResInput -->
+  <class name="alpaka_rocm_async::PortableCollection<torchportable::ResNetOutputSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::torchportable::ResNetOutputCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::torchportable::ResNetOutputCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportable::ResNetOutputCollection>>" persistent="false"/>  
+  <!-- ResOutput -->
+  <class name="alpaka_rocm_async::PortableCollection<torchportable::InputSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::torchportable::InputCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::torchportable::InputCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportable::InputCollection>>" persistent="false"/>
+  <!-- Input -->
+  <class name="alpaka_rocm_async::PortableCollection<torchportable::OutputSoA>" persistent="false"/>
+  <class name="alpaka_rocm_async::torchportable::OutputCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_rocm_async::torchportable::OutputCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_rocm_async::torchportable::OutputCollection>>" persistent="false"/>
   <!-- Particle -->
   <class name="alpaka_rocm_async::PortableCollection<torchportable::ParticleSoA>" persistent="false"/>
   <class name="alpaka_rocm_async::torchportable::ParticleCollection" persistent="false"/>

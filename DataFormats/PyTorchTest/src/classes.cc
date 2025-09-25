@@ -1,6 +1,10 @@
 #include "DataFormats/Portable/interface/PortableHostCollectionReadRules.h"
 #include "DataFormats/PyTorchTest/interface/Host.h"
 
+SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportable::ResNetInputCollectionHost);
+SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportable::ResNetOutputCollectionHost);
+SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportable::InputCollectionHost);
+SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportable::OutputCollectionHost);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportable::ParticleCollectionHost);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportable::ClassificationCollectionHost);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(torchportable::RegressionCollectionHost);

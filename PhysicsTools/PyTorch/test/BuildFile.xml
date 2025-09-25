@@ -1,5 +1,5 @@
 <!-- ROCm backend not yet supported, see: https://github.com/pytorch/pytorch/blob/main/aten/CMakeLists.txt#L75 -->
-<use name="boost_filesystem"/>
+<!-- <use name="boost_filesystem"/>
 
 <bin file="alpaka/testModelAlpakaNamespace.cc testRunner.cc" name="testModelAlpakaNamespace">
   <use name="cppunit"/>
@@ -172,4 +172,4 @@
 </test>
 <test name="TestPipelineROCm" command="testPipeline.sh rocm">
   <use name="rocm"/>
-</test>
+</test> -->

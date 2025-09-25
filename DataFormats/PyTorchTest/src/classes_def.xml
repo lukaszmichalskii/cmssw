@@ -1,4 +1,28 @@
 <lcgdict>
+  <!-- ResInput -->
+  <class name="torchportable::ResNetInputSoA"/>
+  <class name="torchportable::ResNetInputSoA::View"/>
+  <class name="torchportable::ResNetInputSoA::ConstView"/>
+  <class name="torchportable::ResNetInputCollectionHost"/>
+  <class name="edm::Wrapper<torchportable::ResNetInputCollectionHost>" splitLevel="0"/>
+  <!-- ResOutput -->
+  <class name="torchportable::ResNetOutputSoA"/>
+  <class name="torchportable::ResNetOutputSoA::View"/>
+  <class name="torchportable::ResNetOutputSoA::ConstView"/>
+  <class name="torchportable::ResNetOutputCollectionHost"/>
+  <class name="edm::Wrapper<torchportable::ResNetOutputCollectionHost>" splitLevel="0"/>
+  <!-- Input -->
+  <class name="torchportable::InputSoA"/>
+  <class name="torchportable::InputSoA::View"/>
+  <class name="torchportable::InputSoA::ConstView"/>
+  <class name="torchportable::InputCollectionHost"/>
+  <class name="edm::Wrapper<torchportable::InputCollectionHost>" splitLevel="0"/>
+  <!-- Input -->
+  <class name="torchportable::OutputSoA"/>
+  <class name="torchportable::OutputSoA::View"/>
+  <class name="torchportable::OutputSoA::ConstView"/>
+  <class name="torchportable::OutputCollectionHost"/>
+  <class name="edm::Wrapper<torchportable::OutputCollectionHost>" splitLevel="0"/>
   <!-- Particle -->
   <class name="torchportable::ParticleSoA"/>
   <class name="torchportable::ParticleSoA::View"/>

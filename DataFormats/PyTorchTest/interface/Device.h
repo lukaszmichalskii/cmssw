@@ -7,6 +7,18 @@
 namespace torchportable {
 
   template <typename TDev>
+  using ResNetInputCollectionDevice = PortableDeviceCollection<ResNetInputSoA, TDev>;
+
+  template <typename TDev>
+  using ResNetOutputCollectionDevice = PortableDeviceCollection<ResNetOutputSoA, TDev>;
+
+  template <typename TDev>
+  using InputCollectionDevice = PortableDeviceCollection<InputSoA, TDev>;
+
+  template <typename TDev>
+  using OutputCollectionDevice = PortableDeviceCollection<OutputSoA, TDev>;
+
+  template <typename TDev>
   using ParticleCollectionDevice = PortableDeviceCollection<ParticleSoA, TDev>;
 
   template <typename TDev>

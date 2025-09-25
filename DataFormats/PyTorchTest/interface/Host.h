@@ -6,6 +6,10 @@
 
 namespace torchportable {
 
+  using ResNetInputCollectionHost = PortableHostCollection<ResNetInputSoA>;
+  using ResNetOutputCollectionHost = PortableHostCollection<ResNetOutputSoA>;
+  using InputCollectionHost = PortableHostCollection<InputSoA>;
+  using OutputCollectionHost = PortableHostCollection<OutputSoA>;
   using ParticleCollectionHost = PortableHostCollection<ParticleSoA>;
   using ClassificationCollectionHost = PortableHostCollection<ClassificationSoA>;
   using RegressionCollectionHost = PortableHostCollection<RegressionSoA>;

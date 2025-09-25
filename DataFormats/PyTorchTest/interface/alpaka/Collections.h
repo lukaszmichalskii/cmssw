@@ -17,12 +17,32 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchportable {
    * inside the `ALPAKA_ACCELERATOR_NAMESPACE::torchportable` namespace
    */
   using namespace ::torchportable;
+  using ::torchportable::ResNetInputCollectionDevice;
+  using ::torchportable::ResNetInputCollectionHost;
+  using ::torchportable::ResNetOutputCollectionDevice;
+  using ::torchportable::ResNetOutputCollectionHost;
+  using ::torchportable::InputCollectionDevice;
+  using ::torchportable::InputCollectionHost;
+  using ::torchportable::OutputCollectionDevice;
+  using ::torchportable::OutputCollectionHost;
   using ::torchportable::ClassificationCollectionDevice;
   using ::torchportable::ClassificationCollectionHost;
   using ::torchportable::ParticleCollectionDevice;
   using ::torchportable::ParticleCollectionHost;
   using ::torchportable::RegressionCollectionDevice;
   using ::torchportable::RegressionCollectionHost;
+
+  using ResNetInputCollection = std::
+      conditional_t<std::is_same_v<Device, alpaka::DevCpu>, ResNetInputCollectionHost, ResNetInputCollectionDevice<Device>>;
+
+  using ResNetOutputCollection = std::
+      conditional_t<std::is_same_v<Device, alpaka::DevCpu>,  ResNetOutputCollectionHost, ResNetOutputCollectionDevice<Device>>;
+
+  using InputCollection = std::
+      conditional_t<std::is_same_v<Device, alpaka::DevCpu>, InputCollectionHost, InputCollectionDevice<Device>>;
+
+  using OutputCollection = std::
+      conditional_t<std::is_same_v<Device, alpaka::DevCpu>, OutputCollectionHost, OutputCollectionDevice<Device>>;
 
   using ParticleCollection = std::
       conditional_t<std::is_same_v<Device, alpaka::DevCpu>, ParticleCollectionHost, ParticleCollectionDevice<Device>>;
@@ -37,6 +57,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchportable {
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchportable
 
+ASSERT_DEVICE_MATCHES_HOST_COLLECTION(torchportable::ResNetInputCollection, torchportable::ResNetInputCollectionHost);
+ASSERT_DEVICE_MATCHES_HOST_COLLECTION(torchportable::ResNetOutputCollection, torchportable::ResNetOutputCollectionHost);
+ASSERT_DEVICE_MATCHES_HOST_COLLECTION(torchportable::InputCollection, torchportable::InputCollectionHost);
+ASSERT_DEVICE_MATCHES_HOST_COLLECTION(torchportable::OutputCollection, torchportable::OutputCollectionHost);
 ASSERT_DEVICE_MATCHES_HOST_COLLECTION(torchportable::ParticleCollection, torchportable::ParticleCollectionHost);
 ASSERT_DEVICE_MATCHES_HOST_COLLECTION(torchportable::ClassificationCollection,
                                       torchportable::ClassificationCollectionHost);
