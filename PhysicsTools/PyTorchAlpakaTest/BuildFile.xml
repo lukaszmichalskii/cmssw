@@ -1,3 +1,6 @@
+<use name="eigen"/>
+<use name="DataFormats/Portable"/>
+<use name="DataFormats/SoATemplate"/>
 <use name="DataFormats/PortableTestObjects"/>
 <use name="FWCore/Framework"/>
 <use name="HeterogeneousCore/AlpakaInterface"/>

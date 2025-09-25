@@ -27,7 +27,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
         : EDProducer<>(params),
           particles_token_(consumes(params.getParameter<edm::InputTag>("particles"))),
           regression_token_{produces()},
-          model_(std::make_unique<torch::AlpakaModel>(params.getParameter<edm::FileInPath>("model").fullPath())),
+          model_(params.getParameter<edm::FileInPath>("model").fullPath()),
           verbose_{params.getUntrackedParameter<bool>("verbose")} {}
 
     void produce(device::Event &event, const device::EventSetup &event_setup) override {
@@ -70,8 +70,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
           fmt::format("Regression::torchlib(event: {}, stream: {}, device: {}, queue: {})", event.id().event(), static_cast<int>(event.streamID().value()), formatDevice(event.device()), QueueHash<Queue>::alpakaQueue(event.queue())).c_str());
       // santity check 
       // assert(QueueHash<Queue>::alpakaQueue(event.queue()) == QueueHash<Queue>::pytorchQueue(event.queue()));
-      model_->to(event.queue());
-      model_->forward(event.queue(), metadata);
+      model_.to(event.queue());
+      model_.forward(event.queue(), metadata);
 
       event.emplace(regression_token_, std::move(regression_collection));
     }
@@ -87,7 +87,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
   private:
     const device::EDGetToken<ParticleDeviceCollection> particles_token_;
     const device::EDPutToken<RegressionDeviceCollection> regression_token_;
-    std::unique_ptr<torch::AlpakaModel> model_;
+    torch::AlpakaModel model_;
     const bool verbose_;
   };
 

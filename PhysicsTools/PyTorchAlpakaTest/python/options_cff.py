@@ -68,3 +68,11 @@ args.register(
     VarParsing.VarParsing.varType.string,         
     "Classification model (just-in-time compiled)"
 )
+
+args.register(
+    "resnetJit",
+    "PhysicsTools/PyTorchAlpakaTest/data/resnet18.pt",
+    VarParsing.VarParsing.multiplicity.singleton,
+    VarParsing.VarParsing.varType.string,         
+    "ResNet model (just-in-time compiled)"
+)

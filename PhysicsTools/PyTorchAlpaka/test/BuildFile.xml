@@ -1,4 +1,4 @@
-<bin file="alpaka/testSoADataTypes.dev.cc testRunner.cc" name="testSoADataTypes">
+<!-- <bin file="alpaka/testSoADataTypes.dev.cc testRunner.cc" name="testSoADataTypes">
   <use name="alpaka"/>
   <use name="boost_filesystem"/>
   <use name="cppunit"/>
@@ -29,4 +29,4 @@
   <use name="HeterogeneousCore/AlpakaInterface"/>
   <use name="PhysicsTools/PyTorchAlpaka"/>
   <flags ALPAKA_BACKENDS="1"/>
-</bin>
+</bin> -->

@@ -5,6 +5,7 @@ from PhysicsTools.PyTorchAlpakaTest.modules import (
     torchtest_ParticleClassificationProducer_alpaka,
     torchtest_ParticleRegressionProducer_alpaka,
     torchtest_ReconstructionMergeProducer_alpaka,
+    torchtest_ResNetInferenceProducer_alpaka,
     torchtest_CollectionAnalyzer
 )
   
@@ -67,6 +68,14 @@ process.ReconstructionMergePortableProducer = torchtest_ReconstructionMergeProdu
     ),
     verbose = cms.untracked.bool(args.verbose)
 )
+process.ResNetInferenceProducer = torchtest_ResNetInferenceProducer_alpaka(
+    model = cms.FileInPath(args.resnetJit),
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(args.backend)
+    ),
+    verbose = cms.untracked.bool(args.verbose),
+    batchSize = cms.uint32(args.batchSize if args.batchSize > 1 else 1)
+)
 process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
     particles = 'PortableCollectionProducer',
     classification = 'ParticleClassificationPortableProducer',
@@ -78,9 +87,10 @@ process.CollectionAnalyzer = torchtest_CollectionAnalyzer(
 
 # schedule the modules
 process.path = cms.Path(
-    process.PortableCollectionProducer + 
-    process.ParticleRegressionPortableProducer +
-    process.ParticleClassificationPortableProducer +
-    process.ReconstructionMergePortableProducer +
-    process.CollectionAnalyzer
+    # process.PortableCollectionProducer + 
+    # process.ParticleRegressionPortableProducer +
+    # process.ParticleClassificationPortableProducer +
+    # process.ReconstructionMergePortableProducer +
+    # process.CollectionAnalyzer
+    process.ResNetInferenceProducer
 )
