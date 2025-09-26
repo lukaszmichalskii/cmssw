@@ -1,0 +1,41 @@
+<lcgdict>
+  <!-- BxLookupHostCollection -->
+  <!-- BxIndexSoA -->
+  <class name="l1sc::BxIndexSoA"/>
+  <class name="l1sc::BxIndexSoA::View"/>
+  <class name="l1sc::BxIndexSoA::ConstView"/>
+  <!-- OffsetsSoA -->
+  <class name="l1sc::OffsetsSoA"/>
+  <class name="l1sc::OffsetsSoA::View"/>
+  <class name="l1sc::OffsetsSoA::ConstView"/>
+  <!-- ROOT R/W recipies -->
+  <class name="portablecollection::CollectionImpl<0,l1sc::BxIndexLayout<128,false>,l1sc::OffsetsLayout<128,false>>"/>
+  <class name="portablecollection::CollectionImpl<1,l1sc::OffsetsLayout<128,false>>"/>
+  <class name="portablecollection::CollectionLeaf<0,l1sc::BxIndexLayout<128,false>>"/>
+  <class name="portablecollection::CollectionLeaf<1,l1sc::OffsetsLayout<128,false>>"/>
+  <!-- PortableMultiCollection -->
+  <class name="l1sc::BxLookupHostCollection"/>
+  <class name="edm::Wrapper<l1sc::BxLookupHostCollection>" splitLevel="0"/>
+  <!-- ___________ END ___________ -->
+
+  <!-- PuppiHostCollection -->
+  <class name="l1sc::PuppiSoA"/>
+  <class name="l1sc::PuppiSoA::View"/>
+  <class name="l1sc::PuppiSoA::ConstView"/>
+  <class name="l1sc::PuppiHostCollection"/>
+  <class name="edm::Wrapper<l1sc::PuppiHostCollection>" splitLevel="0"/>
+
+  <!-- SelectedBxHostCollection -->
+  <class name="l1sc::SelectedBxSoA"/>
+  <class name="l1sc::SelectedBxSoA::View"/>
+  <class name="l1sc::SelectedBxSoA::ConstView"/>
+  <class name="l1sc::SelectedBxHostCollection"/>
+  <class name="edm::Wrapper<l1sc::SelectedBxHostCollection>" splitLevel="0"/>
+
+  <!-- W3PiHostTable -->
+  <class name="l1sc::W3PiTable"/>
+  <class name="l1sc::W3PiTable::View"/>
+  <class name="l1sc::W3PiTable::ConstView"/>
+  <class name="l1sc::W3PiHostTable"/>
+  <class name="edm::Wrapper<l1sc::W3PiHostTable>" splitLevel="0"/>
+</lcgdict>

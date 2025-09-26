@@ -1,0 +1,24 @@
+<lcgdict>
+  <!-- BxLookupDeviceCollection -->
+  <class name="alpaka_cuda_async::l1sc::BxLookupDeviceCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_cuda_async::l1sc::BxLookupDeviceCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_cuda_async::l1sc::BxLookupDeviceCollection>>" persistent="false"/>
+  
+  <!-- PuppiDeviceCollection -->
+  <class name="alpaka_cuda_async::PortableCollection<l1sc::PuppiSoA>" persistent="false"/>
+  <class name="alpaka_cuda_async::l1sc::PuppiDeviceCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_cuda_async::l1sc::PuppiDeviceCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_cuda_async::l1sc::PuppiDeviceCollection>>" persistent="false"/>
+  
+  <!-- SelectedBxDeviceCollection -->
+  <class name="alpaka_cuda_async::PortableCollection<l1sc::SelectedBxSoA>" persistent="false"/>
+  <class name="alpaka_cuda_async::l1sc::SelectedBxDeviceCollection" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_cuda_async::l1sc::SelectedBxDeviceCollection>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_cuda_async::l1sc::SelectedBxDeviceCollection>>" persistent="false"/> 
+
+  <!-- W3PiDeviceTable -->
+  <class name="alpaka_cuda_async::PortableCollection<l1sc::W3PiTable>" persistent="false"/>
+  <class name="alpaka_cuda_async::l1sc::W3PiDeviceTable" persistent="false"/>
+  <class name="edm::DeviceProduct<alpaka_cuda_async::l1sc::W3PiDeviceTable>" persistent="false"/>
+  <class name="edm::Wrapper<edm::DeviceProduct<alpaka_cuda_async::l1sc::W3PiDeviceTable>>" persistent="false"/> 
+</lcgdict>

@@ -21,7 +21,7 @@ process.options = cms.untracked.PSet(
     numberOfThreads = cms.untracked.uint32(options.numThreads),
     numberOfStreams = cms.untracked.uint32(options.numFwkStreams),
     numberOfConcurrentLuminosityBlocks = cms.untracked.uint32(1),
-    wantSummary = cms.untracked.bool(True)
+    wantSummary = cms.untracked.bool(False)
 )
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
