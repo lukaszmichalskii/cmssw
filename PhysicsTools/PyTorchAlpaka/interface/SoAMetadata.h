@@ -68,7 +68,7 @@ namespace cms::torch::alpakatools {
           const size_t alignment,
           const void* ptr,
           const Columns& columns,
-          ::torch::ScalarType type,
+          const ::torch::ScalarType type,
           const size_t bytes)
         : ptr_(ptr), type_(type), bytes_(bytes), alignment_(alignment) {
       stride_ = create_stride(nElements, alignment, columns, bytes);
@@ -76,7 +76,11 @@ namespace cms::torch::alpakatools {
     };
 
     // Constructor for scalar columns
-    Block(const int nElements, const size_t alignment, const void* ptr, ::torch::ScalarType type, const size_t bytes)
+    Block(const int nElements,
+          const size_t alignment,
+          const void* ptr,
+          const ::torch::ScalarType type,
+          const size_t bytes)
         : ptr_(ptr), type_(type), bytes_(bytes), alignment_(alignment) {
       stride_ = create_stride(nElements, alignment, 1, bytes, true);
       size_ = create_size(nElements, 1);
@@ -303,6 +307,29 @@ namespace cms::torch::alpakatools {
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
       order.push_back(name);
       nBlocks += 1;
+    }
+
+    template <typename SoALayout, typename T, typename... Others>
+      requires(SameTypes<typename T::ValueType, typename Others::ValueType...> && T::columnType == SoAColumnType::eigen)
+    void append_block(const std::string& name,
+                      std::tuple<T, cms::soa::size_type> column,
+                      std::tuple<Others, cms::soa::size_type>... others) {
+      append_block<SoALayout, T, Others...>(name, nElements, column, others...);
+    }
+
+    template <typename SoALayout, typename T, typename... Others>
+      requires(SameTypes<typename T::ScalarType, typename Others::ScalarType...> &&
+               T::columnType == SoAColumnType::column)
+    void append_block(const std::string& name,
+                      std::tuple<T, cms::soa::size_type> column,
+                      std::tuple<Others, cms::soa::size_type>... others) {
+      append_block<SoALayout, T, Others...>(name, nElements, column, others...);
+    }
+
+    template <typename SoALayout, SoAColumnType col_type, typename T>
+      requires(std::is_arithmetic_v<T> && col_type == SoAColumnType::scalar)
+    void append_block(const std::string& name, std::tuple<SoAParametersImpl<col_type, T>, cms::soa::size_type> column) {
+      append_block<SoALayout, col_type, T>(name, nElements, column);
     }
 
     // The order is defined by the order append_block is called.

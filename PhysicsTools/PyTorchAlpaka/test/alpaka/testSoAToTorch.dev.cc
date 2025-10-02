@@ -107,11 +107,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     // Create SoA Metadata
     SoAMetadata input(batch_size);
     auto posview = positionCollection.view().records();
-    input.append_block<SoAPosition>("main", batch_size, posview.x(), posview.y(), posview.z());
+    input.append_block<SoAPosition>("main", posview.x(), posview.y(), posview.z());
 
     SoAMetadata output(batch_size);
     auto view = resultCollection.view().records();
-    output.append_block<SoAResult>("result", batch_size, view.x(), view.y());
+    output.append_block<SoAResult>("result", view.x(), view.y());
     ModelMetadata metadata(input, output);
 
     // Call inference

@@ -53,11 +53,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       auto output_records = logits.view().records();
       // input tensor definition
       SoAMetadata inputs_metadata(batch_size);
-      inputs_metadata.append_block<Image>(
-          "images", batch_size, input_records.r(), input_records.g(), input_records.b());
+      inputs_metadata.append_block<Image>("images", input_records.r(), input_records.g(), input_records.b());
       // output tensor definition
       SoAMetadata outputs_metadata(batch_size);
-      outputs_metadata.append_block<Logits>("logits", batch_size, output_records.logits());
+      outputs_metadata.append_block<Logits>("logits", output_records.logits());
       // metadata for automatic tensor conversion
       ModelMetadata metadata(inputs_metadata, outputs_metadata);
       metadata_def.end();

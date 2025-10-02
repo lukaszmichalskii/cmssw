@@ -54,10 +54,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       // input tensor definition
       SoAMetadata inputs_metadata(batch_size);
       inputs_metadata.append_block<ParticleSoA>(
-          "particles", batch_size, input_records.pt(), input_records.eta(), input_records.phi());
+          "particles", input_records.pt(), input_records.eta(), input_records.phi());
       // output tensor definition
       SoAMetadata outputs_metadata(batch_size);
-      outputs_metadata.append_block<SimpleNetSoA>("regression_head", batch_size, output_records.reco_pt());
+      outputs_metadata.append_block<SimpleNetSoA>("regression_head", output_records.reco_pt());
       // metadata for automatic tensor conversion
       ModelMetadata metadata(inputs_metadata, outputs_metadata);
       metadata_def.end();

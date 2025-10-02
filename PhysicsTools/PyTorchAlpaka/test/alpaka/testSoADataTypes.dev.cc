@@ -208,14 +208,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     SoAMetaRecords records = deviceCollection.view().records();
 
     SoAMetadata input(batch_size);
-    input.append_block<SoA>("vector", batch_size, records.a(), records.b());
-    input.append_block<SoA>("matrix", batch_size, records.c());
-    input.append_block<SoA>("column", batch_size, records.x(), records.y(), records.z());
-    input.append_block<SoA>("scalar", batch_size, records.type());
+    input.append_block<SoA>("vector", records.a(), records.b());
+    input.append_block<SoA>("matrix", records.c());
+    input.append_block<SoA>("column", records.x(), records.y(), records.z());
+    input.append_block<SoA>("scalar", records.type());
     input.change_order({"column", "scalar", "matrix", "vector"});
 
     SoAMetadata output(batch_size);
-    output.append_block<SoA>("result", batch_size, records.v());
+    output.append_block<SoA>("result", records.v());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -248,12 +248,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
     auto records = deviceCollection.view().records();
     SoAMetadata input(batch_size);
-    input.append_block<SoA>("x", batch_size, records.x());
-    input.append_block<SoA>("y", batch_size, records.y());
+    input.append_block<SoA>("x", records.x());
+    input.append_block<SoA>("y", records.y());
 
     SoAMetadata output(batch_size);
-    output.append_block<SoA>("v", batch_size, records.v());
-    output.append_block<SoA>("w", batch_size, records.w());
+    output.append_block<SoA>("v", records.v());
+    output.append_block<SoA>("w", records.w());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -287,14 +287,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
     // Run Converter for single tensor
     SoAMetadata input(batch_size);
-    input.append_block<SoA>("vector", batch_size, records.a(), records.b());
-    input.append_block<SoA>("matrix", batch_size, records.c());
-    input.append_block<SoA>("column", batch_size, records.x(), records.y(), records.z());
-    input.append_block<SoA>("scalar", batch_size, records.type());
+    input.append_block<SoA>("vector", records.a(), records.b());
+    input.append_block<SoA>("matrix", records.c());
+    input.append_block<SoA>("column", records.x(), records.y(), records.z());
+    input.append_block<SoA>("scalar", records.type());
     input.change_order({"column", "scalar", "matrix", "vector"});
 
     SoAMetadata output(batch_size);
-    output.append_block<SoA>("result", batch_size, records.v());
+    output.append_block<SoA>("result", records.v());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -325,14 +325,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
     // Run Converter
     SoAMetadata input(batch_size);
-    input.append_block<SoA>("vector", batch_size, records.a(), records.b());
-    input.append_block<SoA>("matrix", batch_size, records.c());
-    input.append_block<SoA>("column", batch_size, records.x(), records.y(), records.z());
-    input.append_block<SoA>("scalar", batch_size, records.type());
+    input.append_block<SoA>("vector", records.a(), records.b());
+    input.append_block<SoA>("matrix", records.c());
+    input.append_block<SoA>("column", records.x(), records.y(), records.z());
+    input.append_block<SoA>("scalar", records.type());
     input.change_order({"column", "scalar", "matrix", "vector"});
 
     SoAMetadata output(batch_size);
-    output.append_block<SoA>("result", batch_size, records.v());
+    output.append_block<SoA>("result", records.v());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED

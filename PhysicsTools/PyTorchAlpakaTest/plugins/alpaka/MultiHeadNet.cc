@@ -54,12 +54,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       // input tensor definition
       SoAMetadata inputs_metadata(batch_size);
       inputs_metadata.append_block<ParticleSoA>(
-          "particles", batch_size, input_records.pt(), input_records.eta(), input_records.phi());
+          "particles", input_records.pt(), input_records.eta(), input_records.phi());
       // output tensor definition
       SoAMetadata outputs_metadata(batch_size);
-      outputs_metadata.append_block<MultiHeadNetSoA>("regression_head", batch_size, output_records.regression_head());
-      outputs_metadata.append_block<MultiHeadNetSoA>(
-          "classification_head", batch_size, output_records.classification_head());
+      outputs_metadata.append_block<MultiHeadNetSoA>("regression_head", output_records.regression_head());
+      outputs_metadata.append_block<MultiHeadNetSoA>("classification_head", output_records.classification_head());
       // metadata for automatic tensor conversion
       // note that `multi_head` is true to distinguish the multi-branch backward conversion
       ModelMetadata metadata(inputs_metadata, outputs_metadata, /**< multi_head = */ true);
