@@ -89,6 +89,9 @@ namespace cms::torch::alpakatools {
       std::vector<long int> size(columns.size() + 1);
       size[0] = nElements;
       std::copy(columns.columns.begin(), columns.columns.end(), size.begin() + 1);
+	  if (columns.size() > 1 && columns[0] == 1) {
+		size.erase(size.begin()+1);
+	  }
 
       return size;
     }
@@ -116,6 +119,9 @@ namespace cms::torch::alpakatools {
           stride[i] = stride[i - 1] * columns[i - 2];
         }
         stride[1] = stride[N - 1] * columns[N - 2];
+		if (columns[0] == 1) {
+		  stride.erase(stride.begin()+1);
+		}
       }
       return stride;
     }
@@ -180,11 +186,7 @@ namespace cms::torch::alpakatools {
                             d_ptr,
                             std::get<0>(std::get<0>(others).tupleOrPointer())...));
 
-      Columns col;
-      if (sizeof...(others) > 0)
-        col.push(sizeof...(others) + 1);
-      col.push(T::ValueType::RowsAtCompileTime);
-
+      Columns col{{sizeof...(others) + 1, T::ValueType::RowsAtCompileTime}};
       if (T::ValueType::ColsAtCompileTime > 1) {
         col.push(T::ValueType::ColsAtCompileTime);
       }
@@ -219,11 +221,7 @@ namespace cms::torch::alpakatools {
                             d_ptr,
                             std::get<0>(std::get<0>(others).tupleOrPointer())...));
 
-      Columns col;
-      if (sizeof...(others) > 0)
-        col.push(sizeof...(others) + 1);
-      col.push(T::ValueType::RowsAtCompileTime);
-
+      Columns col{{sizeof...(others) + 1, T::ValueType::RowsAtCompileTime}};
       if (T::ValueType::ColsAtCompileTime > 1) {
         col.push(T::ValueType::ColsAtCompileTime);
       }

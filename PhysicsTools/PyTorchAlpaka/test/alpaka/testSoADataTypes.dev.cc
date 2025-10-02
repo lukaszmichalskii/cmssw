@@ -166,14 +166,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       CPPUNIT_ASSERT(view[i].b()(1) - tensors[3].toTensor()[i][1][1].item<double>() > -tol);
       CPPUNIT_ASSERT(view[i].b()(2) - tensors[3].toTensor()[i][1][2].item<double>() > -tol);
 
-      CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0][0].item<float>() < tol);
-      CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0][0].item<float>() > -tol);
-      CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][0][1].item<float>() < tol);
-      CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][0][1].item<float>() > -tol);
-      CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][0][1][0].item<float>() < tol);
-      CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][0][1][0].item<float>() > -tol);
-      CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][0][1][1].item<float>() < tol);
-      CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][0][1][1].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 0) - tensors[2].toTensor()[i][0][0].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][1].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(0, 1) - tensors[2].toTensor()[i][0][1].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][1][0].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 0) - tensors[2].toTensor()[i][1][0].item<float>() > -tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][1][1].item<float>() < tol);
+      CPPUNIT_ASSERT(view[i].c()(1, 1) - tensors[2].toTensor()[i][1][1].item<float>() > -tol);
 
       CPPUNIT_ASSERT((view.x()[i] - tensors[0].toTensor()[i][0].item<double>()) < tol);
       CPPUNIT_ASSERT(view.x()[i] - tensors[0].toTensor()[i][0].item<double>() > -tol);
