@@ -15,43 +15,45 @@ namespace cms::torch::alpakatools {
   class Converter {
   public:
     // Calculate size and stride of data store based on InputMetadata and return list of IValue, which is parent class of torch::tensor.
-    static std::vector<::torch::IValue> convert_input(const ModelMetadata& metadata,
-                                                      ::torch::Device device) {
+    static std::vector<::torch::IValue> convert_input(const ModelMetadata& metadata, ::torch::Device device) {
       std::vector<::torch::IValue> tensors(metadata.input.nBlocks);
       for (int i = 0; i < metadata.input.nBlocks; i++) {
-        assert(reinterpret_cast<intptr_t>(metadata.input[metadata.input.order[i]].ptr()) % metadata.input[metadata.input.order[i]].alignment() == 0);
+        assert(reinterpret_cast<intptr_t>(metadata.input[metadata.input.order[i]].ptr()) %
+                   metadata.input[metadata.input.order[i]].alignment() ==
+               0);
         tensors[i] = Converter::array_to_tensor(device, metadata.input[metadata.input.order[i]]);
       }
       return tensors;
     }
 
     // AOT specific implementation, as model expects vector of torch::Tensor not torch::IValue
-    static std::vector<::torch::Tensor> convert_input_tensor(const ModelMetadata& metadata,
-                                                             ::torch::Device device) {
+    static std::vector<::torch::Tensor> convert_input_tensor(const ModelMetadata& metadata, ::torch::Device device) {
       std::vector<::torch::Tensor> tensors(metadata.input.nBlocks);
       for (int i = 0; i < metadata.input.nBlocks; i++) {
-        assert(reinterpret_cast<intptr_t>(metadata.input[metadata.input.order[i]].ptr()) % metadata.input[metadata.input.order[i]].alignment() == 0);
+        assert(reinterpret_cast<intptr_t>(metadata.input[metadata.input.order[i]].ptr()) %
+                   metadata.input[metadata.input.order[i]].alignment() ==
+               0);
         tensors[i] = Converter::array_to_tensor(device, metadata.input[metadata.input.order[i]]);
       }
       return tensors;
     }
 
     // Calculate size and stride of data store based on OutputMetadata and return single output tensor
-    static ::torch::Tensor convert_output(const ModelMetadata& metadata,
-                                          ::torch::Device device) {
-      assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[0]].ptr()) % metadata.output[metadata.output.order[0]].alignment() == 0);
+    static ::torch::Tensor convert_output(const ModelMetadata& metadata, ::torch::Device device) {
+      assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[0]].ptr()) %
+                 metadata.output[metadata.output.order[0]].alignment() ==
+             0);
       return Converter::array_to_tensor(device, metadata.output[metadata.output.order[0]]);
     }
 
     // Calculate size and stride of data store based on OutputMetadata and fill SoA with tensor values
     // TODO: temporary solution for multi output branch models, figure out how to solve without copy (similar issue to AOT compiled models)
-    static void convert_output(const ::torch::IValue& tensors,
-                               const ModelMetadata& metadata,
-                               ::torch::Device device) {
+    static void convert_output(const ::torch::IValue& tensors, const ModelMetadata& metadata, ::torch::Device device) {
       if (tensors.isTuple()) {
         const auto tensors_tuple = tensors.toTuple();
         for (int i = 0; i < metadata.output.nBlocks; i++) {
-          assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[i]].ptr()) % metadata.output[metadata.output.order[i]].alignment() ==
+          assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[i]].ptr()) %
+                     metadata.output[metadata.output.order[i]].alignment() ==
                  0);
           Converter::array_to_tensor(device, metadata.output[metadata.output.order[i]]) =
               tensors_tuple->elements()[i].toTensor();
@@ -66,10 +68,10 @@ namespace cms::torch::alpakatools {
       for (int i = 0; i < metadata.output.nBlocks; i++) {
         // Only tensors are currenlty supported for conversion
         if (tensors[i].isTensor()) {
-          assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[i]].ptr()) % metadata.output[metadata.output.order[i]].alignment() ==
+          assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[i]].ptr()) %
+                     metadata.output[metadata.output.order[i]].alignment() ==
                  0);
-          Converter::array_to_tensor(device, metadata.output[metadata.output.order[i]]) =
-              tensors[i].toTensor();
+          Converter::array_to_tensor(device, metadata.output[metadata.output.order[i]]) = tensors[i].toTensor();
         }
       }
     }
@@ -79,7 +81,9 @@ namespace cms::torch::alpakatools {
                                const ModelMetadata& metadata,
                                ::torch::Device device) {
       for (int i = 0; i < metadata.output.nBlocks; i++) {
-        assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[i]].ptr()) % metadata.output[metadata.output.order[i]].alignment() == 0);
+        assert(reinterpret_cast<intptr_t>(metadata.output[metadata.output.order[i]].ptr()) %
+                   metadata.output[metadata.output.order[i]].alignment() ==
+               0);
         Converter::array_to_tensor(device, metadata.output[metadata.output.order[i]]) = tensors[i];
       }
     }

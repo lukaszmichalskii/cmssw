@@ -21,10 +21,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
     // Default model loads to CPU memory space. Prefered way to load model,
     // Move to device memory space is done asynchronously using to() method in CMSSW aware stream.
     explicit AlpakaModel(const std::string &model_path) : cms::torch::Model(model_path) {}
+
     // Loads model to alpaka accelerator specified memory space.
     // Note that this is done in default stream, i.e. synchronously.
-    explicit AlpakaModel(const std::string &model_path, Device &dev) : cms::torch::Model(model_path, getDevice(dev)) {}
-    explicit AlpakaModel(const std::string &model_path, Queue &queue) : cms::torch::Model(model_path, getDevice(queue)) {}
+    explicit AlpakaModel(const std::string &model_path, const Device &dev)
+        : cms::torch::Model(model_path, getDevice(dev)) {}
+    explicit AlpakaModel(const std::string &model_path, const Queue &queue)
+        : cms::torch::Model(model_path, getDevice(queue)) {}
 
     // Forward pass (inference) of model with SoA metadata input/output.
     // Allows to run inference directly using SoA portable objects/collections without excessive copies and conversions.

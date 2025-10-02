@@ -64,7 +64,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       auto output_records = masked_net_output.view().records();
       // input tensor definition
       SoAMetadata inputs_metadata(batch_size);
-      inputs_metadata.append_block<ParticleSoA>("particles", batch_size, particle_records.pt(), particle_records.eta(), particle_records.phi());
+      inputs_metadata.append_block<ParticleSoA>(
+          "particles", batch_size, particle_records.pt(), particle_records.eta(), particle_records.phi());
       // note override of default `ParticleSoA` layout with `Mask`
       inputs_metadata.append_block<Mask>("mask", batch_size, mask_records.mask());
       // inputs_metadata.append_block<ScalarMask>("scalar_mask", batch_size, scalar_mask_records.scalar_mask());
