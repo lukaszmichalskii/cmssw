@@ -207,15 +207,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     fill(queue, deviceCollection);
     SoAMetaRecords records = deviceCollection.view().records();
 
-    SoAMetadata<SoA> input(batch_size);
-    input.append_block("vector", records.a(), records.b());
-    input.append_block("matrix", records.c());
-    input.append_block("column", records.x(), records.y(), records.z());
-    input.append_block("scalar", records.type());
+    SoAMetadata input(batch_size);
+    input.append_block<SoA>("vector", batch_size, records.a(), records.b());
+    input.append_block<SoA>("matrix", batch_size, records.c());
+    input.append_block<SoA>("column", batch_size, records.x(), records.y(), records.z());
+    input.append_block<SoA>("scalar", batch_size, records.type());
     input.change_order({"column", "scalar", "matrix", "vector"});
 
-    SoAMetadata<SoA> output(batch_size);
-    output.append_block("result", records.v());
+    SoAMetadata output(batch_size);
+    output.append_block<SoA>("result", batch_size, records.v());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -247,13 +247,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     fill(queue, deviceCollection);
 
     auto records = deviceCollection.view().records();
-    SoAMetadata<SoA> input(batch_size);
-    input.append_block("x", records.x());
-    input.append_block("y", records.y());
+    SoAMetadata input(batch_size);
+    input.append_block<SoA>("x", batch_size, records.x());
+    input.append_block<SoA>("y", batch_size, records.y());
 
-    SoAMetadata<SoA> output(batch_size);
-    output.append_block("v", records.v());
-    output.append_block("w", records.w());
+    SoAMetadata output(batch_size);
+    output.append_block<SoA>("v", batch_size, records.v());
+    output.append_block<SoA>("w", batch_size, records.w());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -286,15 +286,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     SoAMetaRecords records = deviceCollection.view().records();
 
     // Run Converter for single tensor
-    SoAMetadata<SoA> input(batch_size);
-    input.append_block("vector", records.a(), records.b());
-    input.append_block("matrix", records.c());
-    input.append_block("column", records.x(), records.y(), records.z());
-    input.append_block("scalar", records.type());
+    SoAMetadata input(batch_size);
+    input.append_block<SoA>("vector", batch_size, records.a(), records.b());
+    input.append_block<SoA>("matrix", batch_size, records.c());
+    input.append_block<SoA>("column", batch_size, records.x(), records.y(), records.z());
+    input.append_block<SoA>("scalar", batch_size, records.type());
     input.change_order({"column", "scalar", "matrix", "vector"});
 
-    SoAMetadata<SoA> output(batch_size);
-    output.append_block("result", records.v());
+    SoAMetadata output(batch_size);
+    output.append_block<SoA>("result", batch_size, records.v());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -324,15 +324,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     SoAMetaRecords records = deviceCollection.view().records();
 
     // Run Converter
-    SoAMetadata<SoA> input(batch_size);
-    input.append_block("vector", records.a(), records.b());
-    input.append_block("matrix", records.c());
-    input.append_block("column", records.x(), records.y(), records.z());
-    input.append_block("scalar", records.type());
+    SoAMetadata input(batch_size);
+    input.append_block<SoA>("vector", batch_size, records.a(), records.b());
+    input.append_block<SoA>("matrix", batch_size, records.c());
+    input.append_block<SoA>("column", batch_size, records.x(), records.y(), records.z());
+    input.append_block<SoA>("scalar", batch_size, records.type());
     input.change_order({"column", "scalar", "matrix", "vector"});
 
-    SoAMetadata<SoA> output(batch_size);
-    output.append_block("result", records.v());
+    SoAMetadata output(batch_size);
+    output.append_block<SoA>("result", batch_size, records.v());
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -365,8 +365,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     fill(queue, deviceCollection);
 
     // Run Converter for empty metadata
-    SoAMetadata<SoA> input(batch_size);
-    SoAMetadata<SoA> output(batch_size);
+    SoAMetadata input(batch_size);
+    SoAMetadata output(batch_size);
     ModelMetadata metadata(input, output);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED

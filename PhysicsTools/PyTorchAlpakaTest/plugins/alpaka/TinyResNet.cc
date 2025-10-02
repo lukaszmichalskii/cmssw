@@ -29,6 +29,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
           model_(params.getParameter<edm::FileInPath>("model").fullPath()),
           environment_{static_cast<Environment>(params.getUntrackedParameter<int>("environment"))} {}
 
+    static void fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+      edm::ParameterSetDescription desc;
+      desc.add<edm::FileInPath>("model");
+      desc.add<edm::InputTag>("images");
+      desc.addUntracked<int>("environment", static_cast<int>(Environment::kProduction));
+      descriptions.addWithDefaultLabel(desc);
+    }
+
     void produce(device::Event &event, const device::EventSetup &event_setup) override {
       NvtxRAII produce_range("TinyResNet::produce", environment_);
       NvtxRAII mem_alloc("TinyResNet::mem_alloc", environment_);
@@ -44,13 +52,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       auto input_records = images.const_view().records();
       auto output_records = logits.view().records();
       // input tensor definition
-      SoAMetadata<Image> inputs_metadata(batch_size);
-      inputs_metadata.append_block("images", input_records.r(), input_records.g(), input_records.b());
+      SoAMetadata inputs_metadata(batch_size);
+      inputs_metadata.append_block<Image>("images", batch_size, input_records.r(), input_records.g(), input_records.b());
       // output tensor definition
-      SoAMetadata<Logits> outputs_metadata(batch_size);
-      outputs_metadata.append_block("logits", output_records.logits());
+      SoAMetadata outputs_metadata(batch_size);
+      outputs_metadata.append_block<Logits>("logits", batch_size, output_records.logits());
       // metadata for automatic tensor conversion
-      ModelMetadata<Image, Logits> metadata(inputs_metadata, outputs_metadata);
+      ModelMetadata metadata(inputs_metadata, outputs_metadata);
       metadata_def.end();
 
       // inference, queue guard restore stream when goes out of scope
@@ -69,22 +77,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       event.emplace(logits_token_, std::move(logits));
     }
 
-    static void fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
-      edm::ParameterSetDescription desc;
-      desc.add<edm::FileInPath>("model");
-      desc.add<edm::InputTag>("images");
-      desc.addUntracked<int>("environment", static_cast<int>(Environment::kProduction));
-      descriptions.addWithDefaultLabel(desc);
-    }
-
   private:
     // event query tokens
     const device::EDGetToken<ImageDeviceCollection> images_token_;
     const device::EDPutToken<LogitsDeviceCollection> logits_token_;
-
     // model
     torch::AlpakaModel model_;
-
     // debug mode flag
     const Environment environment_;
   };

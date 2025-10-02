@@ -29,6 +29,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
           model_(params.getParameter<edm::FileInPath>("model").fullPath()),
           environment_{static_cast<Environment>(params.getUntrackedParameter<int>("environment"))} {}
 
+    static void fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+      edm::ParameterSetDescription desc;
+      desc.add<edm::FileInPath>("model");
+      desc.add<edm::InputTag>("particles");
+      desc.addUntracked<int>("environment", static_cast<int>(Environment::kProduction));
+      descriptions.addWithDefaultLabel(desc);
+    }
+
     void produce(device::Event &event, const device::EventSetup &event_setup) override {
       NvtxRAII produce_range("SimpleNet::produce", environment_);
       NvtxRAII mem_alloc("SimpleNet::mem_alloc", environment_);
@@ -44,13 +52,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       auto input_records = particles.const_view().records();
       auto output_records = regression_collection.view().records();
       // input tensor definition
-      SoAMetadata<ParticleSoA> inputs_metadata(batch_size);
-      inputs_metadata.append_block("particles", input_records.pt(), input_records.eta(), input_records.phi());
+      SoAMetadata inputs_metadata(batch_size);
+      inputs_metadata.append_block<ParticleSoA>("particles", batch_size, input_records.pt(), input_records.eta(), input_records.phi());
       // output tensor definition
-      SoAMetadata<SimpleNetSoA> outputs_metadata(batch_size);
-      outputs_metadata.append_block("regression_head", output_records.reco_pt());
+      SoAMetadata outputs_metadata(batch_size);
+      outputs_metadata.append_block<SimpleNetSoA>("regression_head", batch_size, output_records.reco_pt());
       // metadata for automatic tensor conversion
-      ModelMetadata<ParticleSoA, SimpleNetSoA> metadata(inputs_metadata, outputs_metadata);
+      ModelMetadata metadata(inputs_metadata, outputs_metadata);
       metadata_def.end();
 
       // inference, queue guard restore stream when goes out of scope
@@ -69,22 +77,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       event.emplace(simple_net_token_, std::move(regression_collection));
     }
 
-    static void fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
-      edm::ParameterSetDescription desc;
-      desc.add<edm::FileInPath>("model");
-      desc.add<edm::InputTag>("particles");
-      desc.addUntracked<int>("environment", static_cast<int>(Environment::kProduction));
-      descriptions.addWithDefaultLabel(desc);
-    }
-
   private:
     // event query tokens
     const device::EDGetToken<ParticleDeviceCollection> particles_token_;
     const device::EDPutToken<SimpleNetDeviceCollection> simple_net_token_;
-
     // model
     torch::AlpakaModel model_;
-
     // debug mode flag
     const Environment environment_;
   };

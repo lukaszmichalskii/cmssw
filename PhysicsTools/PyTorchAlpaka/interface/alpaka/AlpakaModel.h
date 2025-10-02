@@ -10,6 +10,8 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
 
+  using namespace cms::torch::alpakatools;
+
   class AlpakaModel : public cms::torch::Model {
   public:
     // inherit generic pytorch interface methods
@@ -19,28 +21,24 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
     // Default model loads to CPU memory space. Prefered way to load model,
     // Move to device memory space is done asynchronously using to() method in CMSSW aware stream.
     explicit AlpakaModel(const std::string &model_path) : cms::torch::Model(model_path) {}
-
     // Loads model to alpaka accelerator specified memory space.
     // Note that this is done in default stream, i.e. synchronously.
-    template <typename T>
-      requires ::alpaka::isDevice<T> || ::alpaka::isQueue<T>
-    explicit AlpakaModel(const std::string &model_path, const T &acc_mem)
-        : cms::torch::Model(model_path, getDevice(acc_mem)) {}
+    explicit AlpakaModel(const std::string &model_path, Device &dev) : cms::torch::Model(model_path, getDevice(dev)) {}
+    explicit AlpakaModel(const std::string &model_path, Queue &queue) : cms::torch::Model(model_path, getDevice(queue)) {}
 
     // Forward pass (inference) of model with SoA metadata input/output.
     // Allows to run inference directly using SoA portable objects/collections without excessive copies and conversions.
     // Refer: PhysicsTools/PyTorch/interface/Converter.h for details about wrapping memory layouts.
-    template <typename InMemLayout, typename OutMemLayout>
-    void forward(Queue &queue, cms::torch::alpakatools::ModelMetadata<InMemLayout, OutMemLayout> &metadata) {
+    void forward(Queue &queue, ModelMetadata &metadata) {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       metadata.copyToHost(queue);
 #endif  // ALPAKA_ACC_GPU_HIP_ENABLED
-      auto input_tensor = cms::torch::alpakatools::Converter::convert_input(metadata, device_);
+      auto input_tensor = Converter::convert_input(metadata, device_);
       if (metadata.multi_head) {
         auto output_tensors = model_.forward(input_tensor);
-        cms::torch::alpakatools::Converter::convert_output(output_tensors, metadata, device_);
+        Converter::convert_output(output_tensors, metadata, device_);
       } else {
-        cms::torch::alpakatools::Converter::convert_output(metadata, device_) = model_.forward(input_tensor).toTensor();
+        Converter::convert_output(metadata, device_) = model_.forward(input_tensor).toTensor();
       }
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       metadata.copyToDevice(queue);
