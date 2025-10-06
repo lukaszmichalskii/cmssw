@@ -2,7 +2,7 @@
 
 #include <fmt/format.h>
 
-#include "DataFormats/PortableTestObjects/interface/TestHostCollection.h"
+#include "DataFormats/PortableTestObjects/interface/TorchTestHostCollection.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/stream/EDAnalyzer.h"
@@ -13,12 +13,11 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/EDGetToken.h"
 #include "FWCore/Utilities/interface/InputTag.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/Environment.h"
+#include "PhysicsTools/PyTorchAlpakaTest/plugins/Environment.h"
 
 namespace torchtest {
 
   using namespace torchportabletest;
-  using namespace cms::torchcommon;
 
   inline edm::InputTag getBackendTag(edm::InputTag const& tag) {
     return edm::InputTag(tag.label(), "backend", tag.process());

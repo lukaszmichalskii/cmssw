@@ -9,13 +9,12 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/devices.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
-#include "PhysicsTools/PyTorch/test/testTorchBase.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/Converter.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/alpaka/Config.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/GetDevice.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/SoAConversion.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/SoAMetadata.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 
-  using namespace ALPAKA_ACCELERATOR_NAMESPACE::torch;
   using namespace cms::torch::alpakatools;
 
   class TestSOADataTypesAlpaka : public CppUnit::TestFixture {
@@ -196,7 +195,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     CPPUNIT_ASSERT(alpakaDevices.size());
     const auto& alpakaDevice = alpakaDevices[0];
     Queue queue{alpakaDevice};
-    ::torch::Device torchDevice(kDevice);
+    ::torch::Device torchDevice = cms::torch::alpakatools::getDevice(queue);
 
     // Large batch size, so multiple bunches needed
     const std::size_t batch_size = 5;
@@ -221,7 +220,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToHost(queue);
 #endif
-    std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+    std::vector<::torch::IValue> tensors = convertInput(metadata, torchDevice);
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToDevice(queue);
 #endif
@@ -237,7 +236,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     CPPUNIT_ASSERT(alpakaDevices.size());
     const auto& alpakaDevice = alpakaDevices[0];
     Queue queue{alpakaDevice};
-    ::torch::Device torchDevice(kDevice);
+    ::torch::Device torchDevice = cms::torch::alpakatools::getDevice(queue);
 
     // Large batch size, so multiple bunches needed
     const std::size_t batch_size = 325;
@@ -259,8 +258,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToHost(queue);
 #endif
-    std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
-    Converter::convert_output(tensors, metadata, torchDevice);
+    std::vector<::torch::IValue> tensors = convertInput(metadata, torchDevice);
+    convertOutput(tensors, metadata, torchDevice);
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToDevice(queue);
 #endif
@@ -276,7 +275,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     CPPUNIT_ASSERT(alpakaDevices.size());
     const auto& alpakaDevice = alpakaDevices[0];
     Queue queue(alpakaDevice);
-    ::torch::Device torchDevice(kDevice);
+    ::torch::Device torchDevice = cms::torch::alpakatools::getDevice(queue);
 
     // Create and fill portable collections
     const std::size_t batch_size = 1;
@@ -300,7 +299,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToHost(queue);
 #endif
-    std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+    std::vector<::torch::IValue> tensors = convertInput(metadata, torchDevice);
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToDevice(queue);
 #endif
@@ -316,7 +315,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     CPPUNIT_ASSERT(alpakaDevices.size());
     const auto& alpakaDevice = alpakaDevices[0];
     Queue queue(alpakaDevice);
-    ::torch::Device torchDevice(kDevice);
+    ::torch::Device torchDevice = cms::torch::alpakatools::getDevice(queue);
 
     //Create empty portable collection
     const std::size_t batch_size = 0;
@@ -338,7 +337,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToHost(queue);
 #endif
-    std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+    std::vector<::torch::IValue> tensors = convertInput(metadata, torchDevice);
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToDevice(queue);
 #endif
@@ -357,7 +356,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     CPPUNIT_ASSERT(alpakaDevices.size());
     const auto& alpakaDevice = alpakaDevices[0];
     Queue queue(alpakaDevice);
-    ::torch::Device torchDevice(kDevice);
+    ::torch::Device torchDevice = cms::torch::alpakatools::getDevice(queue);
 
     // Create and fill portable collections
     const std::size_t batch_size = 12;
@@ -372,7 +371,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToHost(queue);
 #endif
-    std::vector<::torch::IValue> tensors = Converter::convert_input(metadata, torchDevice);
+    std::vector<::torch::IValue> tensors = convertInput(metadata, torchDevice);
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     metadata.copyToDevice(queue);
 #endif

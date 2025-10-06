@@ -1,4 +1,4 @@
-<iftool name="cuda-gcc-support">
+<!-- <iftool name="cuda-gcc-support">
   <bin file="SoALayoutAndView_t.cu" name="testCudaSoALayoutAndView_t">
     <use name="boost"/>
     <use name="cuda"/>
@@ -37,12 +37,12 @@
   <use name="DataFormats/SoATemplate"/>
 </bin>
 
-<!-- This test triggers a bug in ROOT, so it's kept disabled
+This test triggers a bug in ROOT, so it's kept disabled
 <bin file="SoAStreamer_t.cpp" name="SoAStreamer_t">
   <use name="root"/>
   <use name="DataFormats/SoATemplate"/>
 </bin>
--->
 
-<!-- dictionaries for FakeSoA -->
-<library file="" name="FakeSoADict"/>
+
+dictionaries for FakeSoA
+<library file="" name="FakeSoADict"/> -->
