@@ -23,9 +23,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
     // Move to device memory space is done asynchronously using to() method in CMSSW aware stream.
     explicit AlpakaModel(const std::string &model_path) : cms::torch::Model(model_path) {}
 
-    // Below constructors are intended for tests. 
+    // Below constructors are intended for tests.
     // The string-only constructor with to() method is preferred way to keep async.
-    // Loads model to alpaka accelerator specified memory space. 
+    // Loads model to alpaka accelerator specified memory space.
     // Note that this is done in default stream, i.e. synchronously.
     explicit AlpakaModel(const std::string &model_path, const Device &dev)
         : cms::torch::Model(model_path, getDevice(dev)) {}

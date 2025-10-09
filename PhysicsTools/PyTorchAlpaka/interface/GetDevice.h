@@ -1,7 +1,7 @@
 #ifndef PhysicsTools_PyTorchAlpaka_interface_GetDevice_h
 #define PhysicsTools_PyTorchAlpaka_interface_GetDevice_h
 
-#include <type_traits>  
+#include <type_traits>
 
 #include "alpaka/alpaka.hpp"
 #include "PhysicsTools/PyTorch/interface/TorchInterface.h"

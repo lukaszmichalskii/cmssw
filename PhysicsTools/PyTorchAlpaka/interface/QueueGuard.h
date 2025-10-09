@@ -39,9 +39,7 @@ namespace cms::torch::alpakatools {
       c10::cuda::setCurrentCUDAStream(stream);
     }
 
-    ~QueueGuard() noexcept {
-      c10::cuda::setCurrentCUDAStream(cached_stream_);
-    }
+    ~QueueGuard() noexcept { c10::cuda::setCurrentCUDAStream(cached_stream_); }
 
   private:
     c10::cuda::CUDAStream cached_stream_ = c10::cuda::getCurrentCUDAStream();

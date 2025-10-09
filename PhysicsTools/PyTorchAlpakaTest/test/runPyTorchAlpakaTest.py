@@ -6,7 +6,7 @@ from PhysicsTools.PyTorchAlpakaTest.modules import (
 )
 
 args = parse_args()
-process = cms.Process("PyTorchAlpakaHeterogeneousTest")
+process = cms.Process("PyTorchAlpakaTest")
 
 # enable multithreading
 process.options.numberOfThreads = args.numberOfThreads if args.numberOfThreads > 1 else 1 
@@ -26,10 +26,11 @@ process.maxEvents.input = args.numberOfEvents if args.numberOfEvents > 1 else 1
 process.source = cms.Source("EmptySource")
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
-process.options.wantSummary = True
+process.options.wantSummary = args.wantSummary
 
 # setup chain configs
 process.path = cms.Path()
+# data provider
 process.DataSource = torchtest_DataSource_alpaka(
     batchSize = cms.uint32(args.batchSize if args.batchSize > 1 else 1),
     alpaka = cms.untracked.PSet(
@@ -38,6 +39,7 @@ process.DataSource = torchtest_DataSource_alpaka(
     environment = cms.untracked.int32(args.environment)
 )
 process.path += process.DataSource
+# --only SimpleNet
 if "SimpleNet" in args.only:
     from PhysicsTools.PyTorchAlpakaTest.modules import torchtest_SimpleNet_alpaka
     process.SimpleNet = torchtest_SimpleNet_alpaka(
@@ -49,6 +51,7 @@ if "SimpleNet" in args.only:
         environment = cms.untracked.int32(args.environment)
     )
     process.path += process.SimpleNet
+# --only MultiHeadNet
 if "MultiHeadNet" in args.only:
     from PhysicsTools.PyTorchAlpakaTest.modules import torchtest_MultiHeadNet_alpaka
     process.MultiHeadNet = torchtest_MultiHeadNet_alpaka(
@@ -60,6 +63,7 @@ if "MultiHeadNet" in args.only:
         environment = cms.untracked.int32(args.environment)
     )
     process.path += process.MultiHeadNet
+# --only MaskedNet
 if "MaskedNet" in args.only:
     from PhysicsTools.PyTorchAlpakaTest.modules import torchtest_MaskedNet_alpaka
     process.MaskedNet = torchtest_MaskedNet_alpaka(
@@ -71,6 +75,7 @@ if "MaskedNet" in args.only:
         environment = cms.untracked.int32(args.environment)
     )
     process.path += process.MaskedNet
+# --only TinyResNet
 if "TinyResNet" in args.only:
     from PhysicsTools.PyTorchAlpakaTest.modules import torchtest_TinyResNet_alpaka
     process.TinyResNet = torchtest_TinyResNet_alpaka(
@@ -82,6 +87,7 @@ if "TinyResNet" in args.only:
         environment = cms.untracked.int32(args.environment)
     )
     process.path += process.TinyResNet
+# debug (if --environment < 1 only assertions are checked)
 process.InspectionSink = torchtest_InspectionSink(
     particles = 'DataSource',
     simple_net = 'SimpleNet',

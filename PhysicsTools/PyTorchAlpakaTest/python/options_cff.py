@@ -7,28 +7,28 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--numberOfThreads",
+        "-nt", "--numberOfThreads",
         type=int,
         default=1,
         help="Number of CMSSW threads"
     )
 
     parser.add_argument(
-        "--numberOfStreams",
+        "-ns", "--numberOfStreams",
         type=int,
         default=1,
         help="Number of CMSSW streams"
     )
 
     parser.add_argument(
-        "--numberOfEvents",
+        "-ne", "--numberOfEvents",
         type=int,
         default=1,
         help="Number of events to process"
     )
 
     parser.add_argument(
-        "--backend",
+        "-b", "--backend",
         type=str,
         choices=["serial_sync", "cuda_async", "rocm_async"],
         default="serial_sync",
@@ -36,14 +36,14 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--batchSize",
+        "-bs", "--batchSize",
         type=int,
         default=8,
         help="Batch size"
     )
 
     parser.add_argument(
-        "--environment",
+        "-e", "--environment",
         type=int,
         choices=[0, 1, 2, 3],
         default=0,
@@ -79,11 +79,17 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--only",
+        "-o", "--only",
         nargs="+",
         default=["SimpleNet", "MultiHeadNet", "MaskedNet", "TinyResNet"],
         choices=["SimpleNet", "MaskedNet", "MultiHeadNet", "TinyResNet"],
         help="Run selected test(s). Default: all modules run in parallel."
+    )
+
+    parser.add_argument(
+        "-ws", "--wantSummary",
+        action="store_true",
+        help="Modules execution summary"
     )
 
     return parser.parse_args()

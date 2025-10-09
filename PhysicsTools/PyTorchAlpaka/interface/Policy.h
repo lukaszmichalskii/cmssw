@@ -1,6 +1,8 @@
 #ifndef PhysicsTools_PyTorchAlpaka_interface_Policy_h
 #define PhysicsTools_PyTorchAlpaka_interface_Policy_h
 
+#include <cstddef>
+
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/memory.h"
 
@@ -10,32 +12,39 @@ namespace cms::torch::alpakatools {
   // - ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLED
   // - ALPAKA_ACC_GPU_CUDA_ENABLED
   struct DefaultPolicy {
-    explicit DefaultPolicy(const void*, size_t, size_t) {}
-    template <typename TQueue> void copyToHost(TQueue&) const noexcept {}
-    template <typename TQueue> void copyToDevice(TQueue&) const noexcept {}
+    explicit DefaultPolicy(const void*, size_t) {}
+
+    template <typename TQueue>
+      requires ::alpaka::isQueue<TQueue>
+    void copyToHost(TQueue&) const noexcept {}
+
+    template <typename TQueue>
+      requires ::alpaka::isQueue<TQueue>
+    void copyToDevice(TQueue&) const noexcept {}
   };
 
   // Generic fallback mechanism that provides a host-resident mirror of device memory blob.
   // Manages a host-side buffer that mirrors device memory, enabling CPU-based inference
   // when ROCm execution is not available.
-  template <typename T>
   struct ROCmAsyncPolicy {
-    ROCmAsyncPolicy(const void* d_ptr, size_t ncols, size_t nelems)
-        : d_ptr_(d_ptr), extent_(alpaka_common::Vec1D{ncols * nelems}),
-          h_buf_(cms::alpakatools::make_host_buffer<T[]>(ncols * nelems)) {}
+    ROCmAsyncPolicy(const void* d_ptr, const size_t nbytes)
+        : d_ptr_(d_ptr), nbytes_{nbytes}, h_buf_(cms::alpakatools::make_host_buffer<std::byte[]>(nbytes)) {}
 
     // Synchronization (if applicable) responsibility move to the caller
     template <typename TQueue>
+      requires ::alpaka::isQueue<TQueue>
     void copyToHost(TQueue& queue) {
-      auto d_view = alpaka::createView(alpaka::getDev(queue), const_cast<T*>(static_cast<const T*>(d_ptr_)), extent_);
+      auto ptr = const_cast<std::byte*>(reinterpret_cast<const std::byte*>(d_ptr_));
+      auto d_view = alpaka::createView(alpaka::getDev(queue), ptr, alpaka_common::Vec1D{nbytes_});
       alpaka::memcpy(queue, h_buf_, d_view);
     }
 
     // Synchronization (if applicable) responsibility move to the caller
     template <typename TQueue>
+      requires ::alpaka::isQueue<TQueue>
     void copyToDevice(TQueue& queue) {
-      auto d_view =
-          alpaka::createView(alpaka::getDev(queue), const_cast<T*>(static_cast<const T*>(d_ptr_)), extent_);
+      auto ptr = const_cast<std::byte*>(reinterpret_cast<const std::byte*>(d_ptr_));
+      auto d_view = alpaka::createView(alpaka::getDev(queue), ptr, alpaka_common::Vec1D{nbytes_});
       alpaka::memcpy(queue, d_view, h_buf_);
     }
 
@@ -43,8 +52,8 @@ namespace cms::torch::alpakatools {
 
   private:
     const void* d_ptr_;
-    alpaka_common::Vec1D extent_;
-    cms::alpakatools::host_buffer<T[]> h_buf_;
+    size_t nbytes_;
+    cms::alpakatools::host_buffer<std::byte[]> h_buf_;
   };
 
 }  // namespace cms::torch::alpakatools

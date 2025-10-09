@@ -6,8 +6,6 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/devices.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/GetDevice.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/QueueGuard.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/SoAConversion.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/SoAMetadata.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/AlpakaModel.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
@@ -108,7 +106,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
       for (uint32_t i = 0; i < 10; ++i) {
         auto out = m.forward(inputs);
       }
-    }); 
+    });
   }
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest

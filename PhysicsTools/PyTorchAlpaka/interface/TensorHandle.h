@@ -1,37 +1,36 @@
-#ifndef PhysicsTools_PyTorchAlpaka_interface_TensorView_h 
-#define PhysicsTools_PyTorchAlpaka_interface_TensorView_h 
+#ifndef PhysicsTools_PyTorchAlpaka_interface_TensorHandle_h
+#define PhysicsTools_PyTorchAlpaka_interface_TensorHandle_h
 
-#include <cmath> 
-#include <numeric> 
-#include <vector> 
+#include <cmath>
+#include <numeric>
+#include <vector>
 
-#include "PhysicsTools/PyTorch/interface/TorchInterface.h" 
+#include "PhysicsTools/PyTorch/interface/TorchInterface.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/Policy.h"
 
-namespace cms::torch::alpakatools { 
+namespace cms::torch::alpakatools {
 
   inline int getElementsPerColumn(const int n_elems, const size_t alignment, const size_t bytes) {
     int per_bunch = alignment / bytes;
     int bunches = std::ceil(1.0 * n_elems / per_bunch);
     return bunches * per_bunch;
   }
-  
-  class Dims { 
-  public: 
-    explicit Dims(const int batch_size, const std::vector<int> dims) : batch_size_(batch_size), dims_(std::move(dims)) {} 
-       
+
+  class Dims {
+  public:
+    explicit Dims(const int batch_size, const std::vector<int> dims) : batch_size_(batch_size), dims_(dims) {}
     int operator[](size_t idx) const { return dims_[idx]; }
-    size_t size() const { return dims_.size(); } 
-    bool empty() const { return dims_.empty(); } 
+    size_t size() const { return dims_.size(); }
+    bool empty() const { return dims_.empty(); }
     int batch_size() const { return batch_size_; }
     int dim0() const { return dims_.empty() ? 1 : dims_[0]; }
-    int n_elems() const { return std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<int>()); } 
+    int n_elems() const { return std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<int>()); }
     int n_elems_per_batch() const { return n_elems() / batch_size_; }
 
-    std::vector<int> shape() const { 
+    std::vector<int> shape() const {
       std::vector<int> s(1, batch_size_);
       s.insert(s.end(), dims_.begin(), dims_.end());
-      return s; 
+      return s;
     }
 
     // iterator
@@ -47,38 +46,24 @@ namespace cms::torch::alpakatools {
   };
 
   template <typename TPolicy = DefaultPolicy>
-  class TensorView {
+  class TensorHandle {
   public:
-    explicit TensorView(const size_t alignment, 
-                        const size_t bytes, 
-                        const void* data, 
-                        const ::torch::ScalarType type, 
-                        const int batch_size, 
-                        const std::vector<int> dims)
-        : alignment_(alignment), 
-          bytes_(bytes), 
+    explicit TensorHandle(const size_t alignment,
+                          const size_t bytes,
+                          const void* data,
+                          const ::torch::ScalarType type,
+                          const int batch_size,
+                          const std::vector<int> dims)
+        : alignment_(alignment),
+          bytes_(bytes),
           data_(data),
-          dims_(batch_size, dims), 
+          dims_(batch_size, dims),
           type_(type),
-          policy_(data, dims_.dim0(), getElementsPerColumn(batch_size, alignment, bytes) * dims_.n_elems_per_batch()) {
+          policy_(data, dims_.dim0() * getElementsPerColumn(batch_size, alignment, bytes) * bytes) {
       init_strides();
       init_sizes();
     }
-    explicit TensorView(const size_t alignment, 
-                        const size_t bytes, 
-                        const void* data,
-                        const ::torch::ScalarType type, 
-                        const int batch_size)
-        : alignment_(alignment), 
-          bytes_(bytes), 
-          data_(data), 
-          dims_(batch_size, {}), 
-          type_(type),
-          policy_(data, dims_.dim0(), getElementsPerColumn(batch_size, alignment, bytes) * dims_.n_elems_per_batch()) {
-      init_strides();
-      init_sizes();
-    }
-      
+
     size_t alignment() const { return alignment_; }
     size_t bytes() const { return bytes_; }
     const void* data() const { return data_; }
@@ -89,11 +74,17 @@ namespace cms::torch::alpakatools {
     const std::vector<long int>& sizes() const { return sizes_; }
 
     template <typename TQueue>
-    void copyToHost(const TQueue& queue) { policy_.copyToHost(queue); }
+      requires ::alpaka::isQueue<TQueue>
+    void copyToHost(const TQueue& queue) {
+      policy_.copyToHost(queue);
+    }
 
     template <typename TQueue>
-    void copyToDevice(const TQueue& queue) { policy_.copyToDevice(queue); }
-    
+      requires ::alpaka::isQueue<TQueue>
+    void copyToDevice(const TQueue& queue) {
+      policy_.copyToDevice(queue);
+    }
+
   private:
     void init_sizes() {
       sizes_ = std::vector<long int>(dims_.size() + 1);
@@ -148,6 +139,12 @@ namespace cms::torch::alpakatools {
     TPolicy policy_;
   };
 
-} // namespace cms::torch::alpakatools 
+#ifndef ALPAKA_ACC_GPU_HIP_ENABLED
+  using PortableTensorHandle = TensorHandle<ROCmAsyncPolicy>;
+#else
+  using PortableTensorHandle = TensorHandle<>;
+#endif
 
-#endif // PhysicsTools_PyTorchAlpaka_interface_TensorView_h
+}  // namespace cms::torch::alpakatools
+
+#endif  // PhysicsTools_PyTorchAlpaka_interface_TensorHandle_h

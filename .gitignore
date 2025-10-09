@@ -10,8 +10,6 @@ __init__.py
 *.rej
 *.orig
 
-PhysicsTools/PyTorch/data/
-PhysicsTools/PyTorchAlpakaTest/data/
 # ignore files under the top level $CMSSW_BASE/src directory, but not its subdirectories
 /*
 !/*/

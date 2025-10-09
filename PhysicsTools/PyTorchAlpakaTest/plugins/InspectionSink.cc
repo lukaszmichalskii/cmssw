@@ -251,7 +251,8 @@ namespace torchtest {
       fmt::format_to(std::back_inserter(buffer), "{}", line);
 
       // Table rows (preview)
-      for (int32_t i = 0; i < std::min<int32_t>(kMaxView, size); ++i) {
+      int32_t range = (environment_ >= Environment::kTest) ? size : std::min<int32_t>(kMaxView, size);
+      for (int32_t i = 0; i < range; ++i) {
         fmt::format_to(std::back_inserter(buffer),
                        "| {:5d} | {:>15.2f} | {:5.2f} | {:5.2f} | {:5.2f} |\n",
                        static_cast<int>(i),
@@ -262,7 +263,7 @@ namespace torchtest {
       }
 
       // Ellipsis row if truncated
-      if (size > kMaxView) {
+      if (range < kMaxView) {
         fmt::format_to(std::back_inserter(buffer),
                        "| {:>5} | {:>15} | {:>5} | {:>5} | {:>5} |\n",
                        "...",
@@ -290,13 +291,14 @@ namespace torchtest {
       fmt::format_to(std::back_inserter(buffer), "{}", line);
 
       // Table rows (preview)
-      for (int32_t i = 0; i < std::min<int32_t>(kMaxView, size); ++i) {
+      int32_t range = (environment_ >= Environment::kTest) ? size : std::min<int32_t>(kMaxView, size);
+      for (int32_t i = 0; i < range; ++i) {
         fmt::format_to(
             std::back_inserter(buffer), "| {:5d} | {:7.2f} |\n", static_cast<int>(i), simple_net[i].reco_pt());
       }
 
       // Ellipsis row if truncated
-      if (size > kMaxView) {
+      if (range < kMaxView) {
         fmt::format_to(std::back_inserter(buffer), "| {:>5} | {:>7} |\n", "...", "...");
       }
 
@@ -316,7 +318,8 @@ namespace torchtest {
       fmt::format_to(std::back_inserter(buffer), "{}", line);
 
       // Table rows (preview)
-      for (int32_t i = 0; i < std::min<int32_t>(kMaxView, size); ++i) {
+      int32_t range = (environment_ >= Environment::kTest) ? size : std::min<int32_t>(kMaxView, size);
+      for (int32_t i = 0; i < range; ++i) {
         fmt::format_to(std::back_inserter(buffer),
                        "| {:5d} | {:7.2f} | {:7.2f} | {:7.2f} |\n",
                        static_cast<int>(i),
@@ -326,7 +329,7 @@ namespace torchtest {
       }
 
       // Ellipsis row if truncated
-      if (size > kMaxView) {
+      if (range < kMaxView) {
         fmt::format_to(std::back_inserter(buffer), "| {:>5} | {:>7} | {:>7} | {:>7} |\n", "...", "...", "...", "...");
       }
 

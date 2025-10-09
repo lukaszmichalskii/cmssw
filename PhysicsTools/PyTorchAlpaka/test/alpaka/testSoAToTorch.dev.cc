@@ -8,7 +8,7 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/host.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/SoAConversion.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/SoAMetadata.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/TensorRegistry.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/alpaka/AlpakaModel.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
@@ -105,17 +105,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     model.to(queue);
 
     // Create SoA Metadata
-    SoAMetadata input(batch_size);
+    TensorRegistry input(batch_size);
     auto posview = positionCollection.view().records();
-    input.append_block<SoAPosition>("main", posview.x(), posview.y(), posview.z());
+    input.register_tensor<SoAPosition>("main", posview.x(), posview.y(), posview.z());
 
-    SoAMetadata output(batch_size);
+    TensorRegistry output(batch_size);
     auto view = resultCollection.view().records();
-    output.append_block<SoAResult>("result", view.x(), view.y());
-    ModelMetadata metadata(input, output);
+    output.register_tensor<SoAResult>("result", view.x(), view.y());
 
     // Call inference
-    model.forward(queue, metadata);
+    model.forward(queue, input, output);
     check(queue, resultCollection);
 
     PortableHostCollection<SoAResult> resultHostCollection(batch_size, cms::alpakatools::host());

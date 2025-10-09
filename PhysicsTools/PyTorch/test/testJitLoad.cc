@@ -66,7 +66,6 @@ namespace torchtest {
       auto expected = torch::tensor({2.1f, 1.8f}, torch::TensorOptions().device(dev)).repeat({batch_size_, 1});
       CPPUNIT_ASSERT(torch::allclose(outputs, expected));
     });
-    
   }
 
 }  // namespace torchtest
