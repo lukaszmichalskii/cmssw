@@ -5,7 +5,6 @@
 
 #include "CLUEstering/CLUEstering.hpp"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/BxLookupDeviceCollection.h"
-#include "DataFormats/L1ScoutingSoA/interface/alpaka/JetDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/ClustersDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PFCandidateDeviceCollection.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
@@ -25,7 +24,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
              const PFCandidateDeviceCollection& pf,
              const BxLookupDeviceCollection& bx_lookup,
              ClustersDeviceCollection& clusters) const;
-    JetsDeviceCollection transform(Queue& queue, const PFCandidateDeviceCollection& pf, ClustersDeviceCollection& clusters) const;
 
   private:
     float dc_, rhoc_, dm_;

@@ -31,11 +31,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
     clue_algo.make_clusters(queue, points_device);
   }
 
-  JetsDeviceCollection transform(Queue& queue, const PFCandidateDeviceCollection& pf, ClustersDeviceCollection& clusters) const {
-    
-  }
-
-
   void CLUEsteringAlgo::run(Queue& queue,
                             const PFCandidateDeviceCollection& pf,
                             const BxLookupDeviceCollection& bx_lookup,

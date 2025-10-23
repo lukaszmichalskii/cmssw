@@ -8,7 +8,6 @@
 #include "DataFormats/Common/interface/Wrapper.h"
 
 #include "DataFormats/L1ScoutingSoA/interface/BxIndexSoA.h"
-#include "DataFormats/L1ScoutingSoA/interface/JetSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/ClustersSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/OffsetsSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiSoA.h"
@@ -19,7 +18,6 @@
 #include "DataFormats/L1ScoutingSoA/interface/SoftTauTensorSoA.h"
 
 #include "DataFormats/L1ScoutingSoA/interface/BxLookupHostCollection.h"
-#include "DataFormats/L1ScoutingSoA/interface/JetHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/ClustersHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/TkEmHostCollection.h"

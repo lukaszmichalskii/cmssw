@@ -32,7 +32,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       const auto &pf_candidates_aos = event.get(pf_candidates_aos_token_);
       // filter out eta domain and estimate mem block size
       size_t size = std::count_if(pf_candidates_aos.begin(), pf_candidates_aos.end(), [](l1t::PFCandidate c) {
-        return c.eta() > -2.4 && c.eta() < 2.4;
+        // return c.eta() > -2.4 && c.eta() < 2.4;
+        return true;
       });
       // allocate buffer to store converted soa
       auto pf_candidates_soa = PFCandidateHostCollection(size, event.queue());
@@ -42,8 +43,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       size_t idx_target = 0;
       for (size_t idx = 0; idx < pf_candidates_aos.size(); ++idx) {
         const auto &pf_candidate = pf_candidates_aos[idx];
-        if (std::abs(pf_candidate.eta()) >= 2.4)
-          continue;
+        // if (std::abs(pf_candidate.eta()) >= 2.4)
+        //   continue;
         auto pf_view = pf_candidates_soa.view()[idx_target];
 
         pf_view.pt() = static_cast<float>(pf_candidate.pt());
