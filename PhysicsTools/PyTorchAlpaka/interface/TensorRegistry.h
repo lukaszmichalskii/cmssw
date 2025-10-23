@@ -73,8 +73,8 @@ namespace cms::torch::alpakatools {
   //                     SOA_COLUMN(float, phi),  note features position was swapped to ensure continuity
   //                     SOA_COLUMN(float, eta))
   //
-  template <typename TDev>
-    requires alpaka::isDevice<TDev>
+  template <typename TQueue>
+    requires alpaka::isQueue<TQueue>
   class TensorRegistry {
   public:
     explicit TensorRegistry(int batch_size) : batch_size_(batch_size) {}
@@ -163,13 +163,12 @@ namespace cms::torch::alpakatools {
       order_ = std::move(order);
     }
     size_t size() const { return registry_.size(); }
-    ITensorHandle& operator[](const size_t index) const { return *registry_.at(order_[index]); }
+    ITensorHandle<TQueue>& operator[](const size_t index) const { return *registry_.at(order_[index]); }
 
-    template <typename TQueue>
-      requires ::alpaka::isQueue<TQueue>
+    // TODO: make these frient of AlpakaModel user should not be able to call it directly
     void copy(TQueue& queue, const MemcpyKind kind) {
       for (const auto& name : order_)
-        registry_.at(name)->copy(&queue, kind);
+        registry_.at(name)->copy(queue, kind);
       // explicit synchronize to ensure data is in place before inference
       // no need to explicitly synchronize D2D/H2D, rely on implicit synchronization mechanism in framework
       if (kind == MemcpyKind::DeviceToHost)
@@ -188,13 +187,13 @@ namespace cms::torch::alpakatools {
       using T = std::remove_pointer_t<Tptr>;
       registry_.try_emplace(
           name,
-          std::make_unique<TensorHandle<TDev, T>>(alignment, sizeof(T), ptr, batch_size, std::move(dims), is_scalar));
+          std::make_unique<TensorHandle<TQueue, T>>(alignment, sizeof(T), ptr, batch_size, std::move(dims), is_scalar));
       order_.push_back(name);
     }
 
     int batch_size_;
     std::vector<std::string> order_;
-    std::unordered_map<std::string, std::unique_ptr<ITensorHandle>> registry_;
+    std::unordered_map<std::string, std::unique_ptr<ITensorHandle<TQueue>>> registry_;
   };
 
 }  // namespace cms::torch::alpakatools

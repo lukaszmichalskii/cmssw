@@ -5,9 +5,9 @@
 
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "PhysicsTools/PyTorch/interface/Model.h"
-#include "PhysicsTools/PyTorchAlpaka/interface/SoAConversion.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/GetDevice.h"
 #include "PhysicsTools/PyTorchAlpaka/interface/TensorRegistry.h"
+#include "PhysicsTools/PyTorchAlpaka/interface/SoAConversion.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
 
@@ -35,7 +35,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torch {
     // Forward pass (inference) of model with SoA metadata input/output.
     // Allows to run inference directly using SoA portable objects/collections without excessive copies and conversions.
     // Refer: PhysicsTools/PyTorch/interface/SoAConversion.h for details about wrapping memory layouts.
-    void forward(Queue &queue, TensorRegistry<Device> &inputs, TensorRegistry<Device> &outputs) {
+    void forward(Queue &queue, TensorRegistry<Queue> &inputs, TensorRegistry<Queue> &outputs) {
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
       inputs.copy(queue, MemcpyKind::DeviceToHost);
       outputs.copy(queue, MemcpyKind::DeviceToHost);

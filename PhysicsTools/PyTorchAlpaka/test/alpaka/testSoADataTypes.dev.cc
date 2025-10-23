@@ -204,7 +204,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     fill(queue, deviceCollection);
     SoAMetaRecords records = deviceCollection.view().records();
 
-    TensorRegistry<Device> input(batch_size);
+    TensorRegistry<Queue> input(batch_size);
     input.register_tensor<SoA>("vector", records.a(), records.b());
     input.register_tensor<SoA>("matrix", records.c());
     input.register_tensor<SoA>("column", records.x(), records.y(), records.z());
@@ -239,11 +239,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     fill(queue, deviceCollection);
 
     auto records = deviceCollection.view().records();
-    TensorRegistry<Device> input(batch_size);
+    TensorRegistry<Queue> input(batch_size);
     input.register_tensor<SoA>("x", records.x());
     input.register_tensor<SoA>("y", records.y());
 
-    TensorRegistry<Device> output(batch_size);
+    TensorRegistry<Queue> output(batch_size);
     output.register_tensor<SoA>("v", records.v());
     output.register_tensor<SoA>("w", records.w());
 
@@ -279,14 +279,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     SoAMetaRecords records = deviceCollection.view().records();
 
     // Run Converter for single tensor
-    TensorRegistry<Device> input(batch_size);
+    TensorRegistry<Queue> input(batch_size);
     input.register_tensor<SoA>("vector", records.a(), records.b());
     input.register_tensor<SoA>("matrix", records.c());
     input.register_tensor<SoA>("column", records.x(), records.y(), records.z());
     input.register_tensor<SoA>("scalar", records.type());
     input.change_order({"column", "scalar", "matrix", "vector"});
 
-    TensorRegistry<Device> output(batch_size);
+    TensorRegistry<Queue> output(batch_size);
     output.register_tensor<SoA>("result", records.v());
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
@@ -313,7 +313,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     SoAMetaRecords records = deviceCollection.view().records();
 
     // Run Converter
-    TensorRegistry<Device> input(batch_size);
+    TensorRegistry<Queue> input(batch_size);
     input.register_tensor<SoA>("vector", records.a(), records.b());
     input.register_tensor<SoA>("matrix", records.c());
     input.register_tensor<SoA>("column", records.x(), records.y(), records.z());
@@ -347,7 +347,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     fill(queue, deviceCollection);
 
     // Run Converter for empty metadata
-    TensorRegistry<Device> input(batch_size);
+    TensorRegistry<Queue> input(batch_size);
 
 #ifdef ALPAKA_ACC_GPU_HIP_ENABLED
     input.copy(queue, MemcpyKind::DeviceToHost);

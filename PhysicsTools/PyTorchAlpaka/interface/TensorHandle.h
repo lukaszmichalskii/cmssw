@@ -47,24 +47,30 @@ namespace cms::torch::alpakatools {
     bool is_scalar_;
   };
 
+  template <typename TQueue>
+    requires alpaka::isQueue<TQueue>
   class ITensorHandle {
   public:
     virtual ~ITensorHandle() = default;
 
-    virtual void copy(void* queue_ptr, const MemcpyKind kind) = 0;
-
     virtual size_t alignment() const = 0;
     virtual size_t bytes() const = 0;
-    virtual void* data() = 0;
     virtual ::torch::ScalarType type() const = 0;
 
     virtual std::vector<long int> sizes() const = 0;
     virtual std::vector<long int> strides() const = 0;
+
+    // TODO: make these frient of TensorRegistry + arrayToTensor function
+    virtual void copy(TQueue &queue, const MemcpyKind kind) = 0;
+    virtual void* data() = 0;
   };
 
-  template <typename TDev, typename T>
-    requires alpaka::isDevice<TDev>
-  class TensorHandle : public ITensorHandle {
+
+  // TODO: handle case when user register only one column:
+  // e.g. .register_tensor("test", soa.pt()); (stride should be [1] instead of e.g. [1, 32])
+  template <typename TQueue, typename T>
+    requires alpaka::isQueue<TQueue>
+  class TensorHandle : public ITensorHandle<TQueue> {
   public:
     explicit TensorHandle(const size_t alignment,
                           const size_t bytes,
@@ -83,13 +89,10 @@ namespace cms::torch::alpakatools {
 
     size_t alignment() const override { return alignment_; }
     size_t bytes() const override { return bytes_; }
-    void* data() override { return static_cast<void*>(policy_.data()); }
     ::torch::ScalarType type() const override { return get_type<T>(); }
 
     std::vector<long int> strides() const override { return strides_; }
     std::vector<long int> sizes() const override { return sizes_; }
-
-    void copy(void* queue_ptr, const MemcpyKind kind) override { policy_.copy(queue_ptr, kind); }
 
     // propagate iterator from Dims
     using iterator_t = std::vector<int>::const_iterator;
@@ -98,6 +101,9 @@ namespace cms::torch::alpakatools {
     iterator_t cbegin() const { return dims_.cbegin(); }
     iterator_t cend() const { return dims_.cend(); }
 
+    // TODO: make these frient of TensorRegistry + arrayToTensor function
+    void copy(TQueue &queue, const MemcpyKind kind) override { policy_.copy(queue, kind); }
+    void* data() override { return static_cast<void*>(policy_.data()); }
   private:
     void init_sizes() {
       sizes_ = std::vector<long int>(dims_.size() + 1);
@@ -150,7 +156,7 @@ namespace cms::torch::alpakatools {
 
     // workaround until pytorch COW Tensors is implemented
     // in the mainstream framework or cmssw add patch with COW inital state.
-    Policy<TDev, T> policy_;
+    Policy<TQueue, T> policy_;
   };
 
 }  // namespace cms::torch::alpakatools

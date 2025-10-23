@@ -102,11 +102,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::torchtest {
     model.to(queue);
 
     // Create SoA Metadata
-    TensorRegistry<Device> input(batch_size);
+    TensorRegistry<Queue> input(batch_size);
     auto posview = positionCollection.const_view().records();
     input.register_tensor<SoAPosition>("main", posview.x(), posview.y(), posview.z());
 
-    TensorRegistry<Device> output(batch_size);
+    TensorRegistry<Queue> output(batch_size);
     auto view = resultCollection.view().records();
     output.register_tensor<SoAResult>("result", view.x(), view.y());
 
