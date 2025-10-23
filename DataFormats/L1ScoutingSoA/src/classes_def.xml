@@ -18,6 +18,21 @@
   <class name="edm::Wrapper<l1sc::BxLookupHostCollection>" splitLevel="0"/>
   <!-- ___________ END ___________ -->
 
+  <!-- JetHostCollection -->
+  <!-- IndexSoA -->
+  <class name="l1sc::IndexSoA"/>
+  <class name="l1sc::IndexSoA::View"/>
+  <class name="l1sc::IndexSoA::ConstView"/>
+  <!-- ROOT R/W recipies -->
+  <class name="portablecollection::CollectionImpl<0,l1sc::IndexLayout<128,false>,l1sc::OffsetsLayout<128,false>>"/>
+  <class name="portablecollection::CollectionImpl<1,l1sc::OffsetsLayout<128,false>>"/>
+  <class name="portablecollection::CollectionLeaf<0,l1sc::IndexLayout<128,false>>"/>
+  <class name="portablecollection::CollectionLeaf<1,l1sc::OffsetsLayout<128,false>>"/>
+  <!-- PortableMultiCollection -->
+  <class name="l1sc::JetHostCollection"/>
+  <class name="edm::Wrapper<l1sc::JetHostCollection>" splitLevel="0"/>
+  <!-- ___________ END ___________ -->
+
   <!-- ClustersHostCollection -->
   <class name="l1sc::ClustersSoA"/>
   <class name="l1sc::ClustersSoA::View"/>

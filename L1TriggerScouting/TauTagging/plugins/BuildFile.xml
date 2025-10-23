@@ -1,3 +1,4 @@
+<use name="pytorch"/>
 <use name="DataFormats/L1Trigger"/>
 <use name="DataFormats/L1Scouting"/>
 <use name="DataFormats/L1ScoutingSoA"/>

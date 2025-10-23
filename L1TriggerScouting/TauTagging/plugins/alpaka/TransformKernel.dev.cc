@@ -16,6 +16,21 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
     b = temp;
   }
 
+  ALPAKA_FN_ACC float charge(int pdgid) {
+    if (pdgid > 0) {
+      if (pdgid == 211)
+        return 1.0f;
+      return -1.0f;
+    } else {
+      return 1.0f;
+    }
+  }
+
+  ALPAKA_FN_ACC float phi(Acc1D const& acc, float p_phi, float phi_jet) {
+    auto pi_c = alpaka::math::constants::pi;
+    return alpaka::math::remainder(acc, p_phi - phi_jet + pi_c, 2.0 * pi_c) - pi_c;
+  }
+
   class NotEfficientMaxKernel {
   public:
     ALPAKA_FN_ACC void operator()(Acc1D const& acc, ClustersDeviceCollection::ConstView clusters, PortableCounter* n_clusters) const {
@@ -257,10 +272,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
               auto thread_idx = tid + begin; 
               auto glob_idx = indices[thread_idx];
 
-              jet_cluster.features()(tid, 0) = pt_jet;
-              jet_cluster.features()(tid, 1) = eta_jet;
-              jet_cluster.features()(tid, 2) = phi_jet;
-              jet_cluster.features()(tid, 3) = 1.0f;
+              // if (tid > 0) {
+              //   if (pf.pt()[glob_idx] > pf.pt()[glob_idx-1])
+              //     break;
+              // }
+
+              jet_cluster.features()(tid, 0) = pf.pt()[glob_idx];
+              jet_cluster.features()(tid, 1) = pf.eta()[glob_idx] - eta_jet;
+              jet_cluster.features()(tid, 2) = phi(acc, pf.phi()[glob_idx], phi_jet);
               jet_cluster.features()(tid, 4) = pf.z0()[glob_idx];
               // one hot-encoding from pdgid
               auto pdgid_v = alpaka::math::abs(acc, static_cast<int>(pf.pdgid()[glob_idx]));
@@ -269,6 +288,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
               jet_cluster.features()(tid, 7) = (pdgid_v == 11) ? 1.0f : 0.0f;
               jet_cluster.features()(tid, 8) = (pdgid_v == 13) ? 1.0f : 0.0f;
               jet_cluster.features()(tid, 9) = (pdgid_v == 22) ? 1.0f : 0.0f;
+              jet_cluster.pad_mask()(tid) = 1.0f;
             }
           }
         },
@@ -283,7 +303,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
         [] ALPAKA_FN_ACC(Acc1D const& acc,
               SoftTauInputDeviceTensor::View input_tensor) {
           if (once_per_grid(acc)) {
-            for (int c = 0; c < 5; c++) {
+            for (int c = 0; c < input_tensor.metadata().size(); c++) {
               auto jet_cluster = input_tensor[c];
               printf("Cluster %d:\n", c);
               for (int i = 0; i < JetFeatures::RowsAtCompileTime; i++) {

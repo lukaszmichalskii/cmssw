@@ -108,9 +108,9 @@ namespace l1sc {
                const SoftTauOutputHostTensor::ConstView& taus,
                const std::string_view taus_backend) {
       fmt::print("[DEBUG] Taus[{}] ({})\n", taus.metadata().size(), taus_backend);
-      constexpr auto sep = "+---------+--------------+-----------+-----------+-----------+-----------+";
+      constexpr auto sep = "+---------+--------------+-----------+-----------+-----------+--------------+";
       fmt::print("{}\n", sep);
-      fmt::print("| {:>7} | {:>12} | {:>9} | {:>9} | {:>9} | {:>9} |\n", "cluster", "constituents", "true tau", "fake tau", "pt", "vz");
+      fmt::print("| {:>7} | {:>12} | {:>9} | {:>9} | {:>9} | {:>12} |\n", "cluster", "constituents", "cls prob", "reg vz", " reg pt", "charge prob");
       fmt::print("{}\n", sep);
 
       const int max_entries = (environment_ > Environment::kTest) ? taus.metadata().size() : 5;
@@ -124,8 +124,8 @@ namespace l1sc {
         constituents[clusters.cluster()[i]] += 1;
       }
       for (int i = 0; i < taus.metadata().size() && i < max_entries; ++i) {
-        fmt::print("| {:>7} | {:>12} | {:>9.4f} | {:>9.4f} | {:>9.4f} | {:>9.4f} |\n", 
-          i, constituents[i], taus.genuine_tau_score()[i], taus.fake_tau_score()[i], taus.pt()[i], taus.vz()[i]);
+        fmt::print("| {:>7} | {:>12} | {:>9.4f} | {:>9.4f} | {:>9.4f} | {:>12.4f} |\n", 
+          i, constituents[i], taus.cls_logits()[i], taus.vz()[i], taus.pt()[i], taus.charge_logits()[i]);
       }
       if (max_entries < taus.metadata().size()) {
         fmt::print("| {:>7} | {:>12} | {:>9} | {:>9} | {:>9} | {:>9} |\n", "...", "...", "...", "...", "...", "...");

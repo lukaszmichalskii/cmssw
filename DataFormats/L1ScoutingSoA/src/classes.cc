@@ -2,6 +2,7 @@
 #include "DataFormats/Portable/interface/PortableHostCollectionReadRules.h"
 #include "DataFormats/Portable/interface/PortableHostObjectReadRules.h"
 #include "DataFormats/L1ScoutingSoA/interface/BxLookupHostCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/JetHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/ClustersHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiHostCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/TkEmHostCollection.h"
@@ -12,6 +13,7 @@
 #include "DataFormats/L1ScoutingSoA/interface/SoftTauHostTensor.h"
 
 SET_PORTABLEHOSTMULTICOLLECTION_READ_RULES(l1sc::BxLookupHostCollection);
+SET_PORTABLEHOSTMULTICOLLECTION_READ_RULES(l1sc::JetHostCollection);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(l1sc::ClustersHostCollection);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(l1sc::ClusterObjHostCollection);
 SET_PORTABLEHOSTCOLLECTION_READ_RULES(l1sc::PuppiHostCollection);

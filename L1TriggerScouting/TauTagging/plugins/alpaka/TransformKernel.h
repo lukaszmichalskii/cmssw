@@ -9,6 +9,7 @@
 #include "DataFormats/Portable/interface/alpaka/PortableCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/SoftTauDeviceTensor.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/BxLookupDeviceCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/JetDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/ClustersDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PFCandidateDeviceCollection.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
@@ -42,7 +43,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc::kernels {
                  const PFCandidateDeviceCollection& pf, 
                  const BxLookupDeviceCollection& bx_lookup, 
                  const ClustersDeviceCollection& clusters);
-  SoftTauInputDeviceTensor transform(Queue& queue, 
+  std::tuple<SoftTauInputDeviceTensor, JetDeviceCollection> transform(Queue& queue, 
                  const PFCandidateDeviceCollection& pf, 
                  const ClustersDeviceCollection& clusters);
 

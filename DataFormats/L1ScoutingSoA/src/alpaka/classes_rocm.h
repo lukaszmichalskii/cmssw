@@ -9,6 +9,7 @@
 #include "DataFormats/Common/interface/DeviceProduct.h"
 
 #include "DataFormats/L1ScoutingSoA/interface/BxIndexSoA.h"
+#include "DataFormats/L1ScoutingSoA/interface/JetSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/ClustersSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/OffsetsSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/PuppiSoA.h"
@@ -19,6 +20,7 @@
 #include "DataFormats/L1ScoutingSoA/interface/SoftTauTensorSoA.h"
 
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/BxLookupDeviceCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/JetDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/ClustersDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PuppiDeviceCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/TkEmDeviceCollection.h"

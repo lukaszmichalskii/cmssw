@@ -65,10 +65,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       inputs.register_tensor<SoftTauInputTensorSoA>("padding_mask", input_records.pad_mask());
       // output tensor definition
       cms::torch::alpakatools::TensorRegistry<Device> outputs(batch_size);
-      outputs.register_tensor<SoftTauOutputTensorSoA>("genuine_tau_score", output_records.genuine_tau_score());
-      outputs.register_tensor<SoftTauOutputTensorSoA>("fake_tau_score", output_records.fake_tau_score());
-      outputs.register_tensor<SoftTauOutputTensorSoA>("pt", output_records.pt());
-      outputs.register_tensor<SoftTauOutputTensorSoA>("vz", output_records.vz());
+      outputs.register_tensor<SoftTauOutputTensorSoA>("cls_logits", output_records.cls_logits());
+      outputs.register_tensor<SoftTauOutputTensorSoA>("reg_vz", output_records.vz());
+      outputs.register_tensor<SoftTauOutputTensorSoA>("reg_pt", output_records.pt());
+      outputs.register_tensor<SoftTauOutputTensorSoA>("charge_logits", output_records.charge_logits());
 
       // inference, queue guard restore stream when goes out of scope
       {
